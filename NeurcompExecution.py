@@ -18,16 +18,16 @@ def config_parser():
     parser.add_argument('--d_in', type=int, default=3, help='spatial input dimension')
     parser.add_argument('--d_out', type=int, default=1, help='spatial output dimension')
 
-    parser.add_argument('--grad_lambda', type=float, default=0,
-                        help='lambda term for gradient regularization - if 0, no regularization is performed; default=0')
+    parser.add_argument('--grad_lambda', type=float, default=0.05,
+                        help='lambda weighting term for gradient regularization - if 0, no regularization is performed; default=0.05')
 
     parser.add_argument('--n_layers', type=int, default=8, help='number of layers for the network')
     parser.add_argument('--omega_0', default=30, help='scale for SIREN')
     parser.add_argument('--lr', type=float, default=5e-5, help='learning rate, default=5e-5')
     parser.add_argument('--max_epochs', type=int, default=75,
                         help='number of passes to make over the volume, default=75')
-    parser.add_argument('--epoch_decay', type=int, default=20,
-                        help='epoch-amount at which to decay learning rate, default=20')
+    parser.add_argument('--pass_decay', type=int, default=20,
+                        help='training-pass-amount at which to decay learning rate, default=20')
     parser.add_argument('--lr_decay', type=float, default=.2, help='learning rate decay, default=.2')
 
     parser.add_argument('--compression_ratio', type=float, default=50,
