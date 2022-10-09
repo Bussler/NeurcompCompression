@@ -1,7 +1,48 @@
 # execute parsing and training
 from training.training import training
 
+def config_parser():
+    import configargparse
+    parser = configargparse.ArgumentParser()
+
+    parser.add_argument('--config', is_config_file=True,
+                        help='config file path')
+
+    parser.add_argument("--expname", type=str, required=True,
+                        help='name of your experiment; is required')
+    parser.add_argument("--data", type=str, required=True,
+                        help='path to volume data set; is required')
+    parser.add_argument("--basedir", type=str, default='/logs/',
+                        help='where to store ckpts and logs')
+
+    parser.add_argument('--d_in', type=int, default=3, help='spatial input dimension')
+    parser.add_argument('--d_out', type=int, default=1, help='spatial output dimension')
+
+    parser.add_argument('--grad_lambda', type=float, default=0,
+                        help='lambda term for gradient regularization - if 0, no regularization is performed; default=0')
+
+    parser.add_argument('--n_layers', type=int, default=8, help='number of layers for the network')
+    parser.add_argument('--omega_0', default=30, help='scale for SIREN')
+    parser.add_argument('--lr', type=float, default=5e-5, help='learning rate, default=5e-5')
+    parser.add_argument('--max_epochs', type=int, default=75,
+                        help='number of passes to make over the volume, default=75')
+    parser.add_argument('--epoch_decay', type=int, default=20,
+                        help='epoch-amount at which to decay learning rate, default=20')
+    parser.add_argument('--lr_decay', type=float, default=.2, help='learning rate decay, default=.2')
+
+    parser.add_argument('--compression_ratio', type=float, default=50,
+                        help='the data is compressed by #voxels / compression_ratio')
+
+    parser.add_argument('--batch_size', type=int, default=1024, help='batch size')
+    parser.add_argument('--sample_size', type=int, default=16, help='how many indices to generate per batch item')
+    parser.add_argument('--num_workers', type=int, default=8, help='how many parallel workers for batch access')
+
+    # M: TODO enable option for visualization, various dropout methods
+
+    return parser
 
 if __name__=='__main__':
-    args = {}
+    parser = config_parser()
+    args = vars(parser.parse_args())
+    print("Finished parsing arguments, starting training")
     training(args)

@@ -14,9 +14,9 @@ NUMPYFILE = 'datasets/test_vol.npy'  # M: SIze: 150^3
 
 def training(args):
     # M: get volume data, set up data
-    volume = get_tensor_from_numpy(NUMPYFILE)
-    dataset = IndexDataset(volume, 16)
-    data_loader = DataLoader(dataset, batch_size=1024, shuffle=True,
+    volume = get_tensor_from_numpy(args['data'])
+    dataset = IndexDataset(volume, args['sample_size'])
+    data_loader = DataLoader(dataset, batch_size=args['batch_size'], shuffle=True,
                              )  # M: create dataloader from dataset to use in training, TODO: num_workers=8
 
     #volume_interpolator = generate_RegularGridInterpolator(volume)  # M: used for accessing the volume with indices
@@ -24,22 +24,17 @@ def training(args):
     volume = volume.to(device)
     dataset.move_data_to_device(device)
 
-    n_layers = 4    # M: TODO parse this in
-    compression_ratio = 50  # M: TODO parse this in
-    max_epochs = 100
-    learning_rate = 5e-5
-
     # M: setup model
-    target_size = int(dataset.n_voxels / compression_ratio) # M: Amt of neurons in whole model
-    num_neurons = compute_num_neurons(num_layer=n_layers, target_size=target_size)  # M: number of neurons per layer
-    feature_list = np.full(n_layers, num_neurons) # M: list holding the amt of neurons per layer
+    target_size = int(dataset.n_voxels / args['compression_ratio']) # M: Amt of neurons in whole model
+    num_neurons = compute_num_neurons(num_layer=args['n_layers'], target_size=target_size)  # M: number of neurons per layer
+    feature_list = np.full(args['n_layers'], num_neurons) # M: list holding the amt of neurons per layer
 
     model = Neurcomp(input_ch=3, output_ch=1, features=feature_list)
     model.to(device)
     model.train()
 
     # M: setup loss, optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate) #betas=(0.9, 0.999)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args['lr']) #betas=(0.9, 0.999)
     loss_criterion = torch.nn.MSELoss().to(device)
 
     # M: print verbose information
@@ -47,7 +42,7 @@ def training(args):
 
     # M: training loop
     n_iter = 0
-    for epoch in range(max_epochs):
+    for epoch in range(args['max_epochs']):
 
         for bdx, data in enumerate(data_loader):
             n_iter += 1
