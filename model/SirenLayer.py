@@ -29,7 +29,7 @@ class SineLayer(nn.Module):
         return torch.sin(self.omega_0 * self.linear(input))
 
 
-# M: SIREN with residual connections according to Neurcomp https://github.com/matthewberger/neurcomp
+# M: SIREN with residual connections
 class ResidualSineLayer(nn.Module):
 
     def __init__(self, num_features, bias=True, ave_first=False, ave_second=False, omega_0=30):

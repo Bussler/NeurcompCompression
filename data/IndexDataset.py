@@ -48,6 +48,12 @@ class IndexDataset(Dataset):
 
         return positional_data
 
+    def move_data_to_device(self, device):
+        self.min_idx = self.min_idx.to(device)
+        self.max_idx = self.max_idx.to(device)
+        self.vol_res = self.vol_res.to(device)
+        self.scales = self.scales.to(device)
+        self.volume_indices = self.volume_indices.to(device)
 
     def __len__(self):
         return self.n_voxels
