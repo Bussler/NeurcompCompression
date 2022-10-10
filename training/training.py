@@ -20,12 +20,12 @@ def training(args):
     volume = get_tensor(args['data'])
     dataset = IndexDataset(volume, args['sample_size'])
     data_loader = DataLoader(dataset, batch_size=args['batch_size'], shuffle=True,
-                             )  # M: create dataloader from dataset to use in training, TODO: num_workers=args['num_workers']
+                             num_workers=args['num_workers'])  # M: create dataloader from dataset to use in training, TODO: num_workers=args['num_workers']
 
     # volume_interpolator = generate_RegularGridInterpolator(volume)  # M: used for accessing the volume with indices
 
     volume = volume.to(device)
-    dataset.move_data_to_device(device)
+    #dataset.move_data_to_device(device)
 
     # M: Setup model
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'],
@@ -59,7 +59,8 @@ def training(args):
 
             # M: Calculate loss
             ground_truth_volume = trilinear_f_interpolation(raw_positions, volume,
-                                                            dataset.min_idx, dataset.max_idx, dataset.vol_res)
+                                                            dataset.min_idx.to(device), dataset.max_idx.to(device),
+                                                            dataset.vol_res.to(device))
             # ground_truth_volume = volume_interpolator(raw_positions.cpu())
 
             vol_loss = loss_criterion(predicted_volume, ground_truth_volume)
@@ -68,8 +69,9 @@ def training(args):
             complete_loss = vol_loss
 
             if args['grad_lambda'] > 0:
-                target_grad = finite_difference_trilinear_grad(raw_positions, volume, dataset.min_idx, dataset.max_idx,
-                                                               dataset.vol_res, scale=dataset.scales)
+                target_grad = finite_difference_trilinear_grad(raw_positions, volume,
+                                                               dataset.min_idx.to(device), dataset.max_idx.to(device),
+                                                               dataset.vol_res.to(device), scale=dataset.scales)
                 # tg2 = numpy.gradient(volume.numpy())
                 # test = tg2(raw_positions[0,0],raw_positions[0,1],raw_positions[0,2])
                 # M: Important to set retain_graph, create_graph, allow_unused here, for correct gradient calculation!
@@ -102,7 +104,7 @@ def training(args):
                 break
 
     # M: print, save verbose information
-    tiled_net_out(dataset, model, True, gt_vol=volume, evaluate=True, write_vols=True, cudaDevice=device) # M: TODO: Make this better
+    tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True, write_vols=True) # M: TODO: Make this better
 
     info = {}
     num_net_params = 0

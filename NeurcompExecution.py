@@ -1,4 +1,5 @@
 from training.training import training
+#from training2 import training
 
 def config_parser():
     import configargparse

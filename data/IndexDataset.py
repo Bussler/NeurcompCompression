@@ -40,15 +40,15 @@ class IndexDataset(Dataset):
                                     dtype=torch.float) # M: can we just say vol_res -1?
 
         # M: transform into (nvoxel, 3) array for easy access
-        self.volume_indices = self.generate_indices(self.min_idx, self.max_idx, self.vol_res.int()).view(-1, 3)
+        self.volume_indices = self.generate_indices(self.min_idx, self.max_idx, self.vol_res.int(), normalize=False).view(-1, 3)
 
         self.sample_size = sampleSize
         self.max_dim = torch.max(self.max_idx)
         self.scales = self.max_idx / self.max_dim
 
 
-    # M: generate a list with the indices of the volume-elements
-    def generate_indices(self, start, end, res):
+    # M: generate a list with the indices of the volume-elements TODO: check other ways to normalize
+    def generate_indices2(self, start, end, res):
         positional_data = torch.zeros(res[0],res[1],res[2],3)
 
         positional_data[:,:,:,0] = torch.linspace(start[0],end[0],res[0],dtype=torch.float).view(res[0],1,1)
@@ -56,6 +56,18 @@ class IndexDataset(Dataset):
         positional_data[:,:,:,2] = torch.linspace(start[2],end[2],res[2],dtype=torch.float).view(1,1,res[2])
 
         return positional_data
+
+    # M: generate a list with the indices of the volume-elements; taken from https://github.com/matthewberger/neurcomp
+    def generate_indices(self, start, end, res, normalize=True):
+        positional_data = torch.zeros(res[0], res[1], res[2], 3)
+
+        starter = start / (self.max_idx - self.min_idx) if normalize else start
+        ender = end / (self.max_idx - self.min_idx) if normalize else end
+        positional_data[:, :, :, 0] = torch.linspace(starter[0], ender[0], res[0], dtype=torch.float).view(res[0], 1, 1)
+        positional_data[:, :, :, 1] = torch.linspace(starter[1], ender[1], res[1], dtype=torch.float).view(1, res[1], 1)
+        positional_data[:, :, :, 2] = torch.linspace(starter[2], ender[2], res[2], dtype=torch.float).view(1, 1, res[2])
+
+        return 2.0 * positional_data - 1.0 if normalize else positional_data
 
     def move_data_to_device(self, device):
         self.min_idx = self.min_idx.to(device)

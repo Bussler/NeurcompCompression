@@ -11,9 +11,10 @@ def tensor_from_model(model, dataset):
 def write_net_to_vtk():
     pass
 
-
-def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False, cudaDevice = None):
+# taken from https://github.com/matthewberger/neurcomp
+def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False):
     target_res = dataset.vol_res_touple
+    #target_res = dataset.vol_res
     full_vol = th.zeros(target_res)
     for xdx in np.arange(0,target_res[0],tiled_res):
         if verbose:
@@ -29,13 +30,16 @@ def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False, cudaDevic
 
                 tile_resolution = th.tensor([x_end-x_begin,y_end-y_begin,z_end-z_begin],dtype=th.int)
 
-                min_alpha_bb = th.tensor([x_begin/(target_res[0]-1),y_begin/(target_res[1]-1),z_begin/(target_res[2]-1)],dtype=th.float, device=cudaDevice)
-                max_alpha_bb = th.tensor([(x_end-1)/(target_res[0]-1),(y_end-1)/(target_res[1]-1),(z_end-1)/(target_res[2]-1)],dtype=th.float, device=cudaDevice)
+                min_alpha_bb = th.tensor([x_begin/(target_res[0]-1),y_begin/(target_res[1]-1),z_begin/(target_res[2]-1)],dtype=th.float)
+                max_alpha_bb = th.tensor([(x_end-1)/(target_res[0]-1),(y_end-1)/(target_res[1]-1),(z_end-1)/(target_res[2]-1)],dtype=th.float)
                 min_bounds = dataset.min_idx + min_alpha_bb*(dataset.max_idx-dataset.min_idx)
                 max_bounds = dataset.min_idx + max_alpha_bb*(dataset.max_idx-dataset.min_idx)
+                #min_bounds = dataset.min_bb + min_alpha_bb * (dataset.max_bb - dataset.min_bb)
+                #max_bounds = dataset.min_bb + max_alpha_bb*(dataset.max_bb-dataset.min_bb)
 
                 with th.no_grad():
-                    tile_positions = dataset.scales.view(1,1,1,3)*dataset.generate_indices(min_bounds,max_bounds,tile_resolution).to(cudaDevice)
+                    tile_positions = dataset.scales.view(1,1,1,3)*dataset.generate_indices(min_bounds,max_bounds,tile_resolution, normalize=True)
+                    #tile_positions = dataset.scales.view(1, 1, 1, 3) * dataset.tile_sampling(min_bounds, max_bounds, tile_resolution)
                     if is_cuda:
                         tile_positions = tile_positions.unsqueeze(0).cuda()
                     tile_vol = net(tile_positions.unsqueeze(0)).squeeze(0).squeeze(-1)
@@ -47,13 +51,14 @@ def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False, cudaDevic
     return full_vol
 #
 
-def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, write_vols=False, filename='vol', cudaDevice = None):
+# taken from https://github.com/matthewberger/neurcomp
+def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, write_vols=False, filename='vol'):
     net.eval()
-    full_vol = field_from_net(dataset, net, is_cuda, tiled_res=32, cudaDevice=cudaDevice)
+    full_vol = field_from_net(dataset, net, is_cuda, tiled_res=32)
     psnr = 0
     print('writing to VTK...')
     if evaluate and gt_vol is not None:
-        diff_vol = gt_vol - full_vol.to(cudaDevice)
+        diff_vol = gt_vol - full_vol
         sqd_max_diff = (th.max(gt_vol)-th.min(gt_vol))**2
         #full_vol = full_vol.cpu().transpose(1,2).transpose(0,1).transpose(1,2)
         l1_diff = th.mean(th.abs(diff_vol))
@@ -64,7 +69,7 @@ def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, write_vols=
     if write_vols:
         imageToVTK(filename, pointData = {'sf':full_vol.numpy()})
         if gt_vol is not None:
-            imageToVTK('gt', pointData = {'sf':gt_vol.cpu().numpy()})
+            imageToVTK('gt', pointData = {'sf':gt_vol.numpy()})
     #
 
     print('back to training...')
