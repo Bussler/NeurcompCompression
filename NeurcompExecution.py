@@ -12,7 +12,7 @@ def config_parser():
                         help='name of your experiment; is required')
     parser.add_argument("--data", type=str, required=True,
                         help='path to volume data set; is required')
-    parser.add_argument("--basedir", type=str, default='/logs/',
+    parser.add_argument("--basedir", type=str, default='/experiments/',
                         help='where to store ckpts and logs')
 
     parser.add_argument('--d_in', type=int, default=3, help='spatial input dimension')
@@ -22,6 +22,8 @@ def config_parser():
                         help='lambda weighting term for gradient regularization - if 0, no regularization is performed; default=0.05')
 
     parser.add_argument('--n_layers', type=int, default=8, help='number of layers for the network')
+    parser.add_argument('--checkpoint_path', type=str, default='', help='checkpoint from where to load model')
+
     parser.add_argument('--omega_0', default=30, help='scale for SIREN')
     parser.add_argument('--lr', type=float, default=5e-5, help='learning rate, default=5e-5')
     parser.add_argument('--max_epochs', type=int, default=75,

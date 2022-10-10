@@ -16,7 +16,7 @@ def get_tensor_from_numpy(filepath):
     maxV = torch.max(volume)
     volume = normalize_volume(volume, minV, maxV, -1.0, 1.0)
 
-    print('Loaded Volume Successfully')
+    print('Loaded Volume Successfully. Shape of: ', volume.shape)
     #print('volume extends:', minV, maxV)
     return volume
 

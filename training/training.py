@@ -1,4 +1,5 @@
-import numpy
+import os
+import json
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -6,7 +7,7 @@ from torch.utils.data import DataLoader
 from data.IndexDataset import get_tensor_from_numpy, IndexDataset
 from data.Interpolation import trilinear_f_interpolation, generate_RegularGridInterpolator, \
     finite_difference_trilinear_grad
-from model.NeurcompModel import Neurcomp, compute_num_neurons
+from model.NeurcompModel import Neurcomp, setup_neurcomp
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -26,12 +27,8 @@ def training(args):
     dataset.move_data_to_device(device)
 
     # M: setup model
-    target_size = int(dataset.n_voxels / args['compression_ratio'])  # M: Amt of neurons in whole model
-    num_neurons = compute_num_neurons(num_layer=args['n_layers'],
-                                      target_size=target_size)  # M: number of neurons per layer
-    feature_list = np.full(args['n_layers'], num_neurons)  # M: list holding the amt of neurons per layer
-
-    model = Neurcomp(input_ch=args['d_in'], output_ch=args['d_out'], features=feature_list)
+    model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'],
+                           args['d_in'], args['d_out'], args['omega_0'], args['checkpoint_path'])
     model.to(device)
     model.train()
 
@@ -88,9 +85,26 @@ def training(args):
                     param_group['lr'] *= args['lr_decay']
 
             print("yep", pass_iter)
+            break
+        break
 
-    # M: print verbose information
-    pass
+    # M: print, save verbose information
+    # M: TODO: visualize
+
+    num_net_params = 0
+    for layer in model.parameters():
+        num_net_params += layer.numel()
+    print("Trained Model: ", num_net_params," parameters; ", dataset.n_voxels/num_net_params, " compression ratio")
+    print("Layers: \n", model)
+
+    ExperimentPath = os.path.abspath(os.getcwd()) + args['basedir'] + args['expname'] + '/'
+    os.makedirs(ExperimentPath, exist_ok=True)
+
+    torch.save(model.state_dict(), os.path.join(ExperimentPath,'model.pth'))
+
+    with open(os.path.join(ExperimentPath,'config.txt'), 'w') as f:
+        for key, value in args.items():
+            f.write('%s = %s\n' % (key, value))
 
 
 if __name__ == '__main__':
