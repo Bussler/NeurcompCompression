@@ -10,6 +10,8 @@ from data.Interpolation import trilinear_f_interpolation, generate_RegularGridIn
 from model.NeurcompModel import Neurcomp, setup_neurcomp
 from visualization.OutputToVTK import tiled_net_out
 
+from data.testDataset import VolumeDataset
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -70,9 +72,10 @@ def training(args):
                                                                dataset.vol_res, scale=dataset.scales)
                 # tg2 = numpy.gradient(volume.numpy())
                 # test = tg2(raw_positions[0,0],raw_positions[0,1],raw_positions[0,2])
+                # M: Important to set retain_graph, create_graph, allow_unused here, for correct gradient calculation!
                 predicted_grad = torch.autograd.grad(outputs=predicted_volume, inputs=norm_positions,
                                                      grad_outputs=torch.ones_like(predicted_volume),
-                                                     retain_graph=True)[0]
+                                                     retain_graph=True, create_graph=True, allow_unused=False)[0]
                 grad_loss = loss_criterion(target_grad, predicted_grad)
                 complete_loss += args['grad_lambda'] * grad_loss
 
@@ -99,8 +102,7 @@ def training(args):
                 break
 
     # M: print, save verbose information
-    # M: TODO: visualize
-    #tiled_net_out(dataset, model, True, gt_vol=volume, evaluate=True, write_vols=True) # M: TODO: Make this better
+    tiled_net_out(dataset, model, True, gt_vol=volume, evaluate=True, write_vols=True, cudaDevice=device) # M: TODO: Make this better
 
     info = {}
     num_net_params = 0

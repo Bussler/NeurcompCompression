@@ -1,0 +1,72 @@
+import torch as th
+import numpy as np
+from pyevtk.hl import imageToVTK
+
+# M: TODO
+def tensor_from_model(model, dataset):
+    # M: TODO: set/reset model to eval!
+    pass
+
+
+def write_net_to_vtk():
+    pass
+
+
+def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False, cudaDevice = None):
+    target_res = dataset.vol_res_touple
+    full_vol = th.zeros(target_res)
+    for xdx in np.arange(0,target_res[0],tiled_res):
+        if verbose:
+            print('x',xdx,'/',target_res[0])
+        x_begin = xdx
+        x_end = xdx+tiled_res if xdx+tiled_res <= target_res[0] else target_res[0]
+        for ydx in np.arange(0,target_res[1],tiled_res):
+            y_begin = ydx
+            y_end = ydx+tiled_res if ydx+tiled_res <= target_res[1] else target_res[1]
+            for zdx in np.arange(0,target_res[2],tiled_res):
+                z_begin = zdx
+                z_end = zdx+tiled_res if zdx+tiled_res <= target_res[2] else target_res[2]
+
+                tile_resolution = th.tensor([x_end-x_begin,y_end-y_begin,z_end-z_begin],dtype=th.int)
+
+                min_alpha_bb = th.tensor([x_begin/(target_res[0]-1),y_begin/(target_res[1]-1),z_begin/(target_res[2]-1)],dtype=th.float, device=cudaDevice)
+                max_alpha_bb = th.tensor([(x_end-1)/(target_res[0]-1),(y_end-1)/(target_res[1]-1),(z_end-1)/(target_res[2]-1)],dtype=th.float, device=cudaDevice)
+                min_bounds = dataset.min_idx + min_alpha_bb*(dataset.max_idx-dataset.min_idx)
+                max_bounds = dataset.min_idx + max_alpha_bb*(dataset.max_idx-dataset.min_idx)
+
+                with th.no_grad():
+                    tile_positions = dataset.scales.view(1,1,1,3)*dataset.generate_indices(min_bounds,max_bounds,tile_resolution).to(cudaDevice)
+                    if is_cuda:
+                        tile_positions = tile_positions.unsqueeze(0).cuda()
+                    tile_vol = net(tile_positions.unsqueeze(0)).squeeze(0).squeeze(-1)
+                    full_vol[x_begin:x_end,y_begin:y_end,z_begin:z_end] = tile_vol.cpu()
+                #
+            #
+        #
+    #
+    return full_vol
+#
+
+def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, write_vols=False, filename='vol', cudaDevice = None):
+    net.eval()
+    full_vol = field_from_net(dataset, net, is_cuda, tiled_res=32, cudaDevice=cudaDevice)
+    psnr = 0
+    print('writing to VTK...')
+    if evaluate and gt_vol is not None:
+        diff_vol = gt_vol - full_vol.to(cudaDevice)
+        sqd_max_diff = (th.max(gt_vol)-th.min(gt_vol))**2
+        #full_vol = full_vol.cpu().transpose(1,2).transpose(0,1).transpose(1,2)
+        l1_diff = th.mean(th.abs(diff_vol))
+        mse = th.mean(th.pow(diff_vol,2))
+        psnr = 10*th.log10(sqd_max_diff/th.mean(diff_vol**2))
+        print('PSNR:',psnr,'l1:',l1_diff,'mse:',mse,'rmse:',th.sqrt(mse))
+
+    if write_vols:
+        imageToVTK(filename, pointData = {'sf':full_vol.numpy()})
+        if gt_vol is not None:
+            imageToVTK('gt', pointData = {'sf':gt_vol.cpu().numpy()})
+    #
+
+    print('back to training...')
+    net.train()
+    return psnr
