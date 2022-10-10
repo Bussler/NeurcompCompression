@@ -15,7 +15,7 @@ NUMPYFILE = 'datasets/test_vol.npy'  # M: SIze: 150^3
 
 
 def training(args):
-    # M: get volume data, set up data
+    # M: Get volume data, set up data
     volume = get_tensor_from_numpy(args['data'])
     dataset = IndexDataset(volume, args['sample_size'])
     data_loader = DataLoader(dataset, batch_size=args['batch_size'], shuffle=True,
@@ -26,36 +26,35 @@ def training(args):
     volume = volume.to(device)
     dataset.move_data_to_device(device)
 
-    # M: setup model
+    # M: Setup model
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'],
                            args['d_in'], args['d_out'], args['omega_0'], args['checkpoint_path'])
     model.to(device)
     model.train()
 
-    # M: setup loss, optimizer
+    # M: Setup loss, optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])  # betas=(0.9, 0.999)
     loss_criterion = torch.nn.MSELoss().to(device)
 
-    # M: training loop
-    pass_iter = 0
-    for epoch in range(args['max_epochs']):
+    # M: Training loop
+    voxel_seen = 0.0
+    volume_passes = 0.0
+    while int(volume_passes) + 1 < args['max_pass']:
 
         for idx, data in enumerate(data_loader):
-            pass_iter += 1
-
-            # M: access data
+            # M: Access data
             raw_positions, norm_positions = data
 
-            raw_positions = raw_positions.to(device)
+            raw_positions = raw_positions.to(device) # M: Tensor of size [batch_size, sample_size, 3]
             norm_positions = norm_positions.to(device)
-            raw_positions = raw_positions.view(-1, args['d_in'])
+            raw_positions = raw_positions.view(-1, args['d_in']) # M: Tensor of size [batch_size x sample_size, 3]
             norm_positions = norm_positions.view(-1, args['d_in'])
             norm_positions.requires_grad = True  # M: For gradient calculation of nw
 
             # M: NW prediction
             optimizer.zero_grad()
             predicted_volume = model(norm_positions)
-            predicted_volume = predicted_volume.squeeze(-1)  # M: Tensor holding batch_size x dataset.sample_size entries
+            predicted_volume = predicted_volume.squeeze(-1)  # M: Tensor of size [batch_size x dataset.sample_size, 1]
 
             # M: Calculate loss
             ground_truth_volume = trilinear_f_interpolation(raw_positions, volume,
@@ -63,6 +62,8 @@ def training(args):
             # ground_truth_volume = volume_interpolator(raw_positions.cpu())
 
             vol_loss = loss_criterion(predicted_volume, ground_truth_volume)
+            debug_for_volumeloss = vol_loss.item()
+            grad_loss = 0.0
             complete_loss = vol_loss
 
             if args['grad_lambda'] > 0:
@@ -79,22 +80,37 @@ def training(args):
             complete_loss.backward()
             optimizer.step()
 
-            # M: learning rate decay
-            if(pass_iter+1) % args['pass_decay'] == 0:
+            # M: Learning rate decay
+            voxel_seen += ground_truth_volume.shape[0]
+            volume_passes = voxel_seen / dataset.n_voxels
+
+            if(int(volume_passes)+1) % args['pass_decay'] == 0:
                 for param_group in optimizer.param_groups:
                     param_group['lr'] *= args['lr_decay']
 
-            print("yep", pass_iter)
-            break
-        break
+            # M: Print training statistics:
+            if idx % 100 == 0:
+                print('Passes: ', volume_passes, " volume loss: ", debug_for_volumeloss,
+                      " grad loss: ", grad_loss.item(), " loss: ", complete_loss.item())
+
+            # M: Stop training, if we reach max amount of passes over volume
+            if (int(volume_passes) + 1) == args['max_pass']:
+                break
 
     # M: print, save verbose information
     # M: TODO: visualize
 
+    info = {}
     num_net_params = 0
     for layer in model.parameters():
         num_net_params += layer.numel()
-    print("Trained Model: ", num_net_params," parameters; ", dataset.n_voxels/num_net_params, " compression ratio")
+    compression_ratio = dataset.n_voxels/num_net_params
+    print("Trained Model: ", num_net_params," parameters; ", compression_ratio, " compression ratio")
+    info['volume_size'] = dataset.vol_res
+    info['volume_num_voxels'] = dataset.n_voxels
+    info['num_parameters'] = num_net_params
+    info['compression_ratio'] = compression_ratio
+
     print("Layers: \n", model)
 
     ExperimentPath = os.path.abspath(os.getcwd()) + args['basedir'] + args['expname'] + '/'
@@ -102,9 +118,13 @@ def training(args):
 
     torch.save(model.state_dict(), os.path.join(ExperimentPath,'model.pth'))
 
-    with open(os.path.join(ExperimentPath,'config.txt'), 'w') as f:
-        for key, value in args.items():
-            f.write('%s = %s\n' % (key, value))
+    def write_dict(dictionary, filename):
+        with open(os.path.join(ExperimentPath, filename), 'w') as f:
+            for key, value in dictionary.items():
+                f.write('%s = %s\n' % (key, value))
+
+    write_dict(args, 'config.txt')
+    write_dict(info, 'info.txt')
 
 
 if __name__ == '__main__':

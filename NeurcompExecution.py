@@ -26,8 +26,8 @@ def config_parser():
 
     parser.add_argument('--omega_0', default=30, help='scale for SIREN')
     parser.add_argument('--lr', type=float, default=5e-5, help='learning rate, default=5e-5')
-    parser.add_argument('--max_epochs', type=int, default=75,
-                        help='number of passes to make over the volume, default=75')
+    parser.add_argument('--max_pass', type=int, default=75,
+                        help='number of training passes to make over the volume, default=75')
     parser.add_argument('--pass_decay', type=int, default=20,
                         help='training-pass-amount at which to decay learning rate, default=20')
     parser.add_argument('--lr_decay', type=float, default=.2, help='learning rate decay, default=.2')

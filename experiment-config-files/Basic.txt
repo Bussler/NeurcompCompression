@@ -12,7 +12,7 @@ compression_ratio = 50
 
 grad_lambda = 0.05
 lr = 5e-5
-max_epochs = 75
+max_pass = 75
 pass_decay = 20
 lr_decay = 0.2
 
