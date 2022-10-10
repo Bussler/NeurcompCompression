@@ -1,4 +1,3 @@
-# execute parsing and training
 from training.training import training
 
 def config_parser():

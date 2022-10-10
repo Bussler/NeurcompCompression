@@ -4,19 +4,18 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from data.IndexDataset import get_tensor_from_numpy, IndexDataset
+from data.IndexDataset import get_tensor, IndexDataset
 from data.Interpolation import trilinear_f_interpolation, generate_RegularGridInterpolator, \
     finite_difference_trilinear_grad
 from model.NeurcompModel import Neurcomp, setup_neurcomp
+from visualization.OutputToVTK import tiled_net_out
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-NUMPYFILE = 'datasets/test_vol.npy'  # M: SIze: 150^3
 
 
 def training(args):
     # M: Get volume data, set up data
-    volume = get_tensor_from_numpy(args['data'])
+    volume = get_tensor(args['data'])
     dataset = IndexDataset(volume, args['sample_size'])
     data_loader = DataLoader(dataset, batch_size=args['batch_size'], shuffle=True,
                              )  # M: create dataloader from dataset to use in training, TODO: num_workers=args['num_workers']
@@ -81,10 +80,12 @@ def training(args):
             optimizer.step()
 
             # M: Learning rate decay
+            prior_volume_passes = int(voxel_seen / dataset.n_voxels)
             voxel_seen += ground_truth_volume.shape[0]
             volume_passes = voxel_seen / dataset.n_voxels
 
-            if(int(volume_passes)+1) % args['pass_decay'] == 0:
+            if prior_volume_passes != int(volume_passes) and (int(volume_passes)+1) % args['pass_decay'] == 0:
+                print('------ learning rate decay ------', volume_passes)
                 for param_group in optimizer.param_groups:
                     param_group['lr'] *= args['lr_decay']
 
@@ -99,6 +100,7 @@ def training(args):
 
     # M: print, save verbose information
     # M: TODO: visualize
+    #tiled_net_out(dataset, model, True, gt_vol=volume, evaluate=True, write_vols=True) # M: TODO: Make this better
 
     info = {}
     num_net_params = 0
@@ -127,6 +129,6 @@ def training(args):
     write_dict(info, 'info.txt')
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': # M: TODO: remove this
     args = {}
     training(args)

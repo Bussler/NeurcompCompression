@@ -20,10 +20,19 @@ def get_tensor_from_numpy(filepath):
     #print('volume extends:', minV, maxV)
     return volume
 
+def get_tensor(filepath):
+
+    if True:
+        return get_tensor_from_numpy(filepath)
+    else:
+        from data.pyrendererSupport import get_tensor_from_cvol
+        return get_tensor_from_cvol(filepath)
+
 
 class IndexDataset(Dataset):
     def __init__(self, volume, sampleSize=16):
         self.vol_res = torch.tensor(volume.shape, dtype=torch.float)
+        self.vol_res_touple = volume.shape
         self.n_voxels = torch.prod(self.vol_res).int().item()
 
         self.min_idx = torch.tensor([0.0, 0.0, 0.0], dtype=torch.float)
