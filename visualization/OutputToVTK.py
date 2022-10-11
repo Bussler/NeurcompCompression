@@ -2,14 +2,6 @@ import torch as th
 import numpy as np
 from pyevtk.hl import imageToVTK
 
-# M: TODO
-def tensor_from_model(model, dataset):
-    # M: TODO: set/reset model to eval!
-    pass
-
-
-def write_net_to_vtk():
-    pass
 
 # taken from https://github.com/matthewberger/neurcomp
 def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False):
@@ -38,7 +30,11 @@ def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False):
                 #max_bounds = dataset.min_bb + max_alpha_bb*(dataset.max_bb-dataset.min_bb)
 
                 with th.no_grad():
-                    tile_positions = dataset.scales.view(1,1,1,3)*dataset.generate_indices(min_bounds,max_bounds,tile_resolution, normalize=True)
+                    start = min_bounds / (dataset.max_idx - dataset.min_idx)
+                    end = max_bounds / (dataset.max_idx - dataset.min_idx)
+                    norm_indices = dataset.generate_indices(start,end,tile_resolution)
+                    norm_indices = 2.0 * norm_indices - 1.0
+                    tile_positions = dataset.scales.view(1,1,1,3)*norm_indices
                     #tile_positions = dataset.scales.view(1, 1, 1, 3) * dataset.tile_sampling(min_bounds, max_bounds, tile_resolution)
                     if is_cuda:
                         tile_positions = tile_positions.unsqueeze(0).cuda()

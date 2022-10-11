@@ -7,10 +7,10 @@ from torch.utils.data import DataLoader
 from data.IndexDataset import get_tensor, IndexDataset
 from data.Interpolation import trilinear_f_interpolation, generate_RegularGridInterpolator, \
     finite_difference_trilinear_grad
-from model.NeurcompModel import Neurcomp, setup_neurcomp
+from model.NeurcompModel import Neurcomp
+from model.model_utils import setup_neurcomp
 from visualization.OutputToVTK import tiled_net_out
 
-from data.testDataset import VolumeDataset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -25,7 +25,6 @@ def training(args):
     # volume_interpolator = generate_RegularGridInterpolator(volume)  # M: used for accessing the volume with indices
 
     volume = volume.to(device)
-    #dataset.move_data_to_device(device)
 
     # M: Setup model
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'],
@@ -104,7 +103,7 @@ def training(args):
                 break
 
     # M: print, save verbose information
-    tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True, write_vols=True) # M: TODO: Make this better
+    tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True, write_vols=True)
 
     info = {}
     num_net_params = 0
@@ -132,7 +131,3 @@ def training(args):
     write_dict(args, 'config.txt')
     write_dict(info, 'info.txt')
 
-
-if __name__ == '__main__': # M: TODO: remove this
-    args = {}
-    training(args)

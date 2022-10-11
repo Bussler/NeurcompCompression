@@ -39,7 +39,7 @@ def config_parser():
     parser.add_argument('--sample_size', type=int, default=16, help='how many indices to generate per batch item')
     parser.add_argument('--num_workers', type=int, default=8, help='how many parallel workers for batch access')
 
-    # M: TODO enable option for visualization, various dropout methods
+    # M: TODO enable option for quantization, various dropout methods
 
     return parser
 

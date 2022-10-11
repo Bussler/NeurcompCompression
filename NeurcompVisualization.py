@@ -1,6 +1,6 @@
 from NeurcompExecution import config_parser
 from visualization.OutputToVTK import tiled_net_out
-from model.NeurcompModel import setup_neurcomp
+from model.model_utils import setup_neurcomp
 from data.IndexDataset import get_tensor, IndexDataset
 
 
@@ -19,4 +19,4 @@ if __name__=='__main__':
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'],
                            args['d_in'], args['d_out'], args['omega_0'], args['model'])
 
-    tiled_net_out(dataset, model, False, gt_vol=volume, evaluate=True, write_vols=True) # M: TODO: Make this better
+    tiled_net_out(dataset, model, False, gt_vol=volume, evaluate=True, write_vols=True)
