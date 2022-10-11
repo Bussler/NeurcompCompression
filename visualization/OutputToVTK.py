@@ -70,4 +70,4 @@ def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, write_vols=
 
     print('back to training...')
     net.train()
-    return psnr
+    return psnr if not evaluate else psnr, l1_diff, mse, th.sqrt(mse)

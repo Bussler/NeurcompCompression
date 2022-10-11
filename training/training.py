@@ -1,5 +1,7 @@
 import os
 import json
+
+import mlflow
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -10,9 +12,26 @@ from data.Interpolation import trilinear_f_interpolation, generate_RegularGridIn
 from model.NeurcompModel import Neurcomp
 from model.model_utils import setup_neurcomp
 from visualization.OutputToVTK import tiled_net_out
+from mlflow import log_metric, log_param, log_artifacts
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def get_Mlfow_Experiment(name):
+    from mlflow.tracking import MlflowClient
+
+    client = MlflowClient()
+    found_experiment = None
+    for experiment in client.search_experiments():
+        if experiment.name == name:
+            found_experiment = experiment
+            break
+    if found_experiment == None:
+        experiment_id = mlflow.create_experiment(name)
+    else:
+        experiment_id = found_experiment.experiment_id
+    return experiment_id
 
 
 def training(args):
@@ -39,9 +58,14 @@ def training(args):
     # M: Training loop
     voxel_seen = 0.0
     volume_passes = 0.0
-    while int(volume_passes) + 1 < args['max_pass']:
+    step_iter = 0
+    mlflow.start_run(experiment_id= get_Mlfow_Experiment(args['expname']))
+
+    while int(volume_passes) + 1 < args['max_pass']: # M: epochs
 
         for idx, data in enumerate(data_loader):
+            step_iter += 1
+
             # M: Access data
             raw_positions, norm_positions = data
 
@@ -95,15 +119,19 @@ def training(args):
 
             # M: Print training statistics:
             if idx % 100 == 0:
-                print('Passes: ', volume_passes, " volume loss: ", debug_for_volumeloss,
-                      " grad loss: ", grad_loss.item(), " loss: ", complete_loss.item())
+                print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, grad loss: {:.4f}, mse: {:.4f}'.format(
+                    volume_passes, args['max_pass'], debug_for_volumeloss, grad_loss.item(), complete_loss.item()))
+
+            log_metric(key="loss", value= complete_loss.item(), step= step_iter)
+            log_metric(key="volume_loss", value= debug_for_volumeloss, step= step_iter)
+            log_metric(key="grad_loss", value= grad_loss.item(), step= step_iter)
 
             # M: Stop training, if we reach max amount of passes over volume
             if (int(volume_passes) + 1) == args['max_pass']:
                 break
 
     # M: print, save verbose information
-    tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True, write_vols=True)
+    psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True, write_vols=True)
 
     info = {}
     num_net_params = 0
@@ -115,6 +143,19 @@ def training(args):
     info['volume_num_voxels'] = dataset.n_voxels
     info['num_parameters'] = num_net_params
     info['compression_ratio'] = compression_ratio
+    info['psnr'] = psnr
+    info['l1_diff'] = l1_diff
+    info['mse'] = mse
+    info['rmse'] = rmse
+
+    log_param("num_net_params", num_net_params)
+    log_param("compression_ratio", compression_ratio)
+    log_param("volume_size", dataset.vol_res)
+    log_param("volume_num_voxels", dataset.n_voxels)
+    log_param("psnr", psnr)
+    log_param("l1_diff", l1_diff)
+    log_param("mse", mse)
+    log_param("rmse", rmse)
 
     print("Layers: \n", model)
 
@@ -131,3 +172,5 @@ def training(args):
     write_dict(args, 'config.txt')
     write_dict(info, 'info.txt')
 
+    log_artifacts(ExperimentPath)
+    mlflow.end_run()
