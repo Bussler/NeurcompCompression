@@ -142,6 +142,7 @@ def training(args):
     info['volume_size'] = dataset.vol_res
     info['volume_num_voxels'] = dataset.n_voxels
     info['num_parameters'] = num_net_params
+    info['network_layer_sizes'] = model.layer_sizes
     info['compression_ratio'] = compression_ratio
     info['psnr'] = psnr
     info['l1_diff'] = l1_diff
@@ -152,6 +153,7 @@ def training(args):
     log_param("compression_ratio", compression_ratio)
     log_param("volume_size", dataset.vol_res)
     log_param("volume_num_voxels", dataset.n_voxels)
+    log_param("network_layer_sizes", model.layer_sizes)
     log_param("psnr", psnr)
     log_param("l1_diff", l1_diff)
     log_param("mse", mse)
