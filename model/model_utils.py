@@ -4,39 +4,35 @@ from model.NeurcompModel import Neurcomp
 
 
 # M: tries to find the correct amt of features per layer, so that we get target_size neurons
-# M: TODO: better way to do this?
+# M: TODO: better way to do this? How big is each neuron, is neuron = voxelsize?
 def compute_num_neurons(num_layer, target_size, input_ch=3, output_ch=1):
     d_in = input_ch
     d_out = output_ch
 
-    def network_size(neurons):
-        layers = [d_in]
-        layers.extend([neurons] * num_layer)
-        layers.append(d_out)
-        n_layers = len(layers) - 1
+    def network_size(features_each_layer):
+        layer_sizes = [d_in]
+        layer_sizes.extend([features_each_layer] * num_layer)
+        layer_sizes.append(d_out)
+        n_layers = len(layer_sizes) - 1
 
         n_params = 0
-        for ndx in np.arange(n_layers):
-            layer_in = layers[ndx]
-            layer_out = layers[ndx + 1]
-            og_layer_in = max(layer_in, layer_out)
+        for ndx in range(n_layers):
+            layer_in = layer_sizes[ndx]
+            layer_out = layer_sizes[ndx + 1]
 
-            if ndx == 0 or ndx == (n_layers - 1):
-                n_params += ((layer_in + 1) * layer_out)
+            if ndx == 0 or ndx == (n_layers - 1): # M: SINE or Linear at Beginning/ End
+                n_params += ((layer_in + 1) * layer_out) # M: TODO: Why + 1 here?
             else:
-                is_shortcut = layer_in != layer_out
-                if is_shortcut:
-                    n_params += (layer_in * layer_out) + layer_out
-                n_params += (layer_in * og_layer_in) + og_layer_in
-                n_params += (og_layer_in * layer_out) + layer_out
+                n_params += (layer_in * layer_out) + layer_out # M: each res block is treated as having 2 layers
+                n_params += (layer_out * layer_out) + layer_out
         return n_params
 
-    min_neurons = 16
-    while network_size(min_neurons) < target_size:
-        min_neurons += 1
-    min_neurons -= 1
+    features_each_layer = 16
+    while network_size(features_each_layer) < target_size:
+        features_each_layer += 1
+    features_each_layer -= 1 # M: apply conservative estimate to account for biases...
 
-    return min_neurons
+    return features_each_layer
 
 
 def setup_neurcomp(compression_ratio, dataset_size, n_layers, d_in, d_out, omega_0, checkpoint_path):

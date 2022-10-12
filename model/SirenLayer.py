@@ -30,14 +30,14 @@ class SineLayer(nn.Module):
 
 
 # M: SIREN with residual connections
-class ResidualSineLayer(nn.Module):
+class ResidualSineBlock(nn.Module):
 
     def __init__(self, num_features, bias=True, ave_first=False, ave_second=False, omega_0=30):
         super().__init__()
         self.omega_0 = omega_0
 
         self.num_features = num_features
-        self.linear_1 = nn.Linear(num_features, num_features, bias=bias)
+        self.linear_1 = nn.Linear(num_features, num_features, bias=bias) # M: Each Res Block has two layers
         self.linear_2 = nn.Linear(num_features, num_features, bias=bias)
 
         self.weight_1 = .5 if ave_first else 1 # M: TODO: correct like this?

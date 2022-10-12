@@ -3,8 +3,7 @@ from visualization.OutputToVTK import tiled_net_out
 from model.model_utils import setup_neurcomp
 from data.IndexDataset import get_tensor, IndexDataset
 
-
-if __name__=='__main__':
+if __name__ == '__main__':
     parser = config_parser()
 
     parser.add_argument('--model', type=str, required=True,

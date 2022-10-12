@@ -1,5 +1,5 @@
 from training.training import training
-#from training2 import training
+
 
 def config_parser():
     import configargparse
@@ -43,7 +43,8 @@ def config_parser():
 
     return parser
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     parser = config_parser()
     args = vars(parser.parse_args())
     print("Finished parsing arguments, starting training")

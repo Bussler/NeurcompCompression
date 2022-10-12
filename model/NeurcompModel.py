@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from model.SirenLayer import SineLayer, ResidualSineLayer
+from model.SirenLayer import SineLayer, ResidualSineBlock
 
 
 # M: Neurcomp according to https://github.com/matthewberger/neurcomp
@@ -30,7 +30,7 @@ class Neurcomp(nn.Module):
                     self.net_layers.append(SineLayer(layer_in, layer_out, bias=True, is_first=True))
                 else:
                     # M: intermed layers
-                    self.net_layers.append(ResidualSineLayer(layer_in, bias=True,
+                    self.net_layers.append(ResidualSineBlock(layer_in, bias=True,
                                                              ave_first=ndx > 1,
                                                              ave_second=ndx == (self.n_layers - 2)))
                 # M: TODO: append Dropout layers here!

@@ -136,7 +136,7 @@ def training(args):
     info = {}
     num_net_params = 0
     for layer in model.parameters():
-        num_net_params += layer.numel()
+        num_net_params += layer.numel() # M: number of elements in each layer weight matrix TODO: What about biases?
     compression_ratio = dataset.n_voxels/num_net_params
     print("Trained Model: ", num_net_params," parameters; ", compression_ratio, " compression ratio")
     info['volume_size'] = dataset.vol_res
@@ -163,6 +163,7 @@ def training(args):
     os.makedirs(ExperimentPath, exist_ok=True)
 
     torch.save(model.state_dict(), os.path.join(ExperimentPath,'model.pth'))
+    args['checkpoint_path'] = os.path.join(ExperimentPath,'model.pth')
 
     def write_dict(dictionary, filename):
         with open(os.path.join(ExperimentPath, filename), 'w') as f:
