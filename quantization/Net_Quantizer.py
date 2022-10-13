@@ -1,6 +1,3 @@
-import torch
-import numpy as np
-import os
 import math
 from model.NeurcompModel import Neurcomp
 import struct
@@ -34,11 +31,11 @@ class NetEncoder():
         all_weights, all_biases = get_net_weights_biases(self.net)
 
         # M: Write header for reconstruction
-        # header: number of layers
+        # number of layers
         file.write(struct.pack('B', n_layers))
-        # header: layers
+        # layer sizes
         file.write(struct.pack(''.join(['I' for _ in range(len(layer_sizes))]), *layer_sizes))
-        # header: number of bits for clustering
+        # number of bits for clustering
         file.write(struct.pack('B', bit_precision))
 
         # M: First Layer: Not quantized
@@ -74,7 +71,7 @@ class NetEncoder():
                 byte_storage.append(int(byte_val, 2))
 
             if len(bin_rep_labels) % 8 != 0:
-                byte_storage.append(int(bin_rep_labels[n_bytes*8:], 2)) # M: write the rest TODO: Caution to handle this in decode!
+                byte_storage.append(int(bin_rep_labels[n_bytes*8:], 2)) # M: write the rest
 
             file.write(byte_storage)
 

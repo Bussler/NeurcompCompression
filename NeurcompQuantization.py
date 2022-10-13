@@ -11,10 +11,10 @@ if __name__ == '__main__':
     parser.add_argument('--quant_bits', type=int, default=9,
                         help='number b of bits for k-means clustering. 2^b bits; default b = 9')
     parser.add_argument('--filename', type=str, required=True,
-                        help='file to quantize / dequantize')
+                        help='file for quantization.')
     args = vars(parser.parse_args())
 
-    print("Finished parsing arguments, let's go")
+    print("Finished parsing arguments.")
 
     # M: Setup model
     volume = get_tensor(args['data'])
@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     encoder = NetEncoder(model)
 
-    print("Start Quantizing")
+    print("Start quantization")
     encoder.encode(filename, args['quant_bits'])
 
-    print("Done Quantizing.")
+    print("Done with quantization.")
