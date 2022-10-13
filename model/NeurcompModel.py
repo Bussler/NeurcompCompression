@@ -4,7 +4,7 @@ import numpy as np
 from model.SirenLayer import SineLayer, ResidualSineBlock
 
 
-# M: Neurcomp according to https://github.com/matthewberger/neurcomp
+# M: Neurcomp according to "Compressive Neural Representations of Volumetric Scalar Fields"
 class Neurcomp(nn.Module):
     def __init__(self, input_ch=3, output_ch=1, features=[], omega_0=30):
         super(Neurcomp, self).__init__()
@@ -23,7 +23,6 @@ class Neurcomp(nn.Module):
         for ndx in range(self.n_layers):
             layer_in = self.layer_sizes[ndx]
             layer_out = self.layer_sizes[ndx + 1]
-            # print("Debug:", ndx, ndx > 1, ndx == (self.n_layers - 2))
             if ndx != self.n_layers - 1:
                 if ndx == 0:
                     # M: first layer
