@@ -17,12 +17,11 @@ def get_tensor_from_numpy(filepath):
     volume = normalize_volume(volume, minV, maxV, -1.0, 1.0)
 
     print('Loaded Volume Successfully. Shape of: ', volume.shape)
-    #print('volume extends:', minV, maxV)
     return volume
 
 def get_tensor(filepath):
 
-    if True:
+    if True: # M: TODO extend file support
         return get_tensor_from_numpy(filepath)
     else:
         from data.pyrendererSupport import get_tensor_from_cvol

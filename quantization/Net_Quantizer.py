@@ -45,8 +45,8 @@ class NetEncoder():
         weights, biases = all_weights[0].view(-1).tolist(), all_biases[0].view(-1).tolist()
         weight_format = ''.join(['f' for _ in range(len(weights))])
         bias_format = ''.join(['f' for _ in range(len(biases))])
-        first_layer = file.write(struct.pack(weight_format, *weights))
-        first_layer += file.write(struct.pack(bias_format, *biases))
+        file.write(struct.pack(weight_format, *weights))
+        file.write(struct.pack(bias_format, *biases))
 
         # M: Quantize middle layers with k-means clustering
         for i in range(1, len(all_weights)-1):
@@ -78,20 +78,17 @@ class NetEncoder():
 
             file.write(byte_storage)
 
-            if bit_precision % 8 != 0:
-                file.write(struct.pack('I', labeled_weights[-1])) # TODO is this rly necessary?
-
             # M: write the unclustered biases
             cur_bias = cur_bias.view(-1).tolist()
             bias_format = ''.join(['f' for _ in range(len(cur_bias))])
             file.write(struct.pack(bias_format, *cur_bias)) # TODO: is asterix rly important here?
 
         # M: Last Layer: Not quantized
-        weights, biases = all_weights[-1].view(-1).tolist(), all_biases[0].view(-1).tolist()
+        weights, biases = all_weights[-1].view(-1).tolist(), all_biases[-1].view(-1).tolist()
         weight_format = ''.join(['f' for _ in range(len(weights))])
         bias_format = ''.join(['f' for _ in range(len(biases))])
-        first_layer = file.write(struct.pack(weight_format, *weights))
-        first_layer += file.write(struct.pack(bias_format, *biases))
+        file.write(struct.pack(weight_format, *weights))
+        file.write(struct.pack(bias_format, *biases))
 
         file.flush()
         file.close()

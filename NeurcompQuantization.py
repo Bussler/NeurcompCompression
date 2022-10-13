@@ -5,6 +5,7 @@ from quantization.Net_Quantizer import NetEncoder
 import os
 
 if __name__ == '__main__':
+    # M: Parse Arguments
     parser = config_parser()
 
     parser.add_argument('--quant_bits', type=int, default=9,
@@ -15,19 +16,21 @@ if __name__ == '__main__':
 
     print("Finished parsing arguments, let's go")
 
+    # M: Setup model
     volume = get_tensor(args['data'])
     dataset = IndexDataset(volume, args['sample_size'])
 
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'],
                            args['d_in'], args['d_out'], args['omega_0'], args['checkpoint_path'])
 
+    # M: Setup encoder
     ExperimentPath = os.path.abspath(os.getcwd()) + args['basedir'] + args['expname'] + '/'
     os.makedirs(ExperimentPath, exist_ok=True)
-    filename = os.path.join(ExperimentPath,args['filename'])
+    filename = os.path.join(ExperimentPath, args['filename'])
 
     encoder = NetEncoder(model)
+
+    print("Start Quantizing")
     encoder.encode(filename, args['quant_bits'])
 
     print("Done Quantizing.")
-
-
