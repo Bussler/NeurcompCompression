@@ -1,4 +1,4 @@
-from NeurcompExecution import config_parser
+from NeurcompTraining import config_parser
 from model.model_utils import setup_neurcomp
 from data.IndexDataset import get_tensor, IndexDataset
 from quantization.Net_Quantizer import NetEncoder

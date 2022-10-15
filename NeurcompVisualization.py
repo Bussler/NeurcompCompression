@@ -1,4 +1,4 @@
-from NeurcompExecution import config_parser
+from NeurcompTraining import config_parser
 from visualization.OutputToVTK import tiled_net_out
 from model.model_utils import setup_neurcomp
 from data.IndexDataset import get_tensor, IndexDataset
