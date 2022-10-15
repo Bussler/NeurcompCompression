@@ -14,6 +14,8 @@ def get_tensor_from_cvol(filepath):
     level = feature.get_level(0).to_tensor()
     volume = level.squeeze()
 
+    # M: TODO Assert correct dimension!
+
     minV = torch.min(volume)
     maxV = torch.max(volume)
     volume = normalize_volume(volume, minV, maxV, -1.0, 1.0)
