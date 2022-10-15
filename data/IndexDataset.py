@@ -16,14 +16,14 @@ def get_tensor_from_numpy(filepath):
     maxV = torch.max(volume)
     volume = normalize_volume(volume, minV, maxV, -1.0, 1.0)
 
-    print('Loaded Volume Successfully. Shape of: ', volume.shape)
+    print('Loaded Numpy Volume Successfully. Shape of: ', volume.shape)
     return volume
 
 def get_tensor(filepath):
 
-    if True: # M: TODO extend file support
+    if filepath.endswith('.npy'):
         return get_tensor_from_numpy(filepath)
-    else:
+    if filepath.endswith('.cvol'):
         from data.pyrendererSupport import get_tensor_from_cvol
         return get_tensor_from_cvol(filepath)
 
