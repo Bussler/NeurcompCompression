@@ -22,7 +22,7 @@ Datasets and corresponding config files for all experiments can be found in `dat
 2. Generate a config-file for the experiment or use one under `experiment-config-files/`. Descriptions for the different parameters can be generated with `python NeurcompTraining.py --help`.
 3. Use `python NeurcompTraining.py --config <Path-To-Config-File>` to start training.
 4. During training, [MLFlow](https://mlflow.org/docs/latest/quickstart.html) tracks the experiment under `mlruns/`. A checkpoint to the trained model, as well as the config-file and basic information about the training are logged to `experiments/<expname>/`.
-5. For inference and visualization, run `python NeurcompVisualization.py --config <Path-To-Model-Config-File-In-Experiment-Folder> --model <Path-To-Model-Checkpoint>`. This will generate a .vti file for the ground-truth and model-prediced volume.
+5. For inference and visualization, run `python NeurcompVisualization.py --config <Path-To-Model-Config-File-In-Experiment-Folder>`. This will generate a .vti file for the ground-truth and model-prediced volume.
 
 ### Encode and decode the network with quantization:
 1. After training a model, use `python NeurcompQuantization.py --config <Path-To-Model-Config-File-In-Experiment-Folder> --filename <Encoded-Name> --quant_bits <Bits-ForQuantization>` to encode the model. The compressed model is then saved in the experiment-folder.
