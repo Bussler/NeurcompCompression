@@ -29,7 +29,7 @@ if __name__ == '__main__':
         compression_ratio = (dataset.n_voxels * 4) / compressed_size  # M: Size in bytes
         print('compression ratio:', compression_ratio)
 
-        psnr, l1_diff, mse, rmse = tiled_net_out(dataset, net, False, gt_vol=volume.cpu(), evaluate=True,
+        psnr, l1_diff, mse, rmse = tiled_net_out(dataset, net, True, gt_vol=volume.cpu(), evaluate=True,
                                                  write_vols=True, filename=args['decompressed_file'])
 
     print("Done.")

@@ -14,7 +14,6 @@ from model.model_utils import setup_neurcomp
 from visualization.OutputToVTK import tiled_net_out
 from mlflow import log_metric, log_param, log_artifacts
 
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -39,7 +38,8 @@ def training(args):
     volume = get_tensor(args['data'])
     dataset = IndexDataset(volume, args['sample_size'])
     data_loader = DataLoader(dataset, batch_size=args['batch_size'], shuffle=True,
-                             num_workers=args['num_workers'])  # M: create dataloader from dataset to use in training, TODO: num_workers=args['num_workers']
+                             num_workers=args[
+                                 'num_workers'])  # M: create dataloader from dataset to use in training, TODO: num_workers=args['num_workers']
 
     # volume_interpolator = generate_RegularGridInterpolator(volume)  # M: used for accessing the volume with indices
 
@@ -59,9 +59,9 @@ def training(args):
     voxel_seen = 0.0
     volume_passes = 0.0
     step_iter = 0
-    mlflow.start_run(experiment_id= get_Mlfow_Experiment(args['expname']))
+    mlflow.start_run(experiment_id=get_Mlfow_Experiment(args['expname']))
 
-    while int(volume_passes) + 1 < args['max_pass']: # M: epochs
+    while int(volume_passes) + 1 < args['max_pass']:  # M: epochs
 
         for idx, data in enumerate(data_loader):
             step_iter += 1
@@ -69,9 +69,9 @@ def training(args):
             # M: Access data
             raw_positions, norm_positions = data
 
-            raw_positions = raw_positions.to(device) # M: Tensor of size [batch_size, sample_size, 3]
+            raw_positions = raw_positions.to(device)  # M: Tensor of size [batch_size, sample_size, 3]
             norm_positions = norm_positions.to(device)
-            raw_positions = raw_positions.view(-1, args['d_in']) # M: Tensor of size [batch_size x sample_size, 3]
+            raw_positions = raw_positions.view(-1, args['d_in'])  # M: Tensor of size [batch_size x sample_size, 3]
             norm_positions = norm_positions.view(-1, args['d_in'])
             norm_positions.requires_grad = True  # M: For gradient calculation of nw
 
@@ -112,7 +112,7 @@ def training(args):
             voxel_seen += ground_truth_volume.shape[0]
             volume_passes = voxel_seen / dataset.n_voxels
 
-            if prior_volume_passes != int(volume_passes) and (int(volume_passes)+1) % args['pass_decay'] == 0:
+            if prior_volume_passes != int(volume_passes) and (int(volume_passes) + 1) % args['pass_decay'] == 0:
                 print('------ learning rate decay ------', volume_passes)
                 for param_group in optimizer.param_groups:
                     param_group['lr'] *= args['lr_decay']
@@ -122,9 +122,9 @@ def training(args):
                 print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, grad loss: {:.4f}, mse: {:.4f}'.format(
                     volume_passes, args['max_pass'], debug_for_volumeloss, grad_loss.item(), complete_loss.item()))
 
-            log_metric(key="loss", value= complete_loss.item(), step= step_iter)
-            log_metric(key="volume_loss", value= debug_for_volumeloss, step= step_iter)
-            log_metric(key="grad_loss", value= grad_loss.item(), step= step_iter)
+            log_metric(key="loss", value=complete_loss.item(), step=step_iter)
+            log_metric(key="volume_loss", value=debug_for_volumeloss, step=step_iter)
+            log_metric(key="grad_loss", value=grad_loss.item(), step=step_iter)
 
             # M: Stop training, if we reach max amount of passes over volume
             if (int(volume_passes) + 1) == args['max_pass']:
@@ -136,9 +136,9 @@ def training(args):
     info = {}
     num_net_params = 0
     for layer in model.parameters():
-        num_net_params += layer.numel() # M: number of elements in each layer weight matrix TODO: What about biases?
-    compression_ratio = dataset.n_voxels/num_net_params
-    print("Trained Model: ", num_net_params," parameters; ", compression_ratio, " compression ratio")
+        num_net_params += layer.numel()  # M: number of elements in each layer weight matrix TODO: What about biases?
+    compression_ratio = dataset.n_voxels / num_net_params
+    print("Trained Model: ", num_net_params, " parameters; ", compression_ratio, " compression ratio")
     info['volume_size'] = dataset.vol_res
     info['volume_num_voxels'] = dataset.n_voxels
     info['num_parameters'] = num_net_params
@@ -164,8 +164,8 @@ def training(args):
     ExperimentPath = os.path.abspath(os.getcwd()) + args['basedir'] + args['expname'] + '/'
     os.makedirs(ExperimentPath, exist_ok=True)
 
-    torch.save(model.state_dict(), os.path.join(ExperimentPath,'model.pth'))
-    args['checkpoint_path'] = os.path.join(ExperimentPath,'model.pth')
+    torch.save(model.state_dict(), os.path.join(ExperimentPath, 'model.pth'))
+    args['checkpoint_path'] = os.path.join(ExperimentPath, 'model.pth')
 
     def write_dict(dictionary, filename):
         with open(os.path.join(ExperimentPath, filename), 'w') as f:

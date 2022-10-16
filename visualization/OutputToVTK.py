@@ -49,6 +49,8 @@ def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False):
 
 # taken from https://github.com/matthewberger/neurcomp
 def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, write_vols=False, filename='vol'):
+    if is_cuda:
+        net = net.cuda()
     net.eval()
     full_vol = field_from_net(dataset, net, is_cuda, tiled_res=32)
     psnr = 0
