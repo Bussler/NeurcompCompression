@@ -40,6 +40,7 @@ def config_parser():
     parser.add_argument('--num_workers', type=int, default=8, help='how many parallel workers for batch access')
 
     # M: TODO enable option for quantization, various dropout methods
+    parser.add_argument('--dropout_technique', type=str, default='', help='Dropout technique to prune the network')
 
     return parser
 

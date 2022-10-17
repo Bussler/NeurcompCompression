@@ -46,8 +46,8 @@ def training(args):
     volume = volume.to(device)
 
     # M: Setup model
-    model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'],
-                           args['d_in'], args['d_out'], args['omega_0'], args['checkpoint_path'])
+    model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
+                           args['d_out'], args['omega_0'], args['checkpoint_path'], args['dropout_technique'])
     model.to(device)
     model.train()
 
