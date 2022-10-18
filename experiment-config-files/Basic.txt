@@ -18,5 +18,3 @@ lr_decay = 0.2
 
 batch_size = 1024
 sample_size = 16
-
-dropout_technique = smallify
