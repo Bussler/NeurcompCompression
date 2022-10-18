@@ -29,7 +29,6 @@ class Neurcomp(nn.Module):
             if dropout_technique == 'variational':
                 pass
 
-
         for ndx in range(self.n_layers):
             layer_in = self.layer_sizes[ndx]
             layer_out = self.layer_sizes[ndx + 1]

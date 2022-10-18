@@ -7,12 +7,13 @@ import torch
 from torch.utils.data import DataLoader
 
 from data.IndexDataset import get_tensor, IndexDataset
-from data.Interpolation import trilinear_f_interpolation, generate_RegularGridInterpolator, \
-    finite_difference_trilinear_grad
+from data.Interpolation import trilinear_f_interpolation, finite_difference_trilinear_grad
 from model.NeurcompModel import Neurcomp
 from model.model_utils import setup_neurcomp
 from visualization.OutputToVTK import tiled_net_out
 from mlflow import log_metric, log_param, log_artifacts
+from model.SmallifyDropoutLayer import calculte_smallify_loss
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -38,11 +39,7 @@ def training(args):
     volume = get_tensor(args['data'])
     dataset = IndexDataset(volume, args['sample_size'])
     data_loader = DataLoader(dataset, batch_size=args['batch_size'], shuffle=True,
-                             num_workers=args[
-                                 'num_workers'])  # M: create dataloader from dataset to use in training, TODO: num_workers=args['num_workers']
-
-    # volume_interpolator = generate_RegularGridInterpolator(volume)  # M: used for accessing the volume with indices
-
+                             num_workers=args['num_workers'])  # M: create dataloader from dataset to use in training
     volume = volume.to(device)
 
     # M: Setup model
@@ -84,25 +81,32 @@ def training(args):
             ground_truth_volume = trilinear_f_interpolation(raw_positions, volume,
                                                             dataset.min_idx.to(device), dataset.max_idx.to(device),
                                                             dataset.vol_res.to(device))
-            # ground_truth_volume = volume_interpolator(raw_positions.cpu())
 
             vol_loss = loss_criterion(predicted_volume, ground_truth_volume)
             debug_for_volumeloss = vol_loss.item()
             grad_loss = 0.0
             complete_loss = vol_loss
 
-            if args['grad_lambda'] > 0:
+            if args['grad_lambda'] > 0: # M: Gradient loss
                 target_grad = finite_difference_trilinear_grad(raw_positions, volume,
                                                                dataset.min_idx.to(device), dataset.max_idx.to(device),
                                                                dataset.vol_res.to(device), scale=dataset.scales)
-                # tg2 = numpy.gradient(volume.numpy())
-                # test = tg2(raw_positions[0,0],raw_positions[0,1],raw_positions[0,2])
+
                 # M: Important to set retain_graph, create_graph, allow_unused here, for correct gradient calculation!
                 predicted_grad = torch.autograd.grad(outputs=predicted_volume, inputs=norm_positions,
                                                      grad_outputs=torch.ones_like(predicted_volume),
                                                      retain_graph=True, create_graph=True, allow_unused=False)[0]
                 grad_loss = loss_criterion(target_grad, predicted_grad)
                 complete_loss += args['grad_lambda'] * grad_loss
+
+            # M: Special loss for Dropout
+            if args['dropout_technique']:
+                if args['dropout_technique'] == 'smallify':
+                    lambda_Betas = 5e-4
+                    lambda_Weights = 5e-4
+                    loss_Betas, loss_Weights = calculte_smallify_loss(model, lambda_Betas, lambda_Weights)
+
+                    complete_loss += loss_Betas + loss_Weights
 
             complete_loss.backward()
             optimizer.step()
@@ -121,15 +125,22 @@ def training(args):
             if idx % 100 == 0:
                 print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, grad loss: {:.4f}, mse: {:.4f}'.format(
                     volume_passes, args['max_pass'], debug_for_volumeloss, grad_loss.item(), complete_loss.item()))
+                if args['dropout_technique']:
+                    print('Beta Loss: {:.4f}, Weight loss: {:.4f}'.format(loss_Betas, loss_Weights))
 
             log_metric(key="loss", value=complete_loss.item(), step=step_iter)
             log_metric(key="volume_loss", value=debug_for_volumeloss, step=step_iter)
             log_metric(key="grad_loss", value=grad_loss.item(), step=step_iter)
 
+            if args['dropout_technique']:
+                log_metric(key="beta_loss", value=loss_Betas, step=step_iter)
+                log_metric(key="nw_weight_loss", value=loss_Weights, step=step_iter)
+
             # M: Stop training, if we reach max amount of passes over volume
             if (int(volume_passes) + 1) == args['max_pass']:
                 break
 
+    #return
     # M: print, save verbose information
     psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True, write_vols=True)
 

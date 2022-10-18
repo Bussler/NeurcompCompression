@@ -86,6 +86,10 @@ def finite_difference_trilinear_grad(p,f,min_bb,max_bb,res,scale=None):
 
 
 # generate RegularGridInterpolator for trilinear interpolation
+# volume_interpolator = generate_RegularGridInterpolator(volume)  # M: used for accessing the volume with indices
+# ground_truth_volume = volume_interpolator(raw_positions.cpu())
+# tg2 = numpy.gradient(volume.numpy())
+# test = tg2(raw_positions[0,0],raw_positions[0,1],raw_positions[0,2])
 def generate_RegularGridInterpolator(volume):
     x = torch.linspace(0, volume.shape[0] - 1, volume.shape[0])
     y = torch.linspace(0, volume.shape[1] - 1, volume.shape[1])
