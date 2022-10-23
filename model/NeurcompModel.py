@@ -35,12 +35,11 @@ class Neurcomp(nn.Module):
             if ndx != self.n_layers - 1:
                 if ndx == 0:
                     # M: first layer
-                    self.net_layers.append(SineLayer(layer_in, layer_out, bias=True, is_first=True))
-                    if dropout_layer is not None:
-                        self.net_layers.append(dropout_layer) # M: TODO watch out: is length of net_layers important?
+                    self.net_layers.append(SineLayer(layer_in, layer_out, bias=True, is_first=True,
+                                                     dropout_layer=dropout_layer))
                 else:
                     # M: intermed layers
-                    self.net_layers.append(ResidualSineBlock(layer_in, bias=True, dropout_layer=dropout_layer,
+                    self.net_layers.append(ResidualSineBlock(layer_in, layer_out, bias=True, dropout_layer=dropout_layer,
                                                              ave_first=ndx > 1,
                                                              ave_second=ndx == (self.n_layers - 2)))
             else:

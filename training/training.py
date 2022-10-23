@@ -5,6 +5,7 @@ import mlflow
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+import torch.nn.utils.prune as prune
 
 from data.IndexDataset import get_tensor, IndexDataset
 from data.Interpolation import trilinear_f_interpolation, finite_difference_trilinear_grad
@@ -12,7 +13,8 @@ from model.NeurcompModel import Neurcomp
 from model.model_utils import setup_neurcomp
 from visualization.OutputToVTK import tiled_net_out
 from mlflow import log_metric, log_param, log_artifacts
-from model.SmallifyDropoutLayer import calculte_smallify_loss
+from model.SmallifyDropoutLayer import calculte_smallify_loss, remove_smallify_from_model, SmallifyDropout
+from model.pruning import prune_dropout_threshold, prune_model
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -48,9 +50,29 @@ def training(args):
     model.to(device)
     model.train()
 
+    #new_state_dict = remove_smallify_from_model(model)
+    #new_model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
+    #                           args['d_out'], args['omega_0'], args['checkpoint_path'], dropout_technique='')
+    #new_model.load_state_dict(new_state_dict)
+    #testdata = torch.ones((16,3))
+    #pred = new_model(testdata)
+
+    #new_state_dict = remove_smallify_from_model(model)
+
+    #for m in model.modules():
+    #    print(list(m.named_parameters()))
+
+    #prune_dropout_threshold(model, SmallifyDropout, threshold=0.5)
+    #new_model = prune_model(model, SmallifyDropout)
+    #testdata = torch.ones((16, 3))
+    #pred = new_model(testdata)
+
+    lambda_Betas = 5e-7
+    lambda_Weights = 5e-7
+
     # M: Setup loss, optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])  # betas=(0.9, 0.999)
-    loss_criterion = torch.nn.MSELoss().to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])
+    loss_criterion = torch.nn.MSELoss().to(device) # M: TODO: try L1 loss
 
     # M: Training loop
     voxel_seen = 0.0
@@ -102,11 +124,10 @@ def training(args):
             # M: Special loss for Dropout
             if args['dropout_technique']:
                 if args['dropout_technique'] == 'smallify':
-                    lambda_Betas = 5e-4
-                    lambda_Weights = 5e-4
                     loss_Betas, loss_Weights = calculte_smallify_loss(model, lambda_Betas, lambda_Weights)
-
                     complete_loss += loss_Betas + loss_Weights
+
+                    #prune_dropout_threshold(model, SmallifyDropout, threshold=0.01) # M: TODO implement oscilating detection
 
             complete_loss.backward()
             optimizer.step()
@@ -119,7 +140,7 @@ def training(args):
             if prior_volume_passes != int(volume_passes) and (int(volume_passes) + 1) % args['pass_decay'] == 0:
                 print('------ learning rate decay ------', volume_passes)
                 for param_group in optimizer.param_groups:
-                    param_group['lr'] *= args['lr_decay']
+                    param_group['lr'] *= args['lr_decay'] # M: TODO: Torch.optim.lr_scheduler
 
             # M: Print training statistics:
             if idx % 100 == 0:
@@ -140,10 +161,23 @@ def training(args):
             if (int(volume_passes) + 1) == args['max_pass']:
                 break
 
-    #return
-    # M: print, save verbose information
-    psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True, write_vols=True)
 
+    # M: remove dropout layers from model
+    if args['dropout_technique']:
+        if args['dropout_technique'] == 'smallify':
+            new_state_dict = remove_smallify_from_model(model)
+            new_model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
+                                       args['d_out'], args['omega_0'], args['checkpoint_path'], dropout_technique='')
+            new_model.load_state_dict(new_state_dict)
+            #new_model = prune_model(model, SmallifyDropout) #M: TODO: solve problem with input combination
+            new_model.to(device)
+        psnr, l1_diff, mse, rmse = tiled_net_out(dataset, new_model, True, gt_vol=volume.cpu(), evaluate=True,
+                                                 write_vols=True)
+    else:
+        psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True,
+                                                 write_vols=True)
+
+    # M: print, save verbose information
     info = {}
     num_net_params = 0
     for layer in model.parameters():
@@ -169,6 +203,10 @@ def training(args):
     log_param("l1_diff", l1_diff)
     log_param("mse", mse)
     log_param("rmse", rmse)
+
+    if args['dropout_technique']:
+        log_param("lambda_Betas", lambda_Betas)
+        log_param("lambda_Weights", lambda_Weights)
 
     print("Layers: \n", model)
 
