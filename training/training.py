@@ -54,6 +54,7 @@ def training(args):
     #new_model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
     #                           args['d_out'], args['omega_0'], args['checkpoint_path'], dropout_technique='')
     #new_model.load_state_dict(new_state_dict)
+    #new_state_dict2 = new_model.state_dict()
     #testdata = torch.ones((16,3))
     #pred = new_model(testdata)
 
@@ -127,7 +128,7 @@ def training(args):
                     loss_Betas, loss_Weights = calculte_smallify_loss(model, lambda_Betas, lambda_Weights)
                     complete_loss += loss_Betas + loss_Weights
 
-                    #prune_dropout_threshold(model, SmallifyDropout, threshold=0.01) # M: TODO implement oscilating detection
+                    prune_dropout_threshold(model, SmallifyDropout, threshold=0.01) # M: TODO implement oscilating detection
 
             complete_loss.backward()
             optimizer.step()
@@ -166,12 +167,12 @@ def training(args):
     if args['dropout_technique']:
         if args['dropout_technique'] == 'smallify':
             new_state_dict = remove_smallify_from_model(model)
-            new_model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
+            model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
                                        args['d_out'], args['omega_0'], args['checkpoint_path'], dropout_technique='')
-            new_model.load_state_dict(new_state_dict)
+            model.load_state_dict(new_state_dict)
             #new_model = prune_model(model, SmallifyDropout) #M: TODO: solve problem with input combination
-            new_model.to(device)
-        psnr, l1_diff, mse, rmse = tiled_net_out(dataset, new_model, True, gt_vol=volume.cpu(), evaluate=True,
+            model.to(device)
+        psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True,
                                                  write_vols=True)
     else:
         psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True,

@@ -33,11 +33,11 @@ class SineLayer(nn.Module):
                                               np.sqrt(6 / self.in_features) / self.omega_0)
 
     def forward(self, input):
-        sine = torch.sin(self.omega_0 * self.linear_1(input))
+        sine = self.linear_1(input)
         if self.drop1 is not None:
             sine = self.drop1(sine)
 
-        return sine
+        return torch.sin(self.omega_0 * sine)
 
 
 # M: SIREN with residual connections
@@ -73,9 +73,11 @@ class ResidualSineBlock(nn.Module):
 
     # M: concat residual block according to paper with two linear layers
     def forward(self, input):
-        sine_1 = torch.sin(self.omega_0 * self.linear_1(self.weight_1 * input))
+        sine_1 = self.linear_1(self.weight_1 * input)
         if self.drop1 is not None:
             sine_1 = self.drop1(sine_1)
+
+        sine_1 = torch.sin(self.omega_0 * sine_1)
 
         sine_2 = torch.sin(self.omega_0 * self.linear_2(sine_1))
         sine_2 = self.weight_2 * (input+sine_2)

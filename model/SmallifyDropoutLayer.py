@@ -1,5 +1,6 @@
 import torch
 from model.DropoutLayer import DropoutLayer
+import torch.nn.utils.prune as prune
 
 
 def calculte_smallify_loss(model, lambdaBetas = 5e-4, lambdaWeights = 5e-4):
@@ -16,7 +17,7 @@ def calculte_smallify_loss(model, lambdaBetas = 5e-4, lambdaWeights = 5e-4):
                 loss_Weights += param.norm()**2
             if name.endswith('.betas'):
                 loss_Betas += param.norm(p=1)
-            if name.endswith('.betas_orig'): # M: TODO: better way to ignore pruned betas?
+            if name.endswith('.betas_orig'):  # M: TODO: better way to ignore pruned betas?
                 layer_split = name.split('.')
                 mask_name = layer_split[0] + '.' + layer_split[1] + '.' + layer_split[2] + '.betas_mask'
                 mask = model_state_dict[mask_name]
@@ -27,6 +28,10 @@ def calculte_smallify_loss(model, lambdaBetas = 5e-4, lambdaWeights = 5e-4):
 
 # M: Remove dropout layers and multiply them with the weights
 def remove_smallify_from_model(model):
+    for module in model.net_layers.modules():
+        if isinstance(module, SmallifyDropout):
+            prune.remove(module, 'betas')
+
     state_dict = model.state_dict()
 
     with torch.no_grad():
@@ -37,7 +42,6 @@ def remove_smallify_from_model(model):
                     layer_name = layer_split[0]+'.'+layer_split[1]+'.linear_1'
                 if 'drop2' in name:
                     layer_name = layer_split[0] + '.' + layer_split[1] + '.linear_2'
-                #param[1] = 0
                 state_dict[layer_name+'.weight'] = state_dict[layer_name+'.weight'].mul(param[:, None])
                 state_dict[layer_name+'.bias'] = state_dict[layer_name+'.bias'].mul(param)
                 state_dict.pop(name)
@@ -54,8 +58,8 @@ class SmallifyDropout(DropoutLayer):
         #self.register_parameter('betas', self.betas)
 
     def forward(self, x):
-        #if self.training:
-        x = x.mul(self.betas) # M: Scale by inverse of keep probability * (1 / (1 - self.betas)) -> Not needed here, since we mult betas with nw after training
+        if self.training:
+            x = x.mul(self.betas) # M: Scale by inverse of keep probability * (1 / (1 - self.betas)) -> Not needed here, since we mult betas with nw after training
         return x
 
     @classmethod
