@@ -51,10 +51,10 @@ def remove_smallify_from_model(model):
 
 class SmallifyDropout(DropoutLayer):
 
-    def __init__(self, c):
+    def __init__(self, number_betas, Momentum = 50):
         super(SmallifyDropout, self).__init__()
-        self.c = c
-        self.betas = torch.nn.Parameter(torch.empty(c).normal_(0, 1), requires_grad=True) # M: uniform_ or normal_
+        self.c = number_betas
+        self.betas = torch.nn.Parameter(torch.empty(number_betas).normal_(0, 1), requires_grad=True) # M: uniform_ or normal_
         #self.register_parameter('betas', self.betas)
 
     def forward(self, x):

@@ -43,14 +43,14 @@ class SineLayer(nn.Module):
 # M: SIREN with residual connections
 class ResidualSineBlock(nn.Module):
 
-    def __init__(self, in_features, out_features, bias=True, ave_first=False, ave_second=False, omega_0=30,
+    def __init__(self, in_features, intermed_features, bias=True, ave_first=False, ave_second=False, omega_0=30,
                  dropout_layer: DropoutLayer = None):
         super().__init__()
         self.omega_0 = omega_0
 
         self.num_features = in_features
-        self.linear_1 = nn.Linear(in_features, out_features, bias=bias) # M: Each Res Block has two layers
-        self.linear_2 = nn.Linear(out_features, out_features, bias=bias)
+        self.linear_1 = nn.Linear(in_features, intermed_features, bias=bias) # M: Each Res Block has two layers
+        self.linear_2 = nn.Linear(intermed_features, in_features, bias=bias)
 
         self.weight_1 = .5 if ave_first else 1 # M: TODO: correct like this?
         self.weight_2 = .5 if ave_second else 1
@@ -58,8 +58,8 @@ class ResidualSineBlock(nn.Module):
         self.drop1 = None
         #self.drop2 = None
         if dropout_layer is not None:
-            self.drop1 = dropout_layer.create_instance(out_features)
-            #self.drop2 = dropout_layer.create_instance(num_features)
+            self.drop1 = dropout_layer.create_instance(intermed_features)
+            #self.drop2 = dropout_layer.create_instance(in_features)
 
         self.init_weights()
 
@@ -80,7 +80,7 @@ class ResidualSineBlock(nn.Module):
         sine_1 = torch.sin(self.omega_0 * sine_1)
 
         sine_2 = torch.sin(self.omega_0 * self.linear_2(sine_1))
-        sine_2 = self.weight_2 * (input+sine_2)
+        sine_2 = self.weight_2 * (input+sine_2)  # M: Scale up / down input?
         #if self.drop2 is not None:
         #    sine_2 = self.drop2(sine_2)
 

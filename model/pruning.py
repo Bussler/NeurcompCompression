@@ -31,6 +31,8 @@ def prune_model(model, dropout_type):
 
     with torch.no_grad():
         for name, param, in model.state_dict().items():
+            if 'net_layers.0.' in name and '.weight' in name:
+                pruned_dropout_channel.append(param.shape[0])
             if 'betas' in name and 'betas_mask' not in name:
                 layer_split = name.split('.')
                 betas_name = layer_split[0] + '.' + layer_split[1] + '.' + layer_split[2] + '.betas_orig'
@@ -60,17 +62,20 @@ def prune_model(model, dropout_type):
                 if cached_mask is not None:
                     nonzero_indices = cached_mask.nonzero().squeeze(1)
                     resized_weights = torch.index_select(resized_weights, 1, nonzero_indices)
-
-                cached_mask = mask
+                #else:
+                    #cached_mask = mask  # M because of res net layers, we have to sum input and second output and thus can't shrink down input after here!
 
                 # M: change size of second linear layer in case of second linear layer
                 layer_name_2 = layer_split[0] + '.' + layer_split[1] + '.linear_2'
                 layer_name_2_weight = layer_name_2+'.weight'
                 layer_name_2_bias = layer_name_2+'.bias'
                 if layer_name_2_weight in state_dict:
-                    resized_weights_2 = state_dict[layer_name_2_weight][mask > 0, :]
-                    resized_bias_2 = state_dict[layer_name_2_bias][mask > 0]
 
+                    # M: output dimension
+                    resized_weights_2 = state_dict[layer_name_2_weight]#[cached_mask > 0, :]
+                    resized_bias_2 = state_dict[layer_name_2_bias]#[cached_mask > 0]
+
+                    # M: input dimension
                     nonzero_indices_2 = mask.nonzero().squeeze(1)
                     resized_weights_2 = torch.index_select(resized_weights_2, 1, nonzero_indices_2)
 
@@ -84,15 +89,12 @@ def prune_model(model, dropout_type):
                 state_dict.pop(mask_name)
 
     # M: fast fix: set output channel
-    last_linear_name = list(state_dict)[len(state_dict)-2]
-    nonzero_indices = cached_mask.nonzero().squeeze(1)
-    state_dict[last_linear_name] = torch.index_select(state_dict[last_linear_name], 1, nonzero_indices)
+    #last_linear_name = list(state_dict)[len(state_dict)-2]
+    #nonzero_indices = cached_mask.nonzero().squeeze(1)
+    #state_dict[last_linear_name] = torch.index_select(state_dict[last_linear_name], 1, nonzero_indices)
 
     new_model = Neurcomp(input_ch=model.d_in, output_ch=model.d_out, features=pruned_dropout_channel,
                      omega_0=model.omega_0, dropout_technique='')
     new_model.load_state_dict(state_dict)
     return new_model
 
-    #for module in model.net_layers.modules():
-    #    if isinstance(module, dropout_type):
-    #        prune.remove(module, 'betas')

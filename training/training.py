@@ -110,7 +110,7 @@ def training(args):
             grad_loss = 0.0
             complete_loss = vol_loss
 
-            if args['grad_lambda'] > 0: # M: Gradient loss
+            if args['grad_lambda'] > 0:  # M: Gradient loss
                 target_grad = finite_difference_trilinear_grad(raw_positions, volume,
                                                                dataset.min_idx.to(device), dataset.max_idx.to(device),
                                                                dataset.vol_res.to(device), scale=dataset.scales)
@@ -128,7 +128,7 @@ def training(args):
                     loss_Betas, loss_Weights = calculte_smallify_loss(model, lambda_Betas, lambda_Weights)
                     complete_loss += loss_Betas + loss_Weights
 
-                    prune_dropout_threshold(model, SmallifyDropout, threshold=0.01) # M: TODO implement oscilating detection
+                    prune_dropout_threshold(model, SmallifyDropout, threshold=0.1) # M: TODO implement oscilating detection
 
             complete_loss.backward()
             optimizer.step()
@@ -166,16 +166,14 @@ def training(args):
     # M: remove dropout layers from model
     if args['dropout_technique']:
         if args['dropout_technique'] == 'smallify':
-            new_state_dict = remove_smallify_from_model(model)
-            model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
-                                       args['d_out'], args['omega_0'], args['checkpoint_path'], dropout_technique='')
-            model.load_state_dict(new_state_dict)
-            #new_model = prune_model(model, SmallifyDropout) #M: TODO: solve problem with input combination
+            #new_state_dict = remove_smallify_from_model(model)
+            #model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
+            #                           args['d_out'], args['omega_0'], args['checkpoint_path'], dropout_technique='')
+            #model.load_state_dict(new_state_dict)
+            model = prune_model(model, SmallifyDropout)
             model.to(device)
-        psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True,
-                                                 write_vols=True)
-    else:
-        psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True,
+
+    psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True,
                                                  write_vols=True)
 
     # M: print, save verbose information

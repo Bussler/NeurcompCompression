@@ -36,14 +36,14 @@ class Neurcomp(nn.Module):
                 if ndx == 0:
                     # M: first layer
                     self.net_layers.append(SineLayer(layer_in, layer_out, bias=True, is_first=True,
-                                                     dropout_layer=dropout_layer))
+                                                     dropout_layer=None))  # M: TODO also try dropout_layer
                 else:
                     # M: intermed layers
-                    self.net_layers.append(ResidualSineBlock(layer_in, layer_out, bias=True, dropout_layer=dropout_layer,
+                    self.net_layers.append(ResidualSineBlock(self.layer_sizes[1], layer_out, bias=True, dropout_layer=dropout_layer,
                                                              ave_first=ndx > 1,
                                                              ave_second=ndx == (self.n_layers - 2)))
             else:
-                final_linear = nn.Linear(layer_in, layer_out)
+                final_linear = nn.Linear(self.layer_sizes[1], layer_out) #nn.Linear(layer_in, layer_out)
                 with torch.no_grad():
                     # M: uniform init, like in SIREN
                     final_linear.weight.uniform_(-np.sqrt(6 / (layer_in)) / 30.0, np.sqrt(6 / (layer_in)) / 30.0)
