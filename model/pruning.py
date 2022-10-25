@@ -46,7 +46,11 @@ def prune_model(model, dropout_type):
                 bias_name = layer_name+'.bias'
 
                 betas = state_dict[betas_name]
-                mask = state_dict[mask_name]
+
+                if mask_name in state_dict:
+                    mask = state_dict[mask_name]
+                else:
+                    mask = torch.ones(param.shape[0])
 
                 # M: mult betas and mask to get pruned betas
                 pruned_betas = betas.mul(mask)

@@ -13,7 +13,7 @@ from model.NeurcompModel import Neurcomp
 from model.model_utils import setup_neurcomp
 from visualization.OutputToVTK import tiled_net_out
 from mlflow import log_metric, log_param, log_artifacts
-from model.SmallifyDropoutLayer import calculte_smallify_loss, remove_smallify_from_model, SmallifyDropout
+from model.SmallifyDropoutLayer import calculte_smallify_loss, remove_smallify_from_model, SmallifyDropout, sign_variance_pruning_strategy
 from model.pruning import prune_dropout_threshold, prune_model
 
 
@@ -68,12 +68,12 @@ def training(args):
     #testdata = torch.ones((16, 3))
     #pred = new_model(testdata)
 
-    lambda_Betas = 5e-7
-    lambda_Weights = 5e-7
+    lambda_Betas = 1
+    lambda_Weights = 5e-5
 
     # M: Setup loss, optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])
-    loss_criterion = torch.nn.MSELoss().to(device) # M: TODO: try L1 loss
+    loss_criterion = torch.nn.MSELoss().to(device)  # M: TODO: try L1 loss
 
     # M: Training loop
     voxel_seen = 0.0
@@ -125,10 +125,13 @@ def training(args):
             # M: Special loss for Dropout
             if args['dropout_technique']:
                 if args['dropout_technique'] == 'smallify':
-                    loss_Betas, loss_Weights = calculte_smallify_loss(model, lambda_Betas, lambda_Weights)
-                    complete_loss += loss_Betas + loss_Weights
+                    loss_Betas, loss_Weights = calculte_smallify_loss(model)
+                    complete_loss += (loss_Betas * lambda_Betas) + (loss_Weights * lambda_Weights)
 
-                    prune_dropout_threshold(model, SmallifyDropout, threshold=0.1) # M: TODO implement oscilating detection
+                    #prune_dropout_threshold(model, SmallifyDropout, threshold=0.1)
+
+                    if idx % 100 == 0:
+                        sign_variance_pruning_strategy(model, device, threshold=0.5)
 
             complete_loss.backward()
             optimizer.step()
@@ -141,7 +144,7 @@ def training(args):
             if prior_volume_passes != int(volume_passes) and (int(volume_passes) + 1) % args['pass_decay'] == 0:
                 print('------ learning rate decay ------', volume_passes)
                 for param_group in optimizer.param_groups:
-                    param_group['lr'] *= args['lr_decay'] # M: TODO: Torch.optim.lr_scheduler
+                    param_group['lr'] *= args['lr_decay']
 
             # M: Print training statistics:
             if idx % 100 == 0:
@@ -170,6 +173,7 @@ def training(args):
             #model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
             #                           args['d_out'], args['omega_0'], args['checkpoint_path'], dropout_technique='')
             #model.load_state_dict(new_state_dict)
+            #prune_dropout_threshold(model, SmallifyDropout, threshold=0.1)
             model = prune_model(model, SmallifyDropout)
             model.to(device)
 
