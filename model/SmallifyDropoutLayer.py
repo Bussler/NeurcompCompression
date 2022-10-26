@@ -25,7 +25,7 @@ def calculte_smallify_loss(model):
                 mask_name = layer_split[0] + '.' + layer_split[1] + '.' + layer_split[2] + '.betas_mask'
                 mask = model_state_dict[mask_name]
                 loss_Betas += param.mul(mask).norm(p=1)
-    return loss_Betas, loss_Weights
+    return loss_Betas.item(), loss_Weights.item()
 
 # M: Remove dropout layers and multiply them with the weights
 def remove_smallify_from_model(model):

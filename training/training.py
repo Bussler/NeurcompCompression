@@ -50,27 +50,6 @@ def training(args):
     model.to(device)
     model.train()
 
-    #new_state_dict = remove_smallify_from_model(model)
-    #new_model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
-    #                           args['d_out'], args['omega_0'], args['checkpoint_path'], dropout_technique='')
-    #new_model.load_state_dict(new_state_dict)
-    #new_state_dict2 = new_model.state_dict()
-    #testdata = torch.ones((16,3))
-    #pred = new_model(testdata)
-
-    #new_state_dict = remove_smallify_from_model(model)
-
-    #for m in model.modules():
-    #    print(list(m.named_parameters()))
-
-    #prune_dropout_threshold(model, SmallifyDropout, threshold=0.5)
-    #new_model = prune_model(model, SmallifyDropout)
-    #testdata = torch.ones((16, 3))
-    #pred = new_model(testdata)
-
-    lambda_Betas = 1
-    lambda_Weights = 5e-5
-
     # M: Setup loss, optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])
     loss_criterion = torch.nn.MSELoss().to(device)  # M: TODO: try L1 loss
@@ -119,19 +98,18 @@ def training(args):
                 predicted_grad = torch.autograd.grad(outputs=predicted_volume, inputs=norm_positions,
                                                      grad_outputs=torch.ones_like(predicted_volume),
                                                      retain_graph=True, create_graph=True, allow_unused=False)[0]
-                grad_loss = loss_criterion(target_grad, predicted_grad)
+                grad_loss = loss_criterion(predicted_grad, target_grad)
                 complete_loss += args['grad_lambda'] * grad_loss
 
             # M: Special loss for Dropout
             if args['dropout_technique']:
                 if args['dropout_technique'] == 'smallify':
                     loss_Betas, loss_Weights = calculte_smallify_loss(model)
-                    complete_loss += (loss_Betas * lambda_Betas) + (loss_Weights * lambda_Weights)
+                    complete_loss = complete_loss + (loss_Betas * args['lambda_betas'])\
+                                    + (loss_Weights * args['lambda_weights'])  # M: TODO: this doesnt do anything?!
 
                     #prune_dropout_threshold(model, SmallifyDropout, threshold=0.1)
-
-                    if idx % 100 == 0:
-                        sign_variance_pruning_strategy(model, device, threshold=0.5)
+                    sign_variance_pruning_strategy(model, device, threshold=0.5)
 
             complete_loss.backward()
             optimizer.step()
@@ -165,6 +143,14 @@ def training(args):
             if (int(volume_passes) + 1) == args['max_pass']:
                 break
 
+
+    # M: debug
+    for module in model.net_layers.modules():
+        if isinstance(module, SmallifyDropout):
+            for i in range(module.c):
+                print(module.variance_emas[i])
+                print(module.beta_sign_data[i])
+                break
 
     # M: remove dropout layers from model
     if args['dropout_technique']:
@@ -208,8 +194,8 @@ def training(args):
     log_param("rmse", rmse)
 
     if args['dropout_technique']:
-        log_param("lambda_Betas", lambda_Betas)
-        log_param("lambda_Weights", lambda_Weights)
+        log_param("lambda_Betas", args['lambda_betas'])
+        log_param("lambda_Weights", args['lambda_weights'])
 
     print("Layers: \n", model)
 

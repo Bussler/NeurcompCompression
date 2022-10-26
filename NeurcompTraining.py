@@ -39,8 +39,10 @@ def config_parser():
     parser.add_argument('--sample_size', type=int, default=16, help='how many indices to generate per batch item')
     parser.add_argument('--num_workers', type=int, default=8, help='how many parallel workers for batch access')
 
-    # M: TODO enable option for quantization, various dropout methods
+    # M: enable option for quantization, various dropout methods
     parser.add_argument('--dropout_technique', type=str, default='', help='Dropout technique to prune the network')
+    parser.add_argument('--lambda_betas', type=float, default=0.05, help='lambda weighting term for dropout weights')
+    parser.add_argument('--lambda_weights', type=float, default=0.05, help='lambda scaling term for nw weights in case of dropout')
 
     return parser
 
