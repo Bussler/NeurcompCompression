@@ -1,6 +1,7 @@
 import torch
 from model.DropoutLayer import DropoutLayer
 import torch.nn.utils.prune as prune
+import model.SirenLayer as SirenLayer
 from typing import NamedTuple
 import collections
 import statistics
@@ -10,28 +11,22 @@ def calculte_smallify_loss(model):
     loss_Betas = 0
     loss_Weights = 0
 
-    model_state_dict = model.state_dict()
+    for module in model.net_layers.modules():
+        if isinstance(module, SmallifyDropout):
+            loss_Betas += module.l1_loss()
+        if isinstance(module, SirenLayer.SineLayer):
+            loss_Weights += module.p_norm_loss()
+        if isinstance(module, SirenLayer.ResidualSineBlock):
+            loss_Weights += module.p_norm_loss()
 
-    with torch.no_grad():
-        for name, param in model.named_parameters():  # M: W: .weight; biases: .bias; Drop Betas: .betas
-            if name.endswith('.weight'):
-                loss_Weights += param.norm()**2  # M: TODO better way to solve this
-            if name.endswith('.bias'):
-                loss_Weights += param.norm()**2
-            if name.endswith('.betas'):
-                loss_Betas += param.norm(p=1)
-            if name.endswith('.betas_orig'):  # M: TODO: better way to ignore pruned betas?
-                layer_split = name.split('.')
-                mask_name = layer_split[0] + '.' + layer_split[1] + '.' + layer_split[2] + '.betas_mask'
-                mask = model_state_dict[mask_name]
-                loss_Betas += param.mul(mask).norm(p=1)
-    return loss_Betas.item(), loss_Weights.item()
+    return loss_Betas, loss_Weights
 
 # M: Remove dropout layers and multiply them with the weights
 def remove_smallify_from_model(model):
     for module in model.net_layers.modules():
         if isinstance(module, SmallifyDropout):
             prune.remove(module, 'betas')
+
 
     state_dict = model.state_dict()
 
@@ -78,6 +73,8 @@ class SmallifyDropout(DropoutLayer):
             x = x.mul(self.betas) # M: Scale by inverse of keep probability * (1 / (1 - self.betas)) -> Not needed here, since we mult betas with nw after training
         return x
 
+    def l1_loss(self):
+        return torch.abs(self.betas).sum()
 
     def init_sign_variance_data(self):
         beta_signs = []

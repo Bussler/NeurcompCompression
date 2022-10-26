@@ -106,7 +106,7 @@ def training(args):
                 if args['dropout_technique'] == 'smallify':
                     loss_Betas, loss_Weights = calculte_smallify_loss(model)
                     complete_loss = complete_loss + (loss_Betas * args['lambda_betas'])\
-                                    + (loss_Weights * args['lambda_weights'])  # M: TODO: this doesnt do anything?!
+                                    + (loss_Weights * args['lambda_weights'])
 
                     #prune_dropout_threshold(model, SmallifyDropout, threshold=0.1)
                     sign_variance_pruning_strategy(model, device, threshold=0.5)

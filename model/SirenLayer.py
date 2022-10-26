@@ -39,6 +39,10 @@ class SineLayer(nn.Module):
 
         return torch.sin(self.omega_0 * sine)
 
+    def p_norm_loss(self):
+        return torch.sqrt(torch.abs(self.linear_1.weight).sum() ** 2) + \
+               torch.sqrt(torch.abs(self.linear_1.bias).sum() ** 2)
+
 
 # M: SIREN with residual connections
 class ResidualSineBlock(nn.Module):
@@ -85,3 +89,10 @@ class ResidualSineBlock(nn.Module):
         #    sine_2 = self.drop2(sine_2)
 
         return sine_2
+
+    def p_norm_loss(self):
+        lin1 = torch.sqrt(torch.abs(self.linear_1.weight).sum() ** 2) +\
+               torch.sqrt(torch.abs(self.linear_1.bias).sum() ** 2)
+        lin2 = torch.sqrt(torch.abs(self.linear_2.weight).sum() ** 2) +\
+               torch.sqrt(torch.abs(self.linear_2.bias).sum() ** 2)
+        return lin1 + lin2
