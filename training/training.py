@@ -143,23 +143,9 @@ def training(args):
             if (int(volume_passes) + 1) == args['max_pass']:
                 break
 
-
-    # M: debug
-    for module in model.net_layers.modules():
-        if isinstance(module, SmallifyDropout):
-            for i in range(module.c):
-                print(module.variance_emas[i])
-                print(module.beta_sign_data[i])
-                break
-
     # M: remove dropout layers from model
     if args['dropout_technique']:
         if args['dropout_technique'] == 'smallify':
-            #new_state_dict = remove_smallify_from_model(model)
-            #model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
-            #                           args['d_out'], args['omega_0'], args['checkpoint_path'], dropout_technique='')
-            #model.load_state_dict(new_state_dict)
-            #prune_dropout_threshold(model, SmallifyDropout, threshold=0.1)
             model = prune_model(model, SmallifyDropout)
             model.to(device)
 
