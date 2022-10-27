@@ -8,7 +8,7 @@ from visualization.OutputToVTK import tiled_net_out
 def dequantize(args):
 
     decoder = NetDecoder()
-    net = decoder.decode(args['compressed_file'])
+    net, bits = decoder.decode(args['compressed_file'])
     net.eval()
 
     if args['volume'] and args['decompressed_file']:
@@ -18,13 +18,14 @@ def dequantize(args):
 
         compressed_size = os.path.getsize(args['compressed_file'])
         compression_ratio = (dataset.n_voxels * 4) / compressed_size  # M: Size in bytes
-        print('compression ratio:', compression_ratio)
+        print('compression ratio:', compression_ratio, 'with ', bits, ' used bits')
 
         psnr, l1_diff, mse, rmse = tiled_net_out(dataset, net, True, gt_vol=volume.cpu(), evaluate=True,
                                                  write_vols=True, filename=args['decompressed_file'])
 
         info = {}
         info['Quant_Compression_Ratio'] = compression_ratio
+        info['used_bits'] = bits
         info['psnr'] = psnr
         info['l1_diff'] = l1_diff
         info['mse'] = mse
@@ -40,6 +41,8 @@ def dequantize(args):
 
         write_dict(info, 'Dequant_Info.txt')
         print('Writing Info into: ', ExperimentPath)
+
+        return info
 
 
 if __name__ == '__main__':

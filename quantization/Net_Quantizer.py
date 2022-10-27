@@ -52,8 +52,15 @@ class NetEncoder():
 
             # M: Cluster the weights according to KMeans
             cur_weigth = cur_weigth.view(-1).unsqueeze(1).numpy()
-            kmeans = KMeans(n_clusters=n_clusters, n_init=4).fit(cur_weigth) # M: Perform k-mean clustering
-            labeled_weights = kmeans.labels_.tolist() # M: each weight as index to nearest cluster center
+
+            if n_clusters > cur_weigth.shape[0]:
+                print('ERROR: Cannot perform K-Means Clustering,'
+                      ' the amount of weights per layer is < than amount of clusters')
+                file.close()
+                return
+
+            kmeans = KMeans(n_clusters=n_clusters, n_init=4).fit(cur_weigth)  # M: Perform k-mean clustering
+            labeled_weights = kmeans.labels_.tolist()  # M: each weight as index to nearest cluster center
             cluster_centers = kmeans.cluster_centers_.reshape(n_clusters).tolist()
 
             # M: Write the centers

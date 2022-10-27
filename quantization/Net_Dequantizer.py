@@ -85,4 +85,4 @@ class NetDecoder:
                 parameters.data = all_bs[bdx].view(b_shape)
                 bdx+=1
 
-        return net
+        return net, self.n_bits

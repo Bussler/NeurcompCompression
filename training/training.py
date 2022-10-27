@@ -52,8 +52,8 @@ def training(args):
 
     # M: Setup loss, optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])
-    #loss_criterion = torch.nn.MSELoss().to(device)
-    loss_criterion = torch.nn.L1Loss().to(device)  # M: try L1 loss
+    loss_criterion = torch.nn.MSELoss().to(device)
+    #loss_criterion = torch.nn.L1Loss().to(device)  # M: try L1 loss
 
     # M: Training loop
     voxel_seen = 0.0
