@@ -2,10 +2,6 @@ import torch
 from model.DropoutLayer import DropoutLayer
 import torch.nn.utils.prune as prune
 import model.SirenLayer as SirenLayer
-from typing import NamedTuple
-import collections
-import statistics
-import numpy as np
 
 def calculte_smallify_loss(model):
     loss_Betas = 0

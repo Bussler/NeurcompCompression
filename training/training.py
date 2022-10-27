@@ -13,7 +13,7 @@ from model.NeurcompModel import Neurcomp
 from model.model_utils import setup_neurcomp
 from visualization.OutputToVTK import tiled_net_out
 from mlflow import log_metric, log_param, log_artifacts
-from model.SmallifyDropoutLayer import calculte_smallify_loss, remove_smallify_from_model, SmallifyDropout, sign_variance_pruning_strategy
+from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy
 from model.pruning import prune_dropout_threshold, prune_model
 
 
@@ -52,7 +52,8 @@ def training(args):
 
     # M: Setup loss, optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])
-    loss_criterion = torch.nn.MSELoss().to(device)  # M: TODO: try L1 loss
+    #loss_criterion = torch.nn.MSELoss().to(device)
+    loss_criterion = torch.nn.L1Loss().to(device)  # M: try L1 loss
 
     # M: Training loop
     voxel_seen = 0.0

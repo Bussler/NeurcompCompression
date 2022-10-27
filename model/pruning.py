@@ -2,7 +2,6 @@ import torch
 from torch import nn
 import torch.nn.utils.prune as prune
 from model.NeurcompModel import Neurcomp
-from model.SmallifyDropoutLayer import remove_smallify_from_model
 
 
 # M: Search for zero beta parameters of layer_type dropout layer
