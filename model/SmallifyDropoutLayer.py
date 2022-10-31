@@ -24,12 +24,14 @@ def sign_variance_pruning_strategy(model, device, threshold=0.5):
             prune_mask = module.sign_variance_pruning(threshold, device)
             prune.custom_from_mask(module, name='betas', mask=prune_mask)
 
+
 class SmallifyDropout(DropoutLayer):
 
     def __init__(self, number_betas, momentum=50):
         super(SmallifyDropout, self).__init__()
         self.c = number_betas
-        self.betas = torch.nn.Parameter(torch.empty(number_betas).normal_(0, 1), requires_grad=True) # M: uniform_ or normal_
+        self.betas = torch.nn.Parameter(torch.empty(number_betas).normal_(0, 1),
+                                        requires_grad=True)  # M: uniform_ or normal_
         self.momentum = momentum
         self.oldVariances, self.oldMeans, self.variance_emas, self.pruned_already, self.n = self.init_variance_data()
 
@@ -43,7 +45,7 @@ class SmallifyDropout(DropoutLayer):
         return torch.abs(self.betas).sum()
 
     def init_variance_data(self):
-        vars = []
+        variances = []
         means = []
         variance_emas = []
         pruned_already = []
@@ -55,11 +57,10 @@ class SmallifyDropout(DropoutLayer):
             else:
                 means.append(-1.0)
 
-            vars.append(0.0)
+            variances.append(0.0)
             variance_emas.append(0.0)
             pruned_already.append(False)
-        return vars, means, variance_emas, pruned_already, n
-
+        return variances, means, variance_emas, pruned_already, n
 
     def sign_variance_pruning(self, threshold, device):
         prune_mask = torch.zeros(self.c)
@@ -70,7 +71,7 @@ class SmallifyDropout(DropoutLayer):
                 if self.pruned_already[i]:
                     continue
 
-                if self.betas[i].item() > 0.0:  # M: safe new data entry
+                if self.betas[i].item() > 0.0:  # M: save new data entry
                     newVal = 1.0
                 else:
                     newVal = -1.0

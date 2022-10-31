@@ -46,9 +46,8 @@ class NetEncoder():
         file.write(struct.pack(bias_format, *biases))
 
         # M: Quantize middle layers with k-means clustering
-        for i in range(1, len(all_weights)-1):
-            cur_weigth = all_weights[i]
-            cur_bias = all_biases[i]
+        #for i in range(1, len(all_weights)-1):
+        for cur_weigth, cur_bias in zip(all_weights[1:len(all_weights)-1], all_biases[1:len(all_weights)-1]):
 
             # M: Cluster the weights according to KMeans
             cur_weigth = cur_weigth.view(-1).unsqueeze(1).numpy()
@@ -85,7 +84,7 @@ class NetEncoder():
             # M: write the unclustered biases
             cur_bias = cur_bias.view(-1).tolist()
             bias_format = ''.join(['f' for _ in range(len(cur_bias))])
-            file.write(struct.pack(bias_format, *cur_bias)) # TODO: is asterix rly important here?
+            file.write(struct.pack(bias_format, *cur_bias))
 
         # M: Last Layer: Not quantized
         weights, biases = all_weights[-1].view(-1).tolist(), all_biases[-1].view(-1).tolist()

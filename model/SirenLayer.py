@@ -84,9 +84,7 @@ class ResidualSineBlock(nn.Module):
         sine_1 = torch.sin(self.omega_0 * sine_1)
 
         sine_2 = torch.sin(self.omega_0 * self.linear_2(sine_1))
-        sine_2 = self.weight_2 * (input+sine_2)  # M: Scale up / down input?
-        #if self.drop2 is not None:
-        #    sine_2 = self.drop2(sine_2)
+        sine_2 = self.weight_2 * (input + sine_2)  # M: Scale up / down input?
 
         return sine_2
 
