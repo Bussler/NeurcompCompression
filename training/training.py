@@ -36,7 +36,67 @@ def get_Mlfow_Experiment(name):
     return experiment_id
 
 
-def training(args):
+def gather_training_info(model, dataset, volume, args, verbose=True):
+    psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True,
+                                                 write_vols=True)
+
+    # M: print, save verbose information
+    info = {}
+    num_net_params = 0
+    for layer in model.parameters():
+        num_net_params += layer.numel()
+    compression_ratio = dataset.n_voxels / num_net_params
+
+    if verbose:
+        print("Trained Model: ", num_net_params, " parameters; ", compression_ratio, " compression ratio")
+
+    info['volume_size'] = dataset.vol_res
+    info['volume_num_voxels'] = dataset.n_voxels
+    info['num_parameters'] = num_net_params
+    info['network_layer_sizes'] = model.layer_sizes
+    info['compression_ratio'] = compression_ratio
+    info['psnr'] = psnr
+    info['l1_diff'] = l1_diff
+    info['mse'] = mse
+    info['rmse'] = rmse
+
+    log_param("num_net_params", num_net_params)
+    log_param("compression_ratio", compression_ratio)
+    log_param("volume_size", dataset.vol_res)
+    log_param("volume_num_voxels", dataset.n_voxels)
+    log_param("network_layer_sizes", model.layer_sizes)
+    log_param("psnr", psnr)
+    log_param("l1_diff", l1_diff)
+    log_param("mse", mse)
+    log_param("rmse", rmse)
+
+    if args['dropout_technique']:
+        log_param("lambda_Betas", args['lambda_betas'])
+        log_param("lambda_Weights", args['lambda_weights'])
+
+    if verbose:
+        print("Layers: \n", model)
+
+    ExperimentPath = os.path.abspath(os.getcwd()) + args['basedir'] + args['expname'] + '/'
+    os.makedirs(ExperimentPath, exist_ok=True)
+
+    torch.save(model.state_dict(), os.path.join(ExperimentPath, 'model.pth'))
+    args['checkpoint_path'] = os.path.join(ExperimentPath, 'model.pth')
+
+    def write_dict(dictionary, filename):
+        with open(os.path.join(ExperimentPath, filename), 'w') as f:
+            for key, value in dictionary.items():
+                f.write('%s = %s\n' % (key, value))
+
+    write_dict(args, 'config.txt')
+    write_dict(info, 'info.txt')
+
+    log_artifacts(ExperimentPath)
+
+    return info
+
+
+def training(args, verbose=True):
     # M: Get volume data, set up data
     volume = get_tensor(args['data'])
     dataset = IndexDataset(volume, args['sample_size'])
@@ -126,7 +186,7 @@ def training(args):
                     param_group['lr'] *= args['lr_decay']
 
             # M: Print training statistics:
-            if idx % 100 == 0:
+            if idx % 100 == 0 and verbose:
                 print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, grad loss: {:.4f}, mse: {:.4f}'.format(
                     volume_passes, args['max_pass'], debug_for_volumeloss, grad_loss.item(), complete_loss.item()))
                 if args['dropout_technique']:
@@ -150,55 +210,8 @@ def training(args):
             model = prune_model(model, SmallifyDropout)
             model.to(device)
 
-    psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True,
-                                                 write_vols=True)
-
-    # M: print, save verbose information
-    info = {}
-    num_net_params = 0
-    for layer in model.parameters():
-        num_net_params += layer.numel()  # M: number of elements in each layer weight matrix TODO: What about biases?
-    compression_ratio = dataset.n_voxels / num_net_params
-    print("Trained Model: ", num_net_params, " parameters; ", compression_ratio, " compression ratio")
-    info['volume_size'] = dataset.vol_res
-    info['volume_num_voxels'] = dataset.n_voxels
-    info['num_parameters'] = num_net_params
-    info['network_layer_sizes'] = model.layer_sizes
-    info['compression_ratio'] = compression_ratio
-    info['psnr'] = psnr
-    info['l1_diff'] = l1_diff
-    info['mse'] = mse
-    info['rmse'] = rmse
-
-    log_param("num_net_params", num_net_params)
-    log_param("compression_ratio", compression_ratio)
-    log_param("volume_size", dataset.vol_res)
-    log_param("volume_num_voxels", dataset.n_voxels)
-    log_param("network_layer_sizes", model.layer_sizes)
-    log_param("psnr", psnr)
-    log_param("l1_diff", l1_diff)
-    log_param("mse", mse)
-    log_param("rmse", rmse)
-
-    if args['dropout_technique']:
-        log_param("lambda_Betas", args['lambda_betas'])
-        log_param("lambda_Weights", args['lambda_weights'])
-
-    print("Layers: \n", model)
-
-    ExperimentPath = os.path.abspath(os.getcwd()) + args['basedir'] + args['expname'] + '/'
-    os.makedirs(ExperimentPath, exist_ok=True)
-
-    torch.save(model.state_dict(), os.path.join(ExperimentPath, 'model.pth'))
-    args['checkpoint_path'] = os.path.join(ExperimentPath, 'model.pth')
-
-    def write_dict(dictionary, filename):
-        with open(os.path.join(ExperimentPath, filename), 'w') as f:
-            for key, value in dictionary.items():
-                f.write('%s = %s\n' % (key, value))
-
-    write_dict(args, 'config.txt')
-    write_dict(info, 'info.txt')
-
-    log_artifacts(ExperimentPath)
+    info = gather_training_info(model, dataset, volume, args, verbose)
     mlflow.end_run()
+
+    return info
+

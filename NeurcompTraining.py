@@ -52,3 +52,4 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
     print("Finished parsing arguments, starting training")
     training(args)
+
