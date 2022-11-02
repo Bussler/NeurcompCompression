@@ -1,11 +1,9 @@
 import os
-import json
 
 import mlflow
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-import torch.nn.utils.prune as prune
 
 from data.IndexDataset import get_tensor, IndexDataset
 from data.Interpolation import trilinear_f_interpolation, finite_difference_trilinear_grad
@@ -13,7 +11,8 @@ from model.NeurcompModel import Neurcomp
 from model.model_utils import setup_neurcomp
 from visualization.OutputToVTK import tiled_net_out
 from mlflow import log_metric, log_param, log_artifacts
-from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy
+from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy,\
+    SmallifyResidualSiren, sign_variance_pruning_strategy_OD
 from model.pruning import prune_dropout_threshold, prune_model
 
 
@@ -75,7 +74,8 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
         log_param("lambda_Weights", args['lambda_weights'])
 
     if verbose:
-        print("Layers: \n", model)
+        print("Layers: ", model.layer_sizes)
+        print("Model: \n", model)
 
     ExperimentPath = os.path.abspath(os.getcwd()) + args['basedir'] + args['expname'] + '/'
     os.makedirs(ExperimentPath, exist_ok=True)
@@ -106,9 +106,13 @@ def training(args, verbose=True):
 
     # M: Setup model
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
-                           args['d_out'], args['omega_0'], args['checkpoint_path'], args['dropout_technique'])
+                           args['d_out'], args['omega_0'], args['checkpoint_path'], args['dropout_technique'],
+                           args['pruning_momentum'])
     model.to(device)
     model.train()
+
+    test = torch.rand((16,3)).to(device)
+    t = model(test)
 
     # M: Setup loss, optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])
@@ -119,6 +123,10 @@ def training(args, verbose=True):
     voxel_seen = 0.0
     volume_passes = 0.0
     step_iter = 0
+
+    last_loss = None
+    no_gain_iter = 0
+
     mlflow.start_run(experiment_id=get_Mlfow_Experiment(args['expname']))
 
     while int(volume_passes) + 1 < args['max_pass']:  # M: epochs
@@ -170,7 +178,8 @@ def training(args, verbose=True):
                                     + (loss_Weights * args['lambda_weights'])
 
                     #prune_dropout_threshold(model, SmallifyDropout, threshold=0.1)
-                    sign_variance_pruning_strategy(model, device, threshold=0.5)
+                    #sign_variance_pruning_strategy(model, optimizer, device, threshold=args['pruning_threshold'])
+                    sign_variance_pruning_strategy_OD(model, device, threshold=args['pruning_threshold'])
 
             complete_loss.backward()
             optimizer.step()
@@ -200,15 +209,34 @@ def training(args, verbose=True):
                 log_metric(key="beta_loss", value=loss_Betas, step=step_iter)
                 log_metric(key="nw_weight_loss", value=loss_Weights, step=step_iter)
 
+                #if last_loss is None or complete_loss < last_loss:  # M: complete loss or just beta_loss?
+                #    last_loss = complete_loss
+                #    no_gain_iter = 0
+                #else:
+                #    no_gain_iter += 1
+                #if no_gain_iter == 5 and args['lambda_betas'] > 1e-7:
+                #    args['lambda_betas'] /= 10.0
+                #    no_gain_iter = 0
+
             # M: Stop training, if we reach max amount of passes over volume
             if (int(volume_passes) + 1) == args['max_pass']:
                 break
 
     # M: remove dropout layers from model
     if args['dropout_technique']:
+        #intermed_layers = [model.d_in]
         if args['dropout_technique'] == 'smallify':
             model = prune_model(model, SmallifyDropout)
             model.to(device)
+            #intermed_layers = []
+            #intermed_layers.append(model.d_in)
+            #for module in model.net_layers.modules():
+            #    if isinstance(module, SmallifyResidualSiren):
+            #        c = module.remove_dropout_layers()
+            #        intermed_layers.append(c)
+
+        #intermed_layers.append(model.d_out)
+        #model.layer_sizes = intermed_layers
 
     info = gather_training_info(model, dataset, volume, args, verbose)
     mlflow.end_run()

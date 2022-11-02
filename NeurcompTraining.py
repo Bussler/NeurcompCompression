@@ -43,6 +43,9 @@ def config_parser():
     parser.add_argument('--dropout_technique', type=str, default='', help='Dropout technique to prune the network')
     parser.add_argument('--lambda_betas', type=float, default=0.05, help='lambda weighting term for dropout weights')
     parser.add_argument('--lambda_weights', type=float, default=0.05, help='lambda scaling term for nw weights in case of dropout')
+    parser.add_argument('--pruning_momentum', type=float, default=0.5, help='momentum for sign variance')
+    parser.add_argument('--pruning_threshold', type=float, default=0.4,
+                        help='betas with a higher variance than this will get pruned')
 
     return parser
 

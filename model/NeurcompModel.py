@@ -2,12 +2,13 @@ import torch
 import torch.nn as nn
 import numpy as np
 from model.SirenLayer import SineLayer, ResidualSineBlock
-from model.SmallifyDropoutLayer import SmallifyDropout
+from model.SmallifyDropoutLayer import SmallifyDropout, SmallifyResidualSiren
 
 
 # M: Neurcomp according to "Compressive Neural Representations of Volumetric Scalar Fields"
 class Neurcomp(nn.Module):
-    def __init__(self, input_ch=3, output_ch=1, features=[], omega_0=30, dropout_technique=''):
+    def __init__(self, input_ch=3, output_ch=1, features=[], omega_0=30, dropout_technique='',
+                 sign_variance_momentum=0.5):
         super(Neurcomp, self).__init__()
 
         self.d_in = input_ch
@@ -24,7 +25,7 @@ class Neurcomp(nn.Module):
         # M: setup dropout
         dropout_layer = None
         if dropout_technique:
-            if dropout_technique == 'smallify':
+            if 'smallify' in dropout_technique:
                 dropout_layer = SmallifyDropout(self.layer_sizes[1])
             if dropout_technique == 'variational':
                 pass
@@ -39,9 +40,15 @@ class Neurcomp(nn.Module):
                                                      dropout_layer=None))  # M: TODO also try dropout_layer
                 else:
                     # M: intermed layers
-                    self.net_layers.append(ResidualSineBlock(self.layer_sizes[1], layer_out, bias=True, dropout_layer=dropout_layer,
-                                                             ave_first=ndx > 1,
-                                                             ave_second=ndx == (self.n_layers - 2)))
+                    if False:# dropout_technique and 'smallify' in dropout_technique:
+                        self.net_layers.append(SmallifyResidualSiren(self.layer_sizes[1], layer_out, bias=True,
+                                                                     ave_first=ndx > 1,
+                                                                     ave_second=ndx == (self.n_layers - 2),
+                                                                     dropout_technique=dropout_technique))
+                    else:
+                        self.net_layers.append(ResidualSineBlock(self.layer_sizes[1], layer_out, bias=True,
+                                                                 dropout_layer=dropout_layer, ave_first=ndx > 1,
+                                                                 ave_second=ndx == (self.n_layers - 2)))
             else:
                 final_linear = nn.Linear(self.layer_sizes[1], layer_out) #nn.Linear(layer_in, layer_out)
                 with torch.no_grad():

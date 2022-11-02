@@ -1,6 +1,7 @@
 import random
 from math import log10
 from training.training import training
+from itertools import product
 
 
 ALLOWED_RANDOM_SEARCH_PARAMS = ['log', 'int', 'float', 'item']
@@ -36,7 +37,7 @@ def random_search_spaces_to_config(random_search_spaces):
     return config
 
 
-def findBestConfig(configs, args):
+def find_best_config(configs, args):
 
     best_val = None
     best_config = None
@@ -66,6 +67,19 @@ def findBestConfig(configs, args):
     return list(zip(configs, results))
 
 
+def grid_search(args, grid_search_spaces = {
+                    "grad_lambda": [0.015, 0.05],
+                    "lambda_betas": [5e-3, 5e-4, 5e-5, 5e-6],
+                    "lambda_weights": [5e-5, 5e-6, 5e-7],
+                }):
+
+    configs = []
+    for instance in product(*grid_search_spaces.values()):
+        configs.append(dict(zip(grid_search_spaces.keys(), instance)))
+
+    return find_best_config(configs, args)
+
+
 def random_search(args, random_search_spaces = {
                       "grad_lambda": ([0.0005, 0.5], 'log'),
                       "lambda_betas": ([0.000005, 0.5], 'log'),
@@ -76,5 +90,5 @@ def random_search(args, random_search_spaces = {
     for _ in range(num_search):
         configs.append(random_search_spaces_to_config(random_search_spaces))
 
-    return findBestConfig(configs, args)
+    return find_best_config(configs, args)
 

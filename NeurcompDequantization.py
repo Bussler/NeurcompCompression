@@ -8,7 +8,7 @@ from visualization.OutputToVTK import tiled_net_out
 def dequantize(args):
 
     decoder = NetDecoder()
-    net, bits = decoder.decode(args['compressed_file'])
+    net, bits = decoder.decode(args['compressed_file'])  # M: TODO: specify nw with droupout
     net.eval()
 
     if args['volume'] and args['decompressed_file']:

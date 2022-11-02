@@ -39,7 +39,7 @@ class NetDecoder:
         all_bs = [b_pos]
 
         # middle layers: cluster, store clusters, then map matrix indices to indices
-        total_n_layers = 2*(self.n_layers-2-1) # M: TODO: generalize this for middle layers: 2* because res
+        total_n_layers = 2*(self.n_layers-2-1) # M: TODO: generalize this for dropped middle layers: 2* because res
         res_idx = 0
         for ldx in range(total_n_layers):
             # weights
