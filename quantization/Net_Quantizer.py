@@ -25,7 +25,7 @@ class NetEncoder():
 
         # M: Get basic NW information
         n_clusters = int(math.pow(2, bit_precision))
-        layer_sizes = self.net.layer_sizes # M: TODO: Find a way to generalize this for all nn
+        layer_sizes = self.net.layer_sizes
         n_layers = len(layer_sizes)  # M: haben hier noch in/ out dabei, das ist bei dem orig anders!
 
         all_weights, all_biases = get_net_weights_biases(self.net)
@@ -77,7 +77,7 @@ class NetEncoder():
                 byte_storage.append(int(byte_val, 2))
 
             if len(bin_rep_labels) % 8 != 0:
-                byte_storage.append(int(bin_rep_labels[n_bytes*8:], 2)) # M: write the rest
+                byte_storage.append(int(bin_rep_labels[n_bytes*8:], 2))  # M: write the rest
 
             file.write(byte_storage)
 

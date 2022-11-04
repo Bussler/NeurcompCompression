@@ -42,7 +42,7 @@ def sign_variance_pruning_strategy(model, optimizer, device, threshold=0.4):
             if pruned:
                 pruned_something = True
 
-    if pruned_something:  # M: TODO better way to remove elements from optimizer?
+    if pruned_something:  # M: TODO better way to remove elements from optimizer? This is buggy
         lr_list = []
         print("--CHANGING OPTIM--")
         for param_group in optimizer.param_groups:
@@ -152,7 +152,7 @@ class SmallifyResidualSiren(nn.Module):
                                                     (-np.sqrt(1/intermed_features), np.sqrt(1/intermed_features)),
                                                     requires_grad=True)
 
-        self.weight_1 = .5 if ave_first else 1  # M: TODO: correct like this?
+        self.weight_1 = .5 if ave_first else 1
         self.weight_2 = .5 if ave_second else 1
 
         self.c = intermed_features
@@ -169,7 +169,6 @@ class SmallifyResidualSiren(nn.Module):
     def forward(self, input):
         sine_1 = linear(self.weight_1 * input, self.linear_weights_1, self.linear_bias_1)
         if self.training and self.betas is not None:
-            # M: TODO: TEST if dropout correct
             sine_1 = sine_1.mul(self.betas)
 
         sine_1 = torch.sin(self.omega_0 * sine_1)

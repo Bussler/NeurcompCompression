@@ -39,11 +39,12 @@ class NetDecoder:
         all_bs = [b_pos]
 
         # middle layers: cluster, store clusters, then map matrix indices to indices
-        total_n_layers = 2*(self.n_layers-2-1) # M: TODO: generalize this for dropped middle layers: 2* because res
+        total_n_layers = 2*(self.n_layers-2-1)
         res_idx = 0
         for ldx in range(total_n_layers):
             # weights
-            n_weights = self.middle_layer_sizes[res_idx] * self.middle_layer_sizes[res_idx]
+            # n_weights =self.middle_layer_sizes[res_idx] * self.middle_layer_sizes[res_idx]
+            n_weights = self.middle_layer_sizes[0] * self.middle_layer_sizes[res_idx+1]
             weight_size = (n_weights*self.n_bits)//8
             if (n_weights*self.n_bits)%8 != 0:
                 weight_size+=1
@@ -54,8 +55,12 @@ class NetDecoder:
             w_inds = th.LongTensor([int(bits[self.n_bits*i:self.n_bits*i+self.n_bits],2) for i in range(n_weights)])
 
             # bias
-            b_format = ''.join(['f' for _ in range(self.middle_layer_sizes[res_idx])])
-            bias = th.FloatTensor(struct.unpack(b_format, file.read(4 * self.middle_layer_sizes[res_idx])))
+            bias_pointer = 0
+            if ldx % 2 == 0:
+                bias_pointer = res_idx+1
+
+            b_format = ''.join(['f' for _ in range(self.middle_layer_sizes[bias_pointer])])
+            bias = th.FloatTensor(struct.unpack(b_format, file.read(4 * self.middle_layer_sizes[bias_pointer])))
             bias = th.squeeze(bias)
 
             w_quant = centers[w_inds]
@@ -66,10 +71,10 @@ class NetDecoder:
                 res_idx += 1
 
         # last layer: matrix and bias
-        w_last_format = ''.join(['f' for _ in range(self.d_out * self.middle_layer_sizes[-1])])
+        w_last_format = ''.join(['f' for _ in range(self.d_out * self.middle_layer_sizes[0])])
         b_last_format = ''.join(['f' for _ in range(self.d_out)])
-        w_last = th.FloatTensor(struct.unpack(w_last_format, file.read(4 * self.d_out * self.middle_layer_sizes[-1])))
-        b_last = th.FloatTensor(struct.unpack(b_last_format, file.read(4 * self.middle_layer_sizes[-1])))
+        w_last = th.FloatTensor(struct.unpack(w_last_format, file.read(4 * self.d_out * self.middle_layer_sizes[0])))
+        b_last = th.FloatTensor(struct.unpack(b_last_format, file.read(4 * self.middle_layer_sizes[0])))
 
         all_ws.append(w_last)
         all_bs.append(b_last)

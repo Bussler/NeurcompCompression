@@ -18,14 +18,15 @@ def config_parser():
     parser.add_argument('--d_in', type=int, default=3, help='spatial input dimension')
     parser.add_argument('--d_out', type=int, default=1, help='spatial output dimension')
 
-    parser.add_argument('--grad_lambda', type=float, default=0.05,
+    parser.add_argument('--grad_lambda', type=float, default=0.001,
                         help='lambda weighting term for gradient regularization - if 0, no regularization is performed; default=0.05')
 
     parser.add_argument('--n_layers', type=int, default=8, help='number of layers for the network')
     parser.add_argument('--checkpoint_path', type=str, default='', help='checkpoint from where to load model')
+    parser.add_argument('--feature_list', type=int, nargs="+", default=None, help='list of internal features to handle')
 
     parser.add_argument('--omega_0', default=30, help='scale for SIREN')
-    parser.add_argument('--lr', type=float, default=5e-5, help='learning rate, default=5e-5')
+    parser.add_argument('--lr', type=float, default=5e-4, help='learning rate, default=5e-5')
     parser.add_argument('--max_pass', type=int, default=75,
                         help='number of training passes to make over the volume, default=75')
     parser.add_argument('--pass_decay', type=int, default=20,
@@ -41,8 +42,8 @@ def config_parser():
 
     # M: enable option for quantization, various dropout methods
     parser.add_argument('--dropout_technique', type=str, default='', help='Dropout technique to prune the network')
-    parser.add_argument('--lambda_betas', type=float, default=0.05, help='lambda weighting term for dropout weights')
-    parser.add_argument('--lambda_weights', type=float, default=0.05, help='lambda scaling term for nw weights in case of dropout')
+    parser.add_argument('--lambda_betas', type=float, default=5e-2, help='lambda weighting term for dropout weights')
+    parser.add_argument('--lambda_weights', type=float, default=5e-6, help='lambda scaling term for nw weights in case of dropout')
     parser.add_argument('--pruning_momentum', type=float, default=0.5, help='momentum for sign variance')
     parser.add_argument('--pruning_threshold', type=float, default=0.4,
                         help='betas with a higher variance than this will get pruned')

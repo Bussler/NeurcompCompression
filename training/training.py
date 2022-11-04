@@ -82,6 +82,7 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
 
     torch.save(model.state_dict(), os.path.join(ExperimentPath, 'model.pth'))
     args['checkpoint_path'] = os.path.join(ExperimentPath, 'model.pth')
+    args['feature_list'] = model.layer_sizes[1:-1]
 
     def write_dict(dictionary, filename):
         with open(os.path.join(ExperimentPath, filename), 'w') as f:
@@ -196,15 +197,20 @@ def training(args, verbose=True):
 
             # M: Print training statistics:
             if idx % 100 == 0 and verbose:
-                print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, grad loss: {:.4f}, mse: {:.4f}'.format(
-                    volume_passes, args['max_pass'], debug_for_volumeloss, grad_loss.item(), complete_loss.item()))
+                if args['grad_lambda'] > 0:
+                    print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, grad loss: {:.4f}, mse: {:.4f}'.format(
+                        volume_passes, args['max_pass'], debug_for_volumeloss, grad_loss.item(), complete_loss.item()))
+                else:
+                    print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, mse: {:.4f}'.format(
+                        volume_passes, args['max_pass'], debug_for_volumeloss, complete_loss.item()))
                 if args['dropout_technique']:
                     print('Beta Loss: {:.4f}, Weight loss: {:.4f}'.format(loss_Betas, loss_Weights))
 
             log_metric(key="loss", value=complete_loss.item(), step=step_iter)
             log_metric(key="volume_loss", value=debug_for_volumeloss, step=step_iter)
-            log_metric(key="grad_loss", value=grad_loss.item(), step=step_iter)
 
+            if args['grad_lambda'] > 0:
+                log_metric(key="grad_loss", value=grad_loss.item(), step=step_iter)
             if args['dropout_technique']:
                 log_metric(key="beta_loss", value=loss_Betas, step=step_iter)
                 log_metric(key="nw_weight_loss", value=loss_Weights, step=step_iter)
