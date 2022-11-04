@@ -19,6 +19,23 @@ def get_tensor_from_numpy(filepath):
     print('Loaded Numpy Volume Successfully. Shape of: ', volume.shape)
     return volume
 
+
+def get_tensor_from_hdf5(filepath):
+    import h5py
+    with h5py.File(filepath, "r") as f:
+        a_group_key = list(f.keys())[0]
+        ds_arr = f[a_group_key][()]  # M: numpy array
+        ds_arr = np.squeeze(ds_arr)
+        volume = torch.from_numpy(ds_arr)
+
+        minV = torch.min(volume)
+        maxV = torch.max(volume)
+        volume = normalize_volume(volume, minV, maxV, -1.0, 1.0)
+
+        print('Loaded HDF5 Volume Successfully. Shape of: ', volume.shape)
+        return volume
+
+
 def get_tensor(filepath):
 
     if filepath.endswith('.npy'):
@@ -26,6 +43,8 @@ def get_tensor(filepath):
     if filepath.endswith('.cvol'):
         from data.pyrendererSupport import get_tensor_from_cvol
         return get_tensor_from_cvol(filepath)
+    if filepath.endswith('.h5'):
+        return get_tensor_from_hdf5(filepath)
 
 
 class IndexDataset(Dataset):
