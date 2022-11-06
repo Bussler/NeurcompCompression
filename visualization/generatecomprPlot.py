@@ -110,22 +110,22 @@ def rmseTTHRESHExperiment():
     NeurcompQuantCompRate = [60.230, 126.506, 196.638, 242.587, 272.6391469424025]
 
     # RMSE target
-    tthreshPSNREjecta = [44.583, 42.1581, 40.6303, 38.6363, 33.9794]
-    tthreshRMSEEjecta = [0.005638692785004683, 0.007525124659809455, 0.00890579221394341, 0.011315378855451252, 0.019798166356808308]
-    tthreshCompRateEjeta = [99.914, 182.523, 300.772, 455.698, 1747.54]
+    #tthreshPSNREjecta = [44.583, 42.1581, 40.6303, 38.6363, 33.9794]
+    #tthreshRMSEEjecta = [0.005638692785004683, 0.007525124659809455, 0.00890579221394341, 0.011315378855451252, 0.019798166356808308]
+    #tthreshCompRateEjeta = [99.914, 182.523, 300.772, 455.698, 1747.54]
 
     # PSNR target
-    #tthreshPSNREjecta = [50.6472, 48.2054, 46.6871,44.629, 38.1792]
-    #tthreshRMSEEjecta = [0.00293522, 0.0036583038694397536, 0.00431510500617772, 0.00561060496130343, 0.01184393076485875]
-    #tthreshCompRateEjeta = [31.7948, 48.6868, 69.6177, 98.9255, 527.246]
+    tthreshPSNREjecta = [51.3853, 48.7344, 47.3002, 45.0356, 39.5897, 37.1734, 35.0835]
+    tthreshRMSEEjecta = [0.00269608, 0.0036583, 0.00431511, 0.00560041, 0.0104838, 0.0138462, 0.0176128]
+    tthreshCompRateEjeta = [31.7948, 48.6866, 69.6177, 98.5605, 385.059, 744.975, 1415.74]
 
-    NeurcompQuantPSNREjecta9 = [51.2516, 48.8107, 47.2383, 45.1975, 38.1867]
-    NeurcompQuantRMSEEjecta9 = [0.0055, 0.0073, 0.0087, 0.0110, 0.0246]
-    NeurcompQuantCompRateEjecta9 = [68.13400828871195, 162.11593502691107, 304.1637462947687, 534.8768909505364, 852.1111280410381]
+    NeurcompQuantPSNREjecta9 = [51.2516, 48.8107, 47.2383, 45.1975, 42.1818, 38.1867]
+    NeurcompQuantRMSEEjecta9 = [0.0055, 0.0073, 0.0087, 0.0110, 0.0156, 0.0246]
+    NeurcompQuantCompRateEjecta9 = [68.13400828871195, 162.11593502691107, 304.1637462947687, 534.8768909505364, 714.076016173654, 852.1111280410381]
 
-    NeurcompQuantPSNREjecta7 = [50.6472, 48.2054, 46.6871, 44.6290, 38.1792]
-    NeurcompQuantRMSEEjecta7 = [0.0059, 0.0078, 0.0093, 0.0117, 0.0247]
-    NeurcompQuantCompRateEjecta7 = [88.87720143985888, 216.8677701440639, 423.9186385860296, 801.3381415231772, 1426.4520681885813]
+    NeurcompQuantPSNREjecta7 = [50.6472, 48.20541000366211, 46.6871, 44.6445, 41.9397, 39.33857345581055]
+    NeurcompQuantRMSEEjecta7 = [0.00587, 0.00777, 0.00926, 0.011737, 0.0160, 0.021582484245300293]  # M: last entry makes no sense
+    NeurcompQuantCompRateEjecta7 = [88.87720143985888, 216.8677701440639, 423.9186385860296, 801.3381415231772, 1137.0144014096438, 1426.4520681885813]
 
     NeurcompQuantPSNRmhd_p9 = [50.1259, 49.2033, 45.4834, 40.7906, 36.1277]
     NeurcompQuantRMSEmhd_9 = [0.0062, 0.0069, 0.0106, 0.0183, 0.0312]
@@ -144,7 +144,7 @@ def rmseTTHRESHExperiment():
     tthreshRMSEmhd_p = [0.0014869144161891758, 0.003114780095102444, 0.004981052701820832, 0.008235872355390245,  0.0118234, 0.017433496413122113, 0.0304019, 0.0390439]
     tthreshCompRatemhd_p = [20.7634, 35.9296, 58.0608, 104.395, 172.495, 309.201, 741.548, 1218.99]
 
-    param = 'psnr'#'psnr', 'rmse'
+    param = 'rmse'#'psnr', 'rmse'
 
     mlClient = MlflowClient()
     expList = mlClient.search_experiments()
@@ -165,14 +165,14 @@ def rmseTTHRESHExperiment():
     #plt.plot(NeurcompQuantCompRateEjecta9, NeurcompQuantRMSEEjecta9, label='Neurcomp Quant 9 bits')
     #plt.plot(NeurcompQuantCompRateEjecta7, NeurcompQuantRMSEEjecta7, label='Neurcomp Quant 7 bits')
 
-    #plt.plot(tthreshCompRateEjeta, tthreshPSNREjecta, label='TTHRESH')
-    #plt.plot(NeurcompQuantCompRateEjecta9, NeurcompQuantPSNREjecta9, label='Neurcomp Quant 9 bits')
-    #plt.plot(NeurcompQuantCompRateEjecta7, NeurcompQuantPSNREjecta7, label='Neurcomp Quant 7 bits')
+    plt.plot(tthreshCompRateEjeta, tthreshPSNREjecta, label='TTHRESH')
+    plt.plot(NeurcompQuantCompRateEjecta9, NeurcompQuantPSNREjecta9, label='Neurcomp Quant 9 bits')
+    plt.plot(NeurcompQuantCompRateEjecta7, NeurcompQuantPSNREjecta7, label='Neurcomp Quant 7 bits')
 
-    plt.plot(tthreshCompRatemhd_p, tthreshPSNRmhd_p, label='TTHRESH')
-    plt.plot(NeurcompQuantCompRatemhd_9, NeurcompQuantPSNRmhd_p9, label='Neurcomp Quant 9 bits')
-    plt.plot(NeurcompQuantCompRatemhd_7, NeurcompQuantPSNRmhd_p7, label='Neurcomp Quant 7 bits')
-    plt.plot(NeurcompQuantCompRatemhd_noGrad9, NeurcompQuantPSNRmhd_p_noGrad9, label='Neurcomp Quant 9 bits, no Grad')
+    #plt.plot(tthreshCompRatemhd_p, tthreshPSNRmhd_p, label='TTHRESH')
+    #plt.plot(NeurcompQuantCompRatemhd_9, NeurcompQuantPSNRmhd_p9, label='Neurcomp Quant 9 bits')
+    #plt.plot(NeurcompQuantCompRatemhd_7, NeurcompQuantPSNRmhd_p7, label='Neurcomp Quant 7 bits')
+    #plt.plot(NeurcompQuantCompRatemhd_noGrad9, NeurcompQuantPSNRmhd_p_noGrad9, label='Neurcomp Quant 9 bits, no Grad')
 
     #plt.plot(tthreshCompRatemhd_p, tthreshRMSEmhd_p, label='TTHRESH')
     #plt.plot(NeurcompQuantCompRatemhd_9, NeurcompQuantRMSEmhd_9, label='Neurcomp Quant 9 bits')
@@ -185,7 +185,7 @@ def rmseTTHRESHExperiment():
     plt.ylabel(param)
     plt.legend()
     
-    filepath = 'plots/'+'mhd_p_TTHRESH_'+param+'.png'
+    filepath = 'plots/'+'Ejecta_TTHRESH_'+param+'.png'
     plt.savefig(filepath)
 
 def paramExperiment():
