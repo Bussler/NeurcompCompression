@@ -112,9 +112,6 @@ def training(args, verbose=True):
     model.to(device)
     model.train()
 
-    test = torch.rand((16,3)).to(device)
-    t = model(test)
-
     # M: Setup loss, optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])
     loss_criterion = torch.nn.MSELoss().to(device)
@@ -179,8 +176,17 @@ def training(args, verbose=True):
                                     + (loss_Weights * args['lambda_weights'])
 
                     #prune_dropout_threshold(model, SmallifyDropout, threshold=0.1)
-                    #sign_variance_pruning_strategy(model, optimizer, device, threshold=args['pruning_threshold'])
-                    sign_variance_pruning_strategy_OD(model, device, threshold=args['pruning_threshold'])
+                    pruned = sign_variance_pruning_strategy(model, optimizer, device, threshold=args['pruning_threshold'])
+                    #sign_variance_pruning_strategy_OD(model, device, threshold=args['pruning_threshold'])
+
+                    if pruned:
+                        lr_list = []
+                        print("--CHANGING OPTIM--")
+                        for param_group in optimizer.param_groups:
+                            lr_list.append(param_group['lr'])
+                        optimizer = torch.optim.Adam(model.parameters(), lr=lr_list[0])
+                        for index, param_group in enumerate(optimizer.param_groups):
+                            param_group['lr'] = lr_list[index]
 
             complete_loss.backward()
             optimizer.step()
@@ -230,19 +236,17 @@ def training(args, verbose=True):
 
     # M: remove dropout layers from model
     if args['dropout_technique']:
-        #intermed_layers = [model.d_in]
+        intermed_layers = [model.d_in, model.layer_sizes[1]]
         if args['dropout_technique'] == 'smallify':
-            model = prune_model(model, SmallifyDropout)
-            model.to(device)
-            #intermed_layers = []
-            #intermed_layers.append(model.d_in)
-            #for module in model.net_layers.modules():
-            #    if isinstance(module, SmallifyResidualSiren):
-            #        c = module.remove_dropout_layers()
-            #        intermed_layers.append(c)
+            #model = prune_model(model, SmallifyDropout)
+            #model.to(device)
+            for module in model.net_layers.modules():
+                if isinstance(module, SmallifyResidualSiren):
+                    c = module.remove_dropout_layers()
+                    intermed_layers.append(c)
 
-        #intermed_layers.append(model.d_out)
-        #model.layer_sizes = intermed_layers
+        intermed_layers.append(model.d_out)
+        model.layer_sizes = intermed_layers
 
     info = gather_training_info(model, dataset, volume, args, verbose)
     mlflow.end_run()

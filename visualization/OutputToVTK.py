@@ -60,8 +60,8 @@ def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, write_vols=
         sqd_max_diff = (th.max(gt_vol)-th.min(gt_vol))**2
         #full_vol = full_vol.cpu().transpose(1,2).transpose(0,1).transpose(1,2)
         l1_diff = th.mean(th.abs(diff_vol))
-        mse = th.mean(th.pow(diff_vol,2))
-        psnr = 10*th.log10(sqd_max_diff/th.mean(diff_vol**2))
+        mse = th.mean(th.pow(diff_vol, 2.0))
+        psnr = 10*th.log10(sqd_max_diff/mse)
         print('PSNR:',psnr,'l1:',l1_diff,'mse:',mse,'rmse:',th.sqrt(mse))
 
     if write_vols:

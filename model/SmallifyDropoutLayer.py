@@ -37,19 +37,11 @@ def sign_variance_pruning_strategy(model, optimizer, device, threshold=0.4):
     for module in model.net_layers.modules():
         if isinstance(module, SmallifyResidualSiren):
             prune_mask = module.sign_variance_pruning(threshold, device)
-            #prune_mask = module.prune_dropout_threshold(device, 0.1)
+            #prune_mask = module.prune_dropout_threshold(device, 0.4)
             pruned = module.garbage_collect(prune_mask)
             if pruned:
                 pruned_something = True
-
-    if pruned_something:  # M: TODO better way to remove elements from optimizer? This is buggy
-        lr_list = []
-        print("--CHANGING OPTIM--")
-        for param_group in optimizer.param_groups:
-            lr_list.append(param_group['lr'])
-        optimizer = torch.optim.Adam(model.parameters(), lr=lr_list[0])
-        for index, param_group in enumerate(optimizer.param_groups):
-            param_group['lr'] =lr_list[index]
+    return pruned_something
 
 
 class SmallifyDropout(DropoutLayer):

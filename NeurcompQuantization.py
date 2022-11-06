@@ -12,7 +12,7 @@ def quantize(args):
 
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'],
                            args['d_in'], args['d_out'], args['omega_0'], args['checkpoint_path'],
-                            featureList=args['feature_list'])
+                            featureList=args['feature_list'], dropout_technique= args['dropout_technique'])
 
     # M: Setup encoder
     ExperimentPath = os.path.abspath(os.getcwd()) + args['basedir'] + args['expname'] + '/'

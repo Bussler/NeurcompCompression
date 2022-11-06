@@ -40,7 +40,7 @@ class Neurcomp(nn.Module):
                                                      dropout_layer=None))  # M: TODO also try dropout_layer
                 else:
                     # M: intermed layers
-                    if False:# dropout_technique and 'smallify' in dropout_technique:
+                    if dropout_technique and 'smallify' in dropout_technique:
                         self.net_layers.append(SmallifyResidualSiren(self.layer_sizes[1], layer_out, bias=True,
                                                                      ave_first=ndx > 1,
                                                                      ave_second=ndx == (self.n_layers - 2),

@@ -20,14 +20,6 @@ def prune_dropout_threshold(model, dropout_type, threshold=0.1):
     #prune.remove(module, 'weight')
 
 
-def remove_parameter_from_optimizer(optimizer, parameter):
-    if optimizer is None:
-        return
-    for group in optimizer.param_groups:
-        group['params'] = [x for x in group['params'] if x is not parameter]
-    del optimizer.state[parameter]
-
-
 # M: TODO rewrite for generalization
 # M: reconstruct the parameter weights according to pruning and remove dropout from network
 def prune_model(model, dropout_type):

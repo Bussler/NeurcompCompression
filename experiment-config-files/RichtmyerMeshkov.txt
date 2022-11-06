@@ -1,4 +1,4 @@
-expname = RichtmyerMeshkovt20
+expname = RichtmyerMeshkov100
 data = datasets/RichtmyerMeshkov/ppm-t0020.cvol
 basedir = /experiments/
 
@@ -8,13 +8,13 @@ d_out = 1
 n_layers = 8
 checkpoint_path = ''
 
-compression_ratio = 50
+compression_ratio = 100
 
-grad_lambda = 0.05
-lr = 5e-5
+grad_lambda = 0.001
+lr = 0.0001
 max_pass = 75
 pass_decay = 20
 lr_decay = 0.2
 
-batch_size = 1024
+batch_size = 2048
 sample_size = 16
