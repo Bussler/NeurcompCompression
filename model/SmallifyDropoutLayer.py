@@ -24,7 +24,7 @@ def calculte_smallify_loss(model):
     return loss_Betas, loss_Weights
 
 
-def sign_variance_pruning_strategy_OD(model, device, threshold=0.5):
+def sign_variance_pruning_strategy_OD(model, device, threshold=0.5):  # M: TODO only prune at the end, so that weights can come back!
     for module in model.net_layers.modules():
         if isinstance(module, SmallifyDropout):
             prune_mask = module.sign_variance_pruning(threshold, device)
@@ -149,9 +149,8 @@ class SmallifyResidualSiren(nn.Module):
 
         self.c = intermed_features
 
-        if '_quant' in dropout_technique:
-            self.betas = None
-        else:
+        self.betas = None
+        if dropout_technique and 'smallify' in dropout_technique and '_quant' not in dropout_technique:
             self.betas = torch.nn.Parameter(torch.empty(intermed_features).normal_(0, 1),
                                             requires_grad=True)  # M: uniform_ or normal_
 
@@ -243,7 +242,7 @@ class SmallifyResidualSiren(nn.Module):
                 means[i] = -1.0
         return variances, means, variance_emas, n
 
-    def sign_variance_pruning(self, threshold, device):
+    def sign_variance_pruning(self, threshold, device):  # M: 0.99
         prune_mask = torch.zeros(self.c)
 
         with torch.no_grad():
@@ -255,6 +254,9 @@ class SmallifyResidualSiren(nn.Module):
 
                 self.oldVariances[i] = (self.n / (self.n + 1)) * (self.oldVariances[i]
                                                                   + (((self.oldMeans[i] - newVal) ** 2) / (self.n + 1)))
+                # M: TODO welford mean nicht zulässig, momentum schon einrechnen in var und mean!
+
+
                 self.oldMeans[i] = self.oldMeans[i] + ((newVal - self.oldMeans[i]) / (self.n + 1))
 
                 smoother = self.momentum

@@ -57,7 +57,7 @@ def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, write_vols=
     print('writing to VTK...')
     if evaluate and gt_vol is not None:
         diff_vol = gt_vol - full_vol
-        sqd_max_diff = (th.max(gt_vol)-th.min(gt_vol))**2
+        sqd_max_diff = (th.max(gt_vol)-th.min(gt_vol))**2  # M: max für tthresh anpassen!!
         #full_vol = full_vol.cpu().transpose(1,2).transpose(0,1).transpose(1,2)
         l1_diff = th.mean(th.abs(diff_vol))
         mse = th.mean(th.pow(diff_vol, 2.0))
