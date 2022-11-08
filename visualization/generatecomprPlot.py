@@ -133,28 +133,33 @@ def OrigVSSelfImplmentation():
     ax1.plot(mhd_p_OrigCompRate, mhd_p_OrigPSNR, label='Original MHD_P')
     ax1.plot(mhd_p_MyCompRate, mhd_p_MyPSNR, label='My Implementation MHD_P')
     ax1.set_ylabel('psnr')
+    ax1.set_xlabel('Compression Rate')
+    ax1.title.set_text('Without Quantization')
 
     ax2.plot(Test_OrigCompRate, Test_OrigRMSE, label='Original TestVolume')
     ax2.plot(Test_MyCompRate, Test_MyRMSE, label='My Implementation TestVolume')
     ax2.plot(mhd_p_OrigCompRate, mhd_p_OrigRMSE, label='Original MHD_P')
     ax2.plot(mhd_p_MyCompRate, mhd_p_MyRMSE, label='My Implementation MHD_P')
     ax2.set_ylabel('rmse')
+    ax2.set_xlabel('Compression Rate')
 
     ax3.plot(Test_OrigQuantCompRate, Test_OrigQuantPSNR, label='Original TestVolume')
     ax3.plot(Test_MyQuantCompRate, Test_MyQuantPSNR, label='My Implementation TestVolume')
     ax3.plot(mhd_p_OrigQuantCompRate, mhd_p_OrigQuantPSNR, label='Original MHD_P')
     ax3.plot(mhd_p_MyQuantCompRate, mhd_p_MyQuantPSNR, label='My Implementation MHD_P')
     ax3.set_ylabel('psnr')
+    ax3.set_xlabel('Compression Rate')
+    ax3.title.set_text('With Quantization')
 
     ax4.plot(Test_OrigQuantCompRate, Test_OrigQuantRMSE, label='Original TestVolume')
     ax4.plot(Test_MyQuantCompRate, Test_MyQuantRMSE, label='My Implementation TestVolume')
     ax4.plot(mhd_p_OrigQuantCompRate, mhd_p_OrigQuantRMSE, label='Original MHD_P')
     ax4.plot(mhd_p_MyQuantCompRate, mhd_p_MyQuantRMSE, label='My Implementation MHD_P')
     ax4.set_ylabel('rmse')
+    ax4.set_xlabel('Compression Rate')
 
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-    plt.xlabel('Compression Rate')
     plt.legend()
     
     filepath = 'plots/OrigVSMyImplementation.png'
@@ -185,12 +190,12 @@ def rmseTTHRESHExperiment():
     #tthreshRMSEEjecta = [0.00269608, 0.0036583, 0.00431511, 0.00560041, 0.0104838, 0.0138462, 0.0176128]
     #tthreshCompRateEjeta = [31.7948, 48.6866, 69.6177, 98.5605, 385.059, 744.975, 1415.74]
 
-    NeurcompQuantPSNREjecta9 = [51.2516, 48.8107, 47.2383, 45.1975, 42.1818, 38.1867]
-    NeurcompQuantRMSEEjecta9 = [0.0055, 0.0073, 0.0087, 0.0110, 0.0156, 0.0246]
+    NeurcompQuantPSNREjecta9 = [51.2516, 48.8107, 47.2383, 45.1982, 43.9587, 42.9999]
+    NeurcompQuantRMSEEjecta9 = [0.0055, 0.0073, 0.0087, 0.0110, 0.0127, 0.0142]
     NeurcompQuantCompRateEjecta9 = [68.13400828871195, 162.11593502691107, 304.1637462947687, 534.8768909505364, 714.076016173654, 852.1111280410381]
 
-    NeurcompQuantPSNREjecta7 = [50.6472, 48.20541000366211, 46.6871, 44.6445, 41.9397, 39.33857345581055]
-    NeurcompQuantRMSEEjecta7 = [0.00587, 0.00777, 0.00926, 0.011737, 0.0160, 0.021582484245300293]  # M: last entry makes no sense
+    NeurcompQuantPSNREjecta7 = [50.6472, 48.20541000366211, 46.6871, 44.7053, 43.4916, 42.4256]
+    NeurcompQuantRMSEEjecta7 = [0.00587, 0.00777, 0.00926, 0.0116, 0.0134, 0.0151] 
     NeurcompQuantCompRateEjecta7 = [88.87720143985888, 216.8677701440639, 423.9186385860296, 801.3381415231772, 1137.0144014096438, 1426.4520681885813]
 
     NeurcompQuantPSNRmhd_p9 = [51.56679153442383, 50.18495559692383, 45.4834, 40.7906, 37.31993103027344]
@@ -215,8 +220,8 @@ def rmseTTHRESHExperiment():
     tthreshRMSEmhd_p = [0.003135982353123946, 0.006271169994000251, 0.009925990818509228, 0.016716544001841114, 0.019070782289479934, 0.028947138499412675, 0.035873616272853986, 0.03725399491978439]
     tthreshCompRatemhd_p = [36.145, 79.6552, 141.825, 297.357, 341.542, 681.394, 1096.76, 1143.66]
 
-    param = 'psnr'#'psnr', 'rmse'
-    datset='mhd_p'
+    param = 'rmse'#'psnr', 'rmse'
+    datset='Ejecta'
 
     mlClient = MlflowClient()
     expList = mlClient.search_experiments()
@@ -233,25 +238,25 @@ def rmseTTHRESHExperiment():
         realCompRates.append(float(bestrun.data.params['compression_ratio']))
 
     #plt.plot(realCompRates, allRunsData, label='Neurcomp no Quant')
-    #plt.plot(tthreshCompRateEjeta, tthreshRMSEEjecta, label='TTHRESH')
-    #plt.plot(NeurcompQuantCompRateEjecta9, NeurcompQuantRMSEEjecta9, label='Neurcomp Quant 9 bits')
-    #plt.plot(NeurcompQuantCompRateEjecta7, NeurcompQuantRMSEEjecta7, label='Neurcomp Quant 7 bits')
+    plt.plot(tthreshCompRateEjeta, tthreshRMSEEjecta, label='TTHRESH')
+    plt.plot(NeurcompQuantCompRateEjecta9, NeurcompQuantRMSEEjecta9, label='Neurcomp Quant 9 bits')
+    plt.plot(NeurcompQuantCompRateEjecta7, NeurcompQuantRMSEEjecta7, label='Neurcomp Quant 7 bits')
 
     #plt.plot(tthreshCompRateEjeta, tthreshPSNREjecta, label='TTHRESH')
     #plt.plot(NeurcompQuantCompRateEjecta9, NeurcompQuantPSNREjecta9, label='Neurcomp Quant 9 bits')
     #plt.plot(NeurcompQuantCompRateEjecta7, NeurcompQuantPSNREjecta7, label='Neurcomp Quant 7 bits')
 
-    plt.plot(tthreshCompRatemhd_p, tthreshPSNRmhd_p, label='TTHRESH')
-    plt.plot(NeurcompQuantCompRatemhd_9, NeurcompQuantPSNRmhd_p9, label='Neurcomp Quant 9 bits')
-    plt.plot(NeurcompQuantCompRatemhd_7, NeurcompQuantPSNRmhd_p7, label='Neurcomp Quant 7 bits')
-    plt.plot(NeurcompQuantCompRatemhd_noGrad9, NeurcompQuantPSNRmhd_p_noGrad9, label='Neurcomp Quant 9 bits, no Grad')
+    #plt.plot(tthreshCompRatemhd_p, tthreshPSNRmhd_p, label='TTHRESH')
+    #plt.plot(NeurcompQuantCompRatemhd_9, NeurcompQuantPSNRmhd_p9, label='Neurcomp Quant 9 bits')
+    #plt.plot(NeurcompQuantCompRatemhd_7, NeurcompQuantPSNRmhd_p7, label='Neurcomp Quant 7 bits')
+    #plt.plot(NeurcompQuantCompRatemhd_noGrad9, NeurcompQuantPSNRmhd_p_noGrad9, label='Neurcomp Quant 9 bits, no Grad')
 
     #plt.plot(tthreshCompRatemhd_p, tthreshRMSEmhd_p, label='TTHRESH')
     #plt.plot(NeurcompQuantCompRatemhd_9, NeurcompQuantRMSEmhd_9, label='Neurcomp Quant 9 bits')
     #plt.plot(NeurcompQuantCompRatemhd_7, NeurcompQuantRMSEmhd_7, label='Neurcomp Quant 7 bits')
     #plt.plot(NeurcompQuantCompRatemhd_noGrad9, NeurcompQuantRMSEmhd_noGrad9, label='Neurcomp Quant 9 bits, no Grad')
 
-    #plt.axhline(y=0.1753335443571432, color='y', linestyle='--')
+    #plt.axhline(y=0.14457457125146844, color='y', linestyle='--')
 
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
@@ -259,7 +264,7 @@ def rmseTTHRESHExperiment():
     plt.ylabel(param)
     plt.legend()
     
-    filepath = 'plots/'+datset+'_TTHRESH_'+param+'.png'
+    filepath = 'plots/'+datset+'_TTHRESH_'+param+'NoSTD.png'
     plt.savefig(filepath)
 
 def paramExperiment():
@@ -289,8 +294,8 @@ def paramExperiment():
 
 
 if __name__ == '__main__':
-    #rmseTTHRESHExperiment()
+    rmseTTHRESHExperiment()
     #paramExperiment()
     #QuantBitsExperiment()
     #QuantVsOrigExperiment()
-    OrigVSSelfImplmentation()
+    #OrigVSSelfImplmentation()
