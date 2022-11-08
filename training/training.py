@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from data.IndexDataset import get_tensor, IndexDataset
 from data.Interpolation import trilinear_f_interpolation, finite_difference_trilinear_grad
 from model.NeurcompModel import Neurcomp
-from model.model_utils import setup_neurcomp
+from model.model_utils import setup_neurcomp, write_dict
 from visualization.OutputToVTK import tiled_net_out
 from mlflow import log_metric, log_param, log_artifacts
 from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy,\
@@ -84,13 +84,8 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
     args['checkpoint_path'] = os.path.join(ExperimentPath, 'model.pth')
     args['feature_list'] = model.layer_sizes[1:-1]
 
-    def write_dict(dictionary, filename):
-        with open(os.path.join(ExperimentPath, filename), 'w') as f:
-            for key, value in dictionary.items():
-                f.write('%s = %s\n' % (key, value))
-
-    write_dict(args, 'config.txt')
-    write_dict(info, 'info.txt')
+    write_dict(args, 'config.txt', ExperimentPath)
+    write_dict(info, 'info.txt', ExperimentPath)
 
     log_artifacts(ExperimentPath)
 

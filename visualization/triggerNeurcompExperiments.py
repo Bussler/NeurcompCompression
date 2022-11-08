@@ -2,6 +2,7 @@ from training.training import training
 from NeurcompTraining import config_parser
 from NeurcompQuantization import quantize
 from NeurcompDequantization import dequantize
+from model.model_utils import write_dict
 import os
 import visualization.pltUtils as pu
 
@@ -49,11 +50,6 @@ def QuantizeDequantize():
     print(results)
     write_dict(results, "QuantizeDequantizeDiffBits_Results.txt")
 
-
-def write_dict(dictionary, filename):
-    with open(os.path.join(filename), 'w') as f:
-        for key, value in dictionary.items():
-            f.write('%s = %s\n' % (key, value))
 
 if __name__ == '__main__':
     #neurcompRunsDiffComprRates()

@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import os
 from model.NeurcompModel import Neurcomp
 
 
@@ -54,3 +55,9 @@ def setup_neurcomp(compression_ratio, dataset_size, n_layers, d_in, d_out, omega
         model.load_state_dict(torch.load(checkpoint_path))
 
     return model
+
+
+def write_dict(dictionary, filename, experiment_path=''):
+    with open(os.path.join(experiment_path, filename), 'w') as f:
+        for key, value in dictionary.items():
+            f.write('%s = %s\n' % (key, value))
