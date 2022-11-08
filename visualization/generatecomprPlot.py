@@ -108,7 +108,7 @@ def OrigVSSelfImplmentation():
 
     mhd_p_OrigQuantPSNR = [50.1650, 45.5244, 40.8, 37.0627]
     mhd_p_OrigQuantRMSE = [0.0062, 0.0106, 0.019, 0.0280]
-    mhd_p_OrigQuantompRate = [162.12500091664407, 300.5437614699685, 528.4184612442936, 860.7999896172665]
+    mhd_p_OrigQuantCompRate = [162.12500091664407, 300.5437614699685, 528.4184612442936, 860.7999896172665]
 
     Test_MyPSNR = [46.993186950683594, 40.01081466674805, 33.18212890625, 30.62228775024414, 28.301376342773438]
     Test_MyRMSE = [0.008940679021179676, 0.01997510902583599, 0.04384535178542137, 0.058872923254966736, 0.07690615952014923]
@@ -126,6 +126,39 @@ def OrigVSSelfImplmentation():
     mhd_p_MyQuantRMSE = [0.0062, 0.010647944174706936, 0.018259266391396523, 0.0272]
     mhd_p_MyQuantCompRate = [162.14521452145215, 300.6132327746404, 528.6332552245229, 861.3701298701299]
 
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 15))
+
+    ax1.plot(Test_OrigCompRate, Test_OrigPSNR, label='Original TestVolume')
+    ax1.plot(Test_MyCompRate, Test_MyPSNR, label='My Implementation TestVolume')
+    ax1.plot(mhd_p_OrigCompRate, mhd_p_OrigPSNR, label='Original MHD_P')
+    ax1.plot(mhd_p_MyCompRate, mhd_p_MyPSNR, label='My Implementation MHD_P')
+    ax1.set_ylabel('psnr')
+
+    ax2.plot(Test_OrigCompRate, Test_OrigRMSE, label='Original TestVolume')
+    ax2.plot(Test_MyCompRate, Test_MyRMSE, label='My Implementation TestVolume')
+    ax2.plot(mhd_p_OrigCompRate, mhd_p_OrigRMSE, label='Original MHD_P')
+    ax2.plot(mhd_p_MyCompRate, mhd_p_MyRMSE, label='My Implementation MHD_P')
+    ax2.set_ylabel('rmse')
+
+    ax3.plot(Test_OrigQuantCompRate, Test_OrigQuantPSNR, label='Original TestVolume')
+    ax3.plot(Test_MyQuantCompRate, Test_MyQuantPSNR, label='My Implementation TestVolume')
+    ax3.plot(mhd_p_OrigQuantCompRate, mhd_p_OrigQuantPSNR, label='Original MHD_P')
+    ax3.plot(mhd_p_MyQuantCompRate, mhd_p_MyQuantPSNR, label='My Implementation MHD_P')
+    ax3.set_ylabel('psnr')
+
+    ax4.plot(Test_OrigQuantCompRate, Test_OrigQuantRMSE, label='Original TestVolume')
+    ax4.plot(Test_MyQuantCompRate, Test_MyQuantRMSE, label='My Implementation TestVolume')
+    ax4.plot(mhd_p_OrigQuantCompRate, mhd_p_OrigQuantRMSE, label='Original MHD_P')
+    ax4.plot(mhd_p_MyQuantCompRate, mhd_p_MyQuantRMSE, label='My Implementation MHD_P')
+    ax4.set_ylabel('rmse')
+
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.xlabel('Compression Rate')
+    plt.legend()
+    
+    filepath = 'plots/OrigVSMyImplementation.png'
+    plt.savefig(filepath)
 
 
 def rmseTTHRESHExperiment():
@@ -256,7 +289,8 @@ def paramExperiment():
 
 
 if __name__ == '__main__':
-    rmseTTHRESHExperiment()
+    #rmseTTHRESHExperiment()
     #paramExperiment()
     #QuantBitsExperiment()
     #QuantVsOrigExperiment()
+    OrigVSSelfImplmentation()
