@@ -47,6 +47,19 @@ def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False):
     return full_vol
 #
 
+
+# M: Print and return error statistics between a prediction and a ground truth volume.
+# M: Both parameters should be torch.Tensor of the same size.
+def calculate_deviation_statistics(prediction, ground_truth):
+    diff_vol = ground_truth - prediction
+    sqd_max_diff = (th.max(ground_truth) - th.min(ground_truth)) ** 2  # M: max für tthresh anpassen!!
+    l1_diff = th.mean(th.abs(diff_vol))
+    mse = th.mean(th.pow(diff_vol, 2.0))
+    psnr = 10 * th.log10(sqd_max_diff / mse)
+    print('PSNR:', psnr, 'l1:', l1_diff, 'mse:', mse, 'rmse:', th.sqrt(mse))
+    return psnr.item(), l1_diff.item(), mse.item(), th.sqrt(mse).item()
+
+
 # taken from https://github.com/matthewberger/neurcomp
 def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, write_vols=False, filename='vol'):
     if is_cuda:
@@ -56,13 +69,7 @@ def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, write_vols=
     psnr = 0
     print('writing to VTK...')
     if evaluate and gt_vol is not None:
-        diff_vol = gt_vol - full_vol
-        sqd_max_diff = (th.max(gt_vol)-th.min(gt_vol))**2  # M: max für tthresh anpassen!!
-        #full_vol = full_vol.cpu().transpose(1,2).transpose(0,1).transpose(1,2)
-        l1_diff = th.mean(th.abs(diff_vol))
-        mse = th.mean(th.pow(diff_vol, 2.0))
-        psnr = 10*th.log10(sqd_max_diff/mse)
-        print('PSNR:',psnr,'l1:',l1_diff,'mse:',mse,'rmse:',th.sqrt(mse))
+        psnr, l1_diff, mse, rmse = calculate_deviation_statistics(full_vol, gt_vol)
 
     if write_vols:
         imageToVTK(filename, pointData = {'sf':full_vol.numpy()})
@@ -72,4 +79,4 @@ def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, write_vols=
 
     print('back to training...')
     net.train()
-    return psnr.item() if not evaluate else psnr.item(), l1_diff.item(), mse.item(), th.sqrt(mse).item()
+    return psnr if not evaluate else psnr, l1_diff, mse, rmse
