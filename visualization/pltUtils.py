@@ -18,4 +18,35 @@ def generate_array_MLFlow(client, idList, searchedParam):
         realCompRates.append(float(bestrun.data.params['compression_ratio']))
 
     return data, realCompRates
-    
+
+
+def dict_from_file(filename):
+    file = open(filename, 'r')
+    Lines = file.readlines()
+
+    d = {}
+    for line in Lines:
+        line = line.replace(' ', '')
+        line = line.replace('\n', '')
+        lineParts = line.split('=')
+
+        value = lineParts[1]
+
+        # M: parse int, float, list or string
+        try:
+            value = int(value)
+        except ValueError:
+            try:
+                value = float(value)
+            except ValueError:
+                if ',' in value:
+                    value = value.replace('[', '')
+                    value = value.replace(']', '')
+                    value = value.split(',')
+                    value = [int(x) for x in value]
+                else:
+                    value = lineParts[1]
+
+        d[lineParts[0]] = value
+
+    return d
