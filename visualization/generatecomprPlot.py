@@ -3,7 +3,7 @@ from mlflow import log_metric, log_param, log_artifacts
 from mlflow.tracking import MlflowClient
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
-from pltUtils import generate_array_MLFlow
+from pltUtils import generate_array_MLFlow, dict_from_file, append_lists_from_dicts, generate_plot_lists
 import numpy as np
 
 
@@ -92,6 +92,7 @@ def QuantVsOrigExperiment():
     
     filepath = 'plots/'+'test_experiment_QuantizationGain.png'
     plt.savefig(filepath)
+
 
 def OrigVSSelfImplmentation():
     Test_OrigPSNR = [47.1365, 39.9855, 33.5493, 30.7486, 28.6885]
@@ -267,6 +268,7 @@ def rmseTTHRESHExperiment():
     filepath = 'plots/'+datset+'_TTHRESH_'+param+'NoSTD.png'
     plt.savefig(filepath)
 
+
 def paramExperiment():
     comprRates = ['20','50','100','150','200']
     comprIdsMSE = ['5','10','11','12','13']
@@ -293,9 +295,65 @@ def paramExperiment():
     plt.savefig(filepath)
 
 
+def NumberOfChannelsVSCompression():
+    BASENAME = 'experiments/mhd_p_diffCompRates/mhd_p_'
+    CONFIGNAME = 'info.txt'
+    QUANTNAMECONFIG = 'Dequant_Info.txt'
+
+    CompressionRate = []
+    PSNR = []
+    RMSE = []
+    AmountFeatures = []
+
+    CompressionRateQuant = []
+    PSNRQuant = []
+    RMSEQuant = []
+
+    # M: generate lists for psnr, rmse...
+    generate_plot_lists(([CompressionRate, PSNR, RMSE], [CompressionRateQuant, PSNRQuant, RMSEQuant]),
+                        (['compression_ratio', 'psnr', 'rmse'], ['Quant_Compression_Ratio', 'psnr', 'rmse']),
+                        BASENAME, (CONFIGNAME, QUANTNAMECONFIG))
+
+    # M generate lists for middle layers
+    for compr in [20, 50, 100, 200, 400]:
+        config_name = BASENAME + str(compr) + '/' + CONFIGNAME
+        info = dict_from_file(config_name)
+        AmountFeatures.append(info['network_layer_sizes'][1])
+
+
+    fig, ((ax1, ax2, ax3)) = plt.subplots(1, 3, figsize=(15, 15), dpi= 100)
+
+    ax1.plot(CompressionRate, PSNR, label='No Quantization')
+    ax1.plot(CompressionRateQuant, PSNRQuant, label='Quantization')
+    ax1.title.set_text('PSNR MHD_P')
+    ax1.set_ylabel('psnr')
+    ax1.set_xlabel('Compression Rate')
+
+    ax2.plot(CompressionRate, RMSEQuant, label='No Quantization')
+    ax2.plot(CompressionRateQuant, RMSEQuant, label='Quantization')
+    ax2.title.set_text('RMSE MHD_P')
+    ax2.set_ylabel('rmse')
+    ax2.set_xlabel('Compression Rate')
+
+    ax3.plot(CompressionRate, AmountFeatures, label='No Quantization')
+    ax3.plot(CompressionRateQuant, AmountFeatures, label='Quantization')
+    ax3.title.set_text('Amount Middle Features MHD_P')
+    ax3.set_ylabel('features')
+    ax3.set_xlabel('Compression Rate')
+
+    #plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    #plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.legend()
+
+    filepath = 'plots/' + 'CompressionratioVSQuality.png'
+    plt.savefig(filepath)
+
+
+
 if __name__ == '__main__':
-    rmseTTHRESHExperiment()
+    #rmseTTHRESHExperiment()
     #paramExperiment()
     #QuantBitsExperiment()
     #QuantVsOrigExperiment()
     #OrigVSSelfImplmentation()
+    NumberOfChannelsVSCompression()

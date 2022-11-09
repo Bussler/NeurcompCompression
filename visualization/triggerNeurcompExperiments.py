@@ -22,18 +22,18 @@ def neurcompRunsDiffComprRates():
 
 
 def QuantizeDequantize():
-    BASENAME = 'experiments/mhd_p_diffCompRates/mhd_p_'
+    BASENAME = 'experiments/mhd_p_diffCompRates_no_Lambda/mhd_p_'
     CONFIGNAME = 'config.txt'
     QUANTNAME = 'modelQuant'
 
     results = {}
 
-    for compr in [50, 100, 200, 400]:
+    for compr in [20, 50, 100, 200, 400]:
 
         config_name = BASENAME + str(compr) + '/' + CONFIGNAME
         args = pu.dict_from_file(config_name)
 
-        for b in [7]: #[3, 5, 7, 9, 10]
+        for b in [9]: #[3, 5, 7, 9, 10]
             args['quant_bits'] = b
             args['filename'] = QUANTNAME
             quantize(args)
