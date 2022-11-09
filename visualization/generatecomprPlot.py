@@ -256,7 +256,7 @@ def rmseTTHRESHExperiment():
     plt.plot(NeurcompQuantCompRatemhd_7, NeurcompQuantRMSEmhd_7, label='Neurcomp Quant 7 bits')
     plt.plot(NeurcompQuantCompRatemhd_noGrad9, NeurcompQuantRMSEmhd_noGrad9, label='Neurcomp Quant 9 bits, no Grad')
 
-    plt.axhline(y=0.14457457125146844, color='y', linestyle='--')
+    plt.axhline(y=0.1753335443571432, color='y', linestyle='--')
 
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
