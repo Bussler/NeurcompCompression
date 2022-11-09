@@ -207,8 +207,8 @@ def rmseTTHRESHExperiment():
     NeurcompQuantRMSEmhd_7 = [0.0069, 0.0079, 0.0126, 0.0202, 0.0290]
     NeurcompQuantCompRatemhd_7 = [89.26451706678941, 217.03086347037342, 418.9702222278372, 791.9840947627349, 1452.7861742673151]
 
-    NeurcompQuantPSNRmhd_p_noGrad9 = [55.1833, 49.1794, 45.2835, 41.0376, 34.7223]
-    NeurcompQuantRMSEmhd_noGrad9 = [0.0035, 0.0070, 0.0109, 0.0177, 0.0367]
+    NeurcompQuantPSNRmhd_p_noGrad9 = [57.679969787597656, 50.457481384277344, 45.28264617919922, 41.036048889160156, 37.52974319458008]
+    NeurcompQuantRMSEmhd_noGrad9 = [0.002612351207062602,0.006000065244734287, 0.01088673621416092, 0.017751192674040794, 0.02657926082611084]
     NeurcompQuantCompRatemhd_noGrad9 = [68.412068076328, 162.14521452145215, 300.6132327746404, 528.6332552245229, 861.3701298701299]
 
     # PSNR no Grad target
@@ -222,7 +222,7 @@ def rmseTTHRESHExperiment():
     tthreshCompRatemhd_p = [36.145, 79.6552, 141.825, 297.357, 341.542, 681.394, 1096.76, 1143.66]
 
     param = 'rmse'#'psnr', 'rmse'
-    datset='Ejecta'
+    datset='mhd_p'
 
     mlClient = MlflowClient()
     expList = mlClient.search_experiments()
@@ -239,9 +239,9 @@ def rmseTTHRESHExperiment():
         realCompRates.append(float(bestrun.data.params['compression_ratio']))
 
     #plt.plot(realCompRates, allRunsData, label='Neurcomp no Quant')
-    plt.plot(tthreshCompRateEjeta, tthreshRMSEEjecta, label='TTHRESH')
-    plt.plot(NeurcompQuantCompRateEjecta9, NeurcompQuantRMSEEjecta9, label='Neurcomp Quant 9 bits')
-    plt.plot(NeurcompQuantCompRateEjecta7, NeurcompQuantRMSEEjecta7, label='Neurcomp Quant 7 bits')
+    #plt.plot(tthreshCompRateEjeta, tthreshRMSEEjecta, label='TTHRESH')
+    #plt.plot(NeurcompQuantCompRateEjecta9, NeurcompQuantRMSEEjecta9, label='Neurcomp Quant 9 bits')
+    #plt.plot(NeurcompQuantCompRateEjecta7, NeurcompQuantRMSEEjecta7, label='Neurcomp Quant 7 bits')
 
     #plt.plot(tthreshCompRateEjeta, tthreshPSNREjecta, label='TTHRESH')
     #plt.plot(NeurcompQuantCompRateEjecta9, NeurcompQuantPSNREjecta9, label='Neurcomp Quant 9 bits')
@@ -252,12 +252,12 @@ def rmseTTHRESHExperiment():
     #plt.plot(NeurcompQuantCompRatemhd_7, NeurcompQuantPSNRmhd_p7, label='Neurcomp Quant 7 bits')
     #plt.plot(NeurcompQuantCompRatemhd_noGrad9, NeurcompQuantPSNRmhd_p_noGrad9, label='Neurcomp Quant 9 bits, no Grad')
 
-    #plt.plot(tthreshCompRatemhd_p, tthreshRMSEmhd_p, label='TTHRESH')
-    #plt.plot(NeurcompQuantCompRatemhd_9, NeurcompQuantRMSEmhd_9, label='Neurcomp Quant 9 bits')
-    #plt.plot(NeurcompQuantCompRatemhd_7, NeurcompQuantRMSEmhd_7, label='Neurcomp Quant 7 bits')
-    #plt.plot(NeurcompQuantCompRatemhd_noGrad9, NeurcompQuantRMSEmhd_noGrad9, label='Neurcomp Quant 9 bits, no Grad')
+    plt.plot(tthreshCompRatemhd_p, tthreshRMSEmhd_p, label='TTHRESH')
+    plt.plot(NeurcompQuantCompRatemhd_9, NeurcompQuantRMSEmhd_9, label='Neurcomp Quant 9 bits')
+    plt.plot(NeurcompQuantCompRatemhd_7, NeurcompQuantRMSEmhd_7, label='Neurcomp Quant 7 bits')
+    plt.plot(NeurcompQuantCompRatemhd_noGrad9, NeurcompQuantRMSEmhd_noGrad9, label='Neurcomp Quant 9 bits, no Grad')
 
-    #plt.axhline(y=0.14457457125146844, color='y', linestyle='--')
+    plt.axhline(y=0.1753335443571432, color='y', linestyle='--')
 
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
@@ -265,7 +265,7 @@ def rmseTTHRESHExperiment():
     plt.ylabel(param)
     plt.legend()
     
-    filepath = 'plots/'+datset+'_TTHRESH_'+param+'NoSTD.png'
+    filepath = 'plots/'+datset+'_TTHRESH_'+param+'.png'
     plt.savefig(filepath)
 
 
