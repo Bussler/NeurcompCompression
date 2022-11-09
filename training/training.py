@@ -12,7 +12,7 @@ from model.model_utils import setup_neurcomp, write_dict
 from visualization.OutputToVTK import tiled_net_out
 from mlflow import log_metric, log_param, log_artifacts
 from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy,\
-    SmallifyResidualSiren, sign_variance_pruning_strategy_OD
+    SmallifyResidualSiren, sign_variance_pruning_strategy_do_prune
 from model.pruning import prune_dropout_threshold, prune_model
 
 
@@ -49,7 +49,7 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
     if verbose:
         print("Trained Model: ", num_net_params, " parameters; ", compression_ratio, " compression ratio")
 
-    info['volume_size'] = dataset.vol_res
+    info['volume_size'] = dataset.vol_res.tolist()
     info['volume_num_voxels'] = dataset.n_voxels
     info['num_parameters'] = num_net_params
     info['network_layer_sizes'] = model.layer_sizes
@@ -144,7 +144,7 @@ def training(args, verbose=True):
             # M: Calculate loss
             ground_truth_volume = trilinear_f_interpolation(raw_positions, volume,
                                                             dataset.min_idx.to(device), dataset.max_idx.to(device),
-                                                            dataset.vol_res.to(device))  # M: TODO rausnehmen?
+                                                            dataset.vol_res.to(device))
 
             vol_loss = loss_criterion(predicted_volume, ground_truth_volume)
             debug_for_volumeloss = vol_loss.item()
@@ -170,9 +170,7 @@ def training(args, verbose=True):
                     complete_loss = complete_loss + (loss_Betas * args['lambda_betas'])\
                                     + (loss_Weights * args['lambda_weights'])
 
-                    #pruned = sign_variance_pruning_strategy(model, optimizer, device, threshold=args['pruning_threshold'])
-                    sign_variance_pruning_strategy_OD(model, device, threshold=args['pruning_threshold'])
-
+                    #pruned = sign_variance_pruning_strategy(model, device, threshold=args['pruning_threshold'])
                     #if pruned:
                     #    lr_list = []
                     #    print("--CHANGING OPTIM--")
@@ -232,7 +230,8 @@ def training(args, verbose=True):
     if args['dropout_technique']:
         #intermed_layers = [model.d_in, model.layer_sizes[1]]
         if args['dropout_technique'] == 'smallify':
-            model = prune_model(model, SmallifyDropout)
+            sign_variance_pruning_strategy_do_prune(model, device, args['pruning_threshold'])  # M: pre-prune
+            model = prune_model(model, SmallifyDropout)  # M: prune and mult betas
             model.to(device)
             #for module in model.net_layers.modules():
             #    if isinstance(module, SmallifyResidualSiren):

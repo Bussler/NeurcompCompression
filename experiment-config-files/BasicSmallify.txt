@@ -22,4 +22,5 @@ sample_size = 16
 dropout_technique = smallify
 lambda_betas = 5e-2
 lambda_weights = 5e-6
-pruning_threshold = 0.4
+pruning_momentum = 0.02
+pruning_threshold = 0.9

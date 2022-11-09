@@ -24,14 +24,16 @@ def calculte_smallify_loss(model):
     return loss_Betas, loss_Weights
 
 
-def sign_variance_pruning_strategy_OD(model, device, threshold=0.5):  # M: TODO only prune at the end, so that weights can come back!
+# M: only prune at the end, so that weights are able to be relevant again
+def sign_variance_pruning_strategy_do_prune(model, device, threshold=0.9):
     for module in model.net_layers.modules():
         if isinstance(module, SmallifyDropout):
-            prune_mask = module.sign_variance_pruning(threshold, device)
+            prune_mask = module.sign_variance_pruning_calculate_pruning_mask(threshold, device)
             prune.custom_from_mask(module, name='betas', mask=prune_mask)
 
 
-def sign_variance_pruning_strategy(model, optimizer, device, threshold=0.4):
+# M: dynamically prune according to sign variance strategy and change sizes of modules of SmallifyResidualSiren
+def sign_variance_pruning_strategy(model, device, threshold=0.4):
     pruned_something = False
 
     for module in model.net_layers.modules():
@@ -46,42 +48,52 @@ def sign_variance_pruning_strategy(model, optimizer, device, threshold=0.4):
 
 class SmallifyDropout(DropoutLayer):
 
-    def __init__(self, number_betas, momentum=50):
+    def __init__(self, number_betas, sign_variance_momentum=0.02):
         super(SmallifyDropout, self).__init__()
         self.c = number_betas
         self.betas = torch.nn.Parameter(torch.empty(number_betas).normal_(0, 1),
                                         requires_grad=True)  # M: uniform_ or normal_
-        self.momentum = momentum
-        self.oldVariances, self.oldMeans, self.variance_emas, self.pruned_already, self.n = self.init_variance_data()
-
+        self.tracker = SmallifySignVarianceTracker(self.c, sign_variance_momentum, self.betas)
 
     def forward(self, x):
         if self.training:
             x = x.mul(self.betas)  # M: No inverse scaling needed here, since we mult betas with nw after training
+            self.tracker.sign_variance_pruning_onlyVar(self.betas)
         return x
 
     def l1_loss(self):
         return torch.abs(self.betas).sum()
 
-    def init_variance_data(self):
-        variances = []
-        means = []
-        variance_emas = []
+    def sign_variance_pruning_calculate_pruning_mask(self, threshold, device):
+        return self.tracker.calculate_pruning_mask(threshold, device)
+
+    @classmethod
+    def create_instance(cls, c):
+        return SmallifyDropout(c)
+
+
+class SmallifySignVarianceTracker():
+    def __init__(self, c, sign_variance_momentum, betas):
+        self.c = c
+        self.sign_variance_momentum = sign_variance_momentum
+        self.EMA, self.EMAVar, self.pruned_already = self.init_variance_data(betas)
+
+    def init_variance_data(self, betas):
+        EMA = []
+        EMAVar = []
         pruned_already = []
-        n = 1.0
 
-        for b in self.betas:
+        for b in betas:
             if b.item() > 0.0:
-                means.append(1.0)
+                EMA.append(1.0)
             else:
-                means.append(-1.0)
+                EMA.append(-1.0)
 
-            variances.append(0.0)
-            variance_emas.append(0.0)
+            EMAVar.append(0.0)
             pruned_already.append(False)
-        return variances, means, variance_emas, pruned_already, n
+        return EMA, EMAVar, pruned_already
 
-    def sign_variance_pruning(self, threshold, device):
+    def sign_variance_pruning(self, threshold, device, betas):
         prune_mask = torch.zeros(self.c)
 
         with torch.no_grad():
@@ -90,29 +102,44 @@ class SmallifyDropout(DropoutLayer):
                 if self.pruned_already[i]:
                     continue
 
-                if self.betas[i].item() > 0.0:  # M: save new data entry
+                if betas[i].item() > 0.0:  # M: save new data entry
                     newVal = 1.0
                 else:
                     newVal = -1.0
 
-                self.oldVariances[i] = (self.n / (self.n + 1)) * (self.oldVariances[i]
-                                                                  + (((self.oldMeans[i] - newVal) ** 2) / (self.n + 1)))
-                self.oldMeans[i] = self.oldMeans[i] + ((newVal - self.oldMeans[i]) / (self.n + 1))
+                phi_i = newVal - self.EMA[i]
+                self.EMA[i] = self.EMA[i] + (self.sign_variance_momentum * phi_i)
+                self.EMAVar[i] = (1.0 - self.sign_variance_momentum) *\
+                            (self.EMAVar[i] + (self.sign_variance_momentum * (phi_i ** 2)))
 
-                smoother = 0.5
-                self.variance_emas[i] = self.oldVariances[i] * smoother + self.variance_emas[i] * (1 - smoother)
-
-                if self.variance_emas[i] < threshold:
+                if self.EMAVar[i] < threshold:
                     prune_mask[i] = 1.0
                 else:
                     self.pruned_already[i] = True
 
-        self.n += 1.0
         return prune_mask.to(device)
 
-    @classmethod
-    def create_instance(cls, c):
-        return SmallifyDropout(c)
+    def sign_variance_pruning_onlyVar(self, betas):
+        with torch.no_grad():
+            for i in range(self.c):
+                if betas[i].item() > 0.0:  # M: save new data entry
+                    newVal = 1.0
+                else:
+                    newVal = -1.0
+
+                phi_i = newVal - self.EMA[i]
+                self.EMA[i] = self.EMA[i] + (self.sign_variance_momentum * phi_i)
+                self.EMAVar[i] = (1.0 - self.sign_variance_momentum) *\
+                            (self.EMAVar[i] + (self.sign_variance_momentum * (phi_i ** 2)))
+
+    def calculate_pruning_mask(self, threshold, device):
+        prune_mask = torch.zeros(self.c)
+        with torch.no_grad():
+            for i in range(self.c):
+                if self.EMAVar[i] < threshold:
+                    prune_mask[i] = 1.0
+
+        return prune_mask.to(device)
 
 
 class SmallifyResidualSiren(nn.Module):
