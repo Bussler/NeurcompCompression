@@ -3,7 +3,8 @@ from mlflow import log_metric, log_param, log_artifacts
 from mlflow.tracking import MlflowClient
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
-from pltUtils import generate_array_MLFlow, dict_from_file, append_lists_from_dicts, generate_plot_lists
+from pltUtils import generate_array_MLFlow, dict_from_file, append_lists_from_dicts, generate_plot_lists,\
+    normalize_array_0_1, normalize_array
 import numpy as np
 
 
@@ -312,7 +313,7 @@ def NumberOfChannelsVSCompression():
     # M: generate lists for psnr, rmse...
     generate_plot_lists(([CompressionRate, PSNR, RMSE], [CompressionRateQuant, PSNRQuant, RMSEQuant]),
                         (['compression_ratio', 'psnr', 'rmse'], ['Quant_Compression_Ratio', 'psnr', 'rmse']),
-                        BASENAME, (CONFIGNAME, QUANTNAMECONFIG))
+                        BASENAME, (CONFIGNAME, QUANTNAMECONFIG), experiment_names=[20, 50, 100, 200, 400])
 
     # M generate lists for middle layers
     for compr in [20, 50, 100, 200, 400]:
@@ -349,6 +350,81 @@ def NumberOfChannelsVSCompression():
     plt.savefig(filepath)
 
 
+def QuantbitsVSCompressionratio():
+    BASENAME50 = 'experiments/test_experiment_QuantbitsVSCompressionratio/Ratio50/test_experiment'
+    BASENAME100 = 'experiments/test_experiment_QuantbitsVSCompressionratio/Ratio100/test_experiment'
+    BASENAME200 = 'experiments/test_experiment_QuantbitsVSCompressionratio/Ratio200/test_experiment'
+    CONFIGNAME = 'info.txt'
+    QUANTNAMECONFIG = 'Dequant_Info.txt'
+
+    experimentNames50=[50,38,31,26,21,17,12,8,4]
+    experimentNames100 = [100, 65, 51, 42, 34, 27, 20, 14, 7]
+    experimentNames200 = [200,106,75,59,48,38,29,20,11]
+
+    used_bits50 = []
+    PSNR50 = []
+    size50 = []
+
+    used_bits100 = []
+    PSNR100 = []
+    size100 = []
+
+    used_bits200 = []
+    PSNR200 = []
+    size200 = []
+
+    # M: generate lists...
+    generate_plot_lists(([used_bits50, PSNR50], ),
+                        (['used_bits', 'psnr'], ),
+                        BASENAME50, (QUANTNAMECONFIG, ), experiment_names=experimentNames50)
+
+    # M generate lists for middle layers
+    for compr in experimentNames50:
+        config_name = BASENAME50 + str(compr) + '/' + CONFIGNAME
+        info = dict_from_file(config_name)
+        size50.append(info['network_layer_sizes'][1])
+
+    generate_plot_lists(([used_bits100, PSNR100], ),
+                        (['used_bits', 'psnr'], ),
+                        BASENAME100, (QUANTNAMECONFIG, ), experiment_names=experimentNames100)
+
+    # M generate lists for middle layers
+    for compr in experimentNames100:
+        config_name = BASENAME100 + str(compr) + '/' + CONFIGNAME
+        info = dict_from_file(config_name)
+        size100.append(info['network_layer_sizes'][1])
+
+    if BASENAME200:
+        generate_plot_lists(([used_bits200, PSNR200], ),
+                            (['used_bits', 'psnr'], ),
+                            BASENAME200, (QUANTNAMECONFIG, ), experiment_names=experimentNames200)
+
+        # M generate lists for middle layers
+        for compr in experimentNames200:
+            config_name = BASENAME200 + str(compr) + '/' + CONFIGNAME
+            info = dict_from_file(config_name)
+            size200.append(info['network_layer_sizes'][1])
+
+    c_map1 = plt.get_cmap('Blues') # c=[c_map1(val) for val in normalize_array_0_1(PSNR50)]
+    c_map2 = plt.get_cmap('Greens')
+    c_map3 = plt.get_cmap('Reds')
+
+    plt.scatter(used_bits50, size50, s = [x for x in normalize_array(PSNR50, np.min(PSNR50), np.max(PSNR50), 10, 200)],
+                c=[c_map1(val) for val in normalize_array(PSNR50, np.min(PSNR50), np.max(PSNR50), 0.3, 1)], label='Compression 126')
+    plt.scatter(used_bits100, size100,s = [x for x in normalize_array(PSNR100, np.min(PSNR100), np.max(PSNR100), 10, 200)],
+                c=[c_map2(val) for val in normalize_array(PSNR100, np.min(PSNR100), np.max(PSNR100), 0.3, 1)], label='Compression 196')
+    plt.scatter(used_bits200, size200, s = [x for x in normalize_array(PSNR200, np.min(PSNR200), np.max(PSNR200), 10, 200)],
+                c=[c_map3(val) for val in normalize_array(PSNR200, np.min(PSNR200), np.max(PSNR200), 0.3, 1)], label='Compression 272')
+
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.xlabel('#quant_bits')
+    plt.ylabel('#channels')
+    plt.legend()
+
+    filepath = 'plots/' + 'test_volume' + '_QuantbitsVSCompressionratio' + '.png'
+    plt.savefig(filepath)
+
 
 if __name__ == '__main__':
     #rmseTTHRESHExperiment()
@@ -356,4 +432,5 @@ if __name__ == '__main__':
     #QuantBitsExperiment()
     #QuantVsOrigExperiment()
     #OrigVSSelfImplmentation()
-    NumberOfChannelsVSCompression()
+    #NumberOfChannelsVSCompression()
+    QuantbitsVSCompressionratio()

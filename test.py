@@ -4,51 +4,51 @@ import collections
 from data.IndexDataset import get_tensor, IndexDataset
 from model.model_utils import setup_neurcomp
 from visualization.OutputToVTK import tiled_net_out
+import visualization.pltUtils as pu
+import random
+import os
+from model.model_utils import compute_num_neurons
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 
 
+def emaTest2():
 
-def ema_test():
-    momentum = 50
+    #momentum = 0.5
+    momentum = 2/(100+1)
+    print("Momentum: ",momentum)
 
-    signs = collections.deque(maxlen=momentum)
-    for val in np.random.randint(2, size=momentum):
-        if val ==1:
-            signs.append(1)
-        if val ==0:
-            signs.append(-1)
+    threshold = 0.9
 
-    old_variance_ema = 0.0
+    breaks = []
 
-    #newMean = oldmean - ((testq[0]-oldmean)/3) + ((4-oldmean)/3)
+    for j in range(100):
 
-    oldVar = 0
-    oldMean = 1
+        oldEMA = 1
+        oldEMAVar = 0
 
-    n = 50
+        numbers = [1]
 
-    for i in range(1000):
+        for i in range(1000):
+            #rand = np.random.randint(2, size=1)[0]
+            rand = random.choices([1, -1], cum_weights=(0.7, 1.0), k=1)[0]
+            newVal = rand
 
-        rand = np.random.randint(2, size=1)[0]
-        newVal = 0.0
-        if rand ==1:
-            signs.append(1)
-            newVal = 1
-        if rand ==0:
-            signs.append(-1)
-            newVal = -1
+            numbers.append(newVal)
 
-        oldVar = (n / (n+1)) * (oldVar + (((oldMean-newVal) ** 2) / (n+1)))
-        oldMean = oldMean + ((newVal - oldMean) / (n + 1))
-        n += 1
+            phi_i = newVal - oldEMA
+            oldEMA = oldEMA + (momentum * phi_i)
+            oldEMAVar = (1.0-momentum) * (oldEMAVar + (momentum*(phi_i ** 2)))
 
-        #var = np.var(signs)
-        smoother = (0.5)
-        old_variance_ema = oldVar * smoother + old_variance_ema * (1-smoother)
+            #print("EMA: ", oldEMAVar)
+            if oldEMAVar > threshold:
+                #print('DAB ', i)
+                #print(numbers)
+                breaks.append(i)
+                break
 
-        print("EMA: ", old_variance_ema, " variance: ", oldVar)
-        if old_variance_ema > 0.5:
-            print('DAB ', i)
-            break
+    b = np.asarray(breaks)
+    print("Mean break: ", np.mean(b))
 
 
 def calculate_variance_of_data():
@@ -80,7 +80,8 @@ def psnr_test():
     psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True,
                                              write_vols=False)
 
+
 if __name__ == '__main__':
-    #ema_test()
+    #emaTest2()
     #calculate_variance_of_data()
     psnr_test()

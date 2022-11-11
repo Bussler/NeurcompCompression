@@ -1,6 +1,7 @@
 from mlflow.tracking import MlflowClient
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
+import numpy as np
 
 
 def generate_array_MLFlow(client, idList, searchedParam):
@@ -64,15 +65,20 @@ def append_lists_from_dicts(lists: [], dict: {}, keys: []):
         lists[i].append(dict[key])
 
 
-def generate_plot_lists(lists: ([]), keys: ([]), BASENAME, config_names: ()):
+def generate_plot_lists(lists: ([]), keys: ([]), BASENAME, config_names: (), experiment_names: []):
 
     if len(lists) is not len(keys) or len(lists) is not len(config_names):
         print("Error filling lists")
 
-    for compr in [20, 50, 100, 200, 400]:
+    for compr in experiment_names:
         for i in range(len(lists)):
             config_name = BASENAME + str(compr) + '/' + config_names[i]
             info = dict_from_file(config_name)
             append_lists_from_dicts(lists[i], info, keys[i])
 
 
+def normalize_array_0_1(data):
+    return (data - np.min(data)) / (np.max(data) - np.min(data))
+
+def normalize_array(array, minV, maxV, minN, maxN):
+    return (maxN-minN) * ((array - minV) / (maxV - minV)) + minN

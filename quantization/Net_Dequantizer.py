@@ -169,7 +169,7 @@ class NetDecoder:
         w_last_format = ''.join(['f' for _ in range(self.d_out*self.layers[0])])
         b_last_format = ''.join(['f' for _ in range(self.d_out)])
         w_last = th.FloatTensor(struct.unpack(w_last_format, file.read(4*self.d_out*self.layers[0])))
-        b_last = th.FloatTensor(struct.unpack(b_last_format, file.read(4*self.layers[0])))
+        b_last = th.FloatTensor(struct.unpack(b_last_format, file.read(4*self.d_out)))  # M: fixed error here from self.layers[0] to self.d_ou
 
         all_ws.append(w_last)
         all_bs.append(b_last)

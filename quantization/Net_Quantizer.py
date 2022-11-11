@@ -135,11 +135,11 @@ class NetEncoder():
         all_weights, all_biases = get_net_weights_biases(self.net)
 
         # header: number of layers
-        header = file.write(struct.pack('B', 8))
+        header = file.write(struct.pack('B', n_layers))
         # header: d_in
-        header += file.write(struct.pack('B', 3))
+        header += file.write(struct.pack('B', self.net.d_in))
         # header: d_out
-        header += file.write(struct.pack('B', 1))
+        header += file.write(struct.pack('B', self.net.d_out))
         # header: layers
         header += file.write(struct.pack(''.join(['I' for _ in range(len(layer_sizes))]), *layer_sizes))
         # header: number of bits for clustering
