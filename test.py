@@ -81,7 +81,36 @@ def psnr_test():
                                              write_vols=False)
 
 
+def plotTest():
+    BASENAMEPruned = 'experiments/hyperparam_search/test_experiment_smallify_RandomSearch/test_experimentHyperSearch'
+    # 'experiments/hyperparam_search/mhd_p_Random_betas/mhd_p_HyperSearch'
+    # experimentNamesPruned = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    experimentNamesPruned = []
+    for i in range(0, 18):
+        experimentNamesPruned.append(i)
+
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/test_experiment_diff_comp_rates/test_experimentComp'
+    # 'experiments/diff_comp_rates/mhd_p_diffCompRates/mhd_p_'
+    experimentNamesUnpruned = [20, 50, 100, 150, 200, 300, 400]
+
+    QUANTNAMECONFIG = 'Dequant_Info.txt'
+
+    compressionRatioPruned = []
+    PSNRPruned = []
+
+    compressionRatioUnpruned = []
+    PSNRUnpruned = []
+
+    # M: generate lists...
+    pu.generate_plot_lists(([compressionRatioPruned, PSNRPruned],),
+                        (['Quant_Compression_Ratio', 'psnr'],),
+                        BASENAMEPruned, (QUANTNAMECONFIG,), experiment_names=experimentNamesPruned)
+    pass
+
+
 if __name__ == '__main__':
     #emaTest2()
     #calculate_variance_of_data()
-    psnr_test()
+    #psnr_test()
+    plotTest()

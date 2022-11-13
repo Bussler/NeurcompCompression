@@ -39,8 +39,8 @@ def find_CompressionValues_for_quantBits(start_comp_ratio, dataset_num_voxel, nu
 
 
 if __name__ == '__main__':
-    grace_interval = 2
-    dataset_num_voxel = 3375000  # 3375000 # testvol #16581375  # mhd_p
-    start_comp_ratio = 100
+    grace_interval = 1
+    dataset_num_voxel = 16581375  # 3375000 # testvol #16581375  # mhd_p
+    start_comp_ratio = 50
     num_layers = 8
     find_CompressionValues_for_quantBits(start_comp_ratio, dataset_num_voxel, num_layers, grace_interval)

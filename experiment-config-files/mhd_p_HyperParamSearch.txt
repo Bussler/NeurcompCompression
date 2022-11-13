@@ -1,0 +1,26 @@
+expname = mhd_p_HyperSearch
+data = datasets/mhd1024.h5
+basedir = /experiments/hyperparam_search/mhd_p_Grid_betas/
+
+d_in = 3
+d_out = 1
+
+n_layers = 8
+checkpoint_path = ''
+
+compression_ratio = 100
+
+grad_lambda = 1.1064741820963577e-05
+lr = 0.0007115638831923747
+max_pass = 75
+pass_decay = 20
+lr_decay = 0.2
+
+batch_size = 2048
+sample_size = 16
+
+dropout_technique = smallify
+lambda_betas = 3.525329344591573e-05
+lambda_weights = 1.0230271633432736e-05
+pruning_momentum = 0.02
+pruning_threshold = 0.9

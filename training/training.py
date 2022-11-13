@@ -11,7 +11,7 @@ from model.NeurcompModel import Neurcomp
 from model.model_utils import setup_neurcomp, write_dict
 from visualization.OutputToVTK import tiled_net_out
 from mlflow import log_metric, log_param, log_artifacts
-from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy,\
+from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy_dynamic,\
     SmallifyResidualSiren, sign_variance_pruning_strategy_do_prune
 from model.pruning import prune_dropout_threshold, prune_model
 
@@ -170,7 +170,7 @@ def training(args, verbose=True):
                     complete_loss = complete_loss + (loss_Betas * args['lambda_betas'])\
                                     + (loss_Weights * args['lambda_weights'])
 
-                    #pruned = sign_variance_pruning_strategy(model, device, threshold=args['pruning_threshold'])
+                    #pruned = sign_variance_pruning_strategy_dynamic(model, device, threshold=args['pruning_threshold'])
                     #if pruned:
                     #    lr_list = []
                     #    print("--CHANGING OPTIM--")
@@ -218,8 +218,11 @@ def training(args, verbose=True):
                 #    no_gain_iter = 0
                 #else:
                 #    no_gain_iter += 1
-                #if no_gain_iter == 5 and args['lambda_betas'] > 1e-7:
-                #    args['lambda_betas'] /= 10.0
+                #if no_gain_iter == 5:
+                #    for param_group in optimizer.param_groups:
+                #        if param_group['lr'] > 1e-7:
+                #            print('------ learning rate decay ------', volume_passes)
+                #            param_group['lr'] /= 10.0
                 #    no_gain_iter = 0
 
             # M: Stop training, if we reach max amount of passes over volume
