@@ -351,14 +351,14 @@ def NumberOfChannelsVSCompression():
 
 
 def QuantbitsVSCompressionratio():
-    BASENAME50 = 'experiments/test_experiment_QuantbitsVSCompressionratio/Ratio50/test_experiment'
-    BASENAME100 = 'experiments/test_experiment_QuantbitsVSCompressionratio/Ratio100/test_experiment'
-    BASENAME200 = 'experiments/test_experiment_QuantbitsVSCompressionratio/Ratio200/test_experiment'
+    BASENAME50 = 'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio50/mhd_p_50'
+    BASENAME100 = 'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio100/test_experiment'
+    BASENAME200 = ''# 'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio200/test_experiment'
     CONFIGNAME = 'info.txt'
     QUANTNAMECONFIG = 'Dequant_Info.txt'
 
-    experimentNames50=[50,38,31,26,21,17,12,8,4]
-    experimentNames100 = [100, 65, 51, 42, 34, 27, 20, 14, 7]
+    experimentNames50=[50,43,36,31,26]
+    experimentNames100 = [100, 82,70,59,49]
     experimentNames200 = [200,106,75,59,48,38,29,20,11]
 
     used_bits50 = []
@@ -413,8 +413,8 @@ def QuantbitsVSCompressionratio():
                 c=[c_map1(val) for val in normalize_array(PSNR50, np.min(PSNR50), np.max(PSNR50), 0.3, 1)], label='Compression 126')
     plt.scatter(used_bits100, size100,s = [x for x in normalize_array(PSNR100, np.min(PSNR100), np.max(PSNR100), 10, 200)],
                 c=[c_map2(val) for val in normalize_array(PSNR100, np.min(PSNR100), np.max(PSNR100), 0.3, 1)], label='Compression 196')
-    plt.scatter(used_bits200, size200, s = [x for x in normalize_array(PSNR200, np.min(PSNR200), np.max(PSNR200), 10, 200)],
-                c=[c_map3(val) for val in normalize_array(PSNR200, np.min(PSNR200), np.max(PSNR200), 0.3, 1)], label='Compression 272')
+    #plt.scatter(used_bits200, size200, s = [x for x in normalize_array(PSNR200, np.min(PSNR200), np.max(PSNR200), 10, 200)],
+    #            c=[c_map3(val) for val in normalize_array(PSNR200, np.min(PSNR200), np.max(PSNR200), 0.3, 1)], label='Compression 272')
 
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
@@ -422,7 +422,88 @@ def QuantbitsVSCompressionratio():
     plt.ylabel('#channels')
     plt.legend()
 
-    filepath = 'plots/' + 'test_volume' + '_QuantbitsVSCompressionratio' + '.png'
+    filepath = 'plots/' + 'mhd_p' + '_QuantbitsVSCompressionratio' + '.png'
+    plt.savefig(filepath)
+
+
+def CompressionGainVSPSNR():
+    BASENAME = 'experiments/hyperparam_search/mhd_p_Random_betas/mhd_p_HyperSearch'
+    experimentNames = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    CONFIGNAME = 'info.txt'
+    QUANTNAMECONFIG = 'Dequant_Info.txt'
+
+    compressionGain = []
+    PSNR = []
+
+    # M: generate lists...
+    generate_plot_lists(([compressionGain, PSNR],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAME, (CONFIGNAME,), experiment_names=experimentNames)
+
+    NoPruningBasename = 'experiments/diff_comp_rates/mhd_p_diffCompRates/mhd_p_100/'
+    noPruningInfo = dict_from_file(NoPruningBasename+'info.txt')
+
+
+    # M: decrease by base-compression
+    for elem in range(len(compressionGain)):
+        compressionGain[elem] = compressionGain[elem] - noPruningInfo['compression_ratio']
+
+    plt.scatter(compressionGain, PSNR, label = 'Pruned')
+
+    # M: Baseline
+    plt.axhline(y=noPruningInfo['psnr'], color='y', linestyle='--', label='No Prune PSNR')
+
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.xlabel('Compression Gain')
+    plt.ylabel('psnr')
+    plt.legend()
+
+    filepath = 'plots/' + 'mhd_p_' + 'CompressionGain_VS_PSNR' + '.png'
+    plt.savefig(filepath)
+
+
+def PrunedVSUnpruned():
+    BASENAMEPruned = 'experiments/hyperparam_search/test_experiment_smallify_RandomSearch/test_experimentHyperSearch'
+    #'experiments/hyperparam_search/mhd_p_Random_betas/mhd_p_HyperSearch'
+    #experimentNamesPruned = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    experimentNamesPruned = []
+    for i in range(0, 18):
+        experimentNamesPruned.append(i)
+
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/test_experiment_diff_comp_rates/test_experimentComp'
+    #'experiments/diff_comp_rates/mhd_p_diffCompRates/mhd_p_'
+    experimentNamesUnpruned = [20,50,100,150,200,300,400]
+
+    QUANTNAMECONFIG = 'Dequant_Info.txt'
+
+    compressionRatioPruned = []
+    PSNRPruned = []
+
+    compressionRatioUnpruned = []
+    PSNRUnpruned = []
+
+    # M: generate lists...
+    generate_plot_lists(([compressionRatioPruned, PSNRPruned],),
+                        (['Quant_Compression_Ratio', 'psnr'],),
+                        BASENAMEPruned, (QUANTNAMECONFIG,), experiment_names=experimentNamesPruned)
+
+    generate_plot_lists(([compressionRatioUnpruned, PSNRUnpruned],),
+                        (['Quant_Compression_Ratio', 'psnr'],),
+                        BASENAMEUnpruned, (QUANTNAMECONFIG,), experiment_names=experimentNamesUnpruned)
+
+
+    plt.scatter(compressionRatioPruned, PSNRPruned, label = 'Pruned')
+    plt.plot(compressionRatioUnpruned, PSNRUnpruned, label='No Pruning')
+
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.xlabel('Compressionratio after Quantization 8 bits')
+    plt.ylabel('psnr')
+    plt.legend()
+
+    filepath = 'plots/' + 'test_volume_' + 'PrunedVSUnpruned' + '.png'
     plt.savefig(filepath)
 
 
@@ -433,4 +514,6 @@ if __name__ == '__main__':
     #QuantVsOrigExperiment()
     #OrigVSSelfImplmentation()
     #NumberOfChannelsVSCompression()
-    QuantbitsVSCompressionratio()
+    #QuantbitsVSCompressionratio()
+    #CompressionGainVSPSNR()
+    PrunedVSUnpruned()
