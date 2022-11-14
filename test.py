@@ -10,6 +10,7 @@ import os
 from model.model_utils import compute_num_neurons
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
+from itertools import product
 
 
 def emaTest2():
@@ -82,12 +83,13 @@ def psnr_test():
 
 
 def plotTest():
-    BASENAMEPruned = 'experiments/hyperparam_search/test_experiment_smallify_RandomSearch/test_experimentHyperSearch'
+    BASENAMEPruned = 'experiments/hyperparam_search/test_experiment_smallify_GridSearch/test_experimentHyperSearch'
+    # 'experiments/hyperparam_search/test_experiment_smallify_RandomSearch/test_experimentHyperSearch'
     # 'experiments/hyperparam_search/mhd_p_Random_betas/mhd_p_HyperSearch'
     # experimentNamesPruned = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     experimentNamesPruned = []
-    for i in range(0, 18):
+    for i in range(0, 54):
         experimentNamesPruned.append(i)
 
     BASENAMEUnpruned = 'experiments/diff_comp_rates/test_experiment_diff_comp_rates/test_experimentComp'
@@ -98,14 +100,24 @@ def plotTest():
 
     compressionRatioPruned = []
     PSNRPruned = []
-
-    compressionRatioUnpruned = []
-    PSNRUnpruned = []
+    rmsePruned = []
 
     # M: generate lists...
-    pu.generate_plot_lists(([compressionRatioPruned, PSNRPruned],),
-                        (['Quant_Compression_Ratio', 'psnr'],),
+    pu.generate_plot_lists(([compressionRatioPruned, PSNRPruned, rmsePruned],),
+                        (['Quant_Compression_Ratio', 'psnr', 'rmse'],),
                         BASENAMEPruned, (QUANTNAMECONFIG,), experiment_names=experimentNamesPruned)
+
+    largestGain = 0
+    largestExp = 0
+    for i in range(0, 54):
+        if PSNRPruned[i] > 41.0:
+            print(i, ' Ratio: ', compressionRatioPruned[i] / rmsePruned[i])
+            if compressionRatioPruned[i] > largestGain:
+                largestGain = compressionRatioPruned[i]
+                largestExp = i
+
+    print("Most Compression: ",largestGain, " At: ", largestExp)
+
     pass
 
 

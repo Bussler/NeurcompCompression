@@ -80,5 +80,17 @@ def generate_plot_lists(lists: ([]), keys: ([]), BASENAME, config_names: (), exp
 def normalize_array_0_1(data):
     return (data - np.min(data)) / (np.max(data) - np.min(data))
 
+
 def normalize_array(array, minV, maxV, minN, maxN):
     return (maxN-minN) * ((array - minV) / (maxV - minV)) + minN
+
+
+def generate_orderedValues(data, highestValue):
+    steps = highestValue/len(data)
+    np_array = np.array(data)
+    data_sorted = np.argsort(np_array)
+
+    for sort, index in enumerate(data_sorted):
+        np_array[index] = steps * (sort+1)
+
+    return np_array

@@ -4,8 +4,9 @@ from mlflow.tracking import MlflowClient
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from pltUtils import generate_array_MLFlow, dict_from_file, append_lists_from_dicts, generate_plot_lists,\
-    normalize_array_0_1, normalize_array
+    normalize_array_0_1, normalize_array, generate_orderedValues
 import numpy as np
+from itertools import product
 
 
 def QuantBitsExperiment():
@@ -351,14 +352,14 @@ def NumberOfChannelsVSCompression():
 
 
 def QuantbitsVSCompressionratio():
-    BASENAME50 = 'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio50/mhd_p_50'
-    BASENAME100 = 'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio100/test_experiment'
-    BASENAME200 = ''# 'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio200/test_experiment'
+    BASENAME50 =  'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio50/test_experiment'#'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio50/mhd_p_50'
+    BASENAME100 =  'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio100/test_experiment'#'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio100/test_experiment'
+    BASENAME200 = 'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio200/test_experiment'
     CONFIGNAME = 'info.txt'
     QUANTNAMECONFIG = 'Dequant_Info.txt'
 
-    experimentNames50=[50,43,36,31,26]
-    experimentNames100 = [100, 82,70,59,49]
+    experimentNames50= [50,38,31,26,21,17,12,8,4]#[50,43,36,31,26]
+    experimentNames100 = [100,65,51,42,34,27,20,14,7]#[100, 82,70,59,49]
     experimentNames200 = [200,106,75,59,48,38,29,20,11]
 
     used_bits50 = []
@@ -409,12 +410,14 @@ def QuantbitsVSCompressionratio():
     c_map2 = plt.get_cmap('Greens')
     c_map3 = plt.get_cmap('Reds')
 
-    plt.scatter(used_bits50, size50, s = [x for x in normalize_array(PSNR50, np.min(PSNR50), np.max(PSNR50), 10, 200)],
+
+
+    plt.scatter(used_bits50, size50, s = [x for x in generate_orderedValues(PSNR50, 200)],
                 c=[c_map1(val) for val in normalize_array(PSNR50, np.min(PSNR50), np.max(PSNR50), 0.3, 1)], label='Compression 126')
-    plt.scatter(used_bits100, size100,s = [x for x in normalize_array(PSNR100, np.min(PSNR100), np.max(PSNR100), 10, 200)],
+    plt.scatter(used_bits100, size100,s = [x for x in generate_orderedValues(PSNR100, 200)],
                 c=[c_map2(val) for val in normalize_array(PSNR100, np.min(PSNR100), np.max(PSNR100), 0.3, 1)], label='Compression 196')
-    #plt.scatter(used_bits200, size200, s = [x for x in normalize_array(PSNR200, np.min(PSNR200), np.max(PSNR200), 10, 200)],
-    #            c=[c_map3(val) for val in normalize_array(PSNR200, np.min(PSNR200), np.max(PSNR200), 0.3, 1)], label='Compression 272')
+    plt.scatter(used_bits200, size200, s = [x for x in generate_orderedValues(PSNR200, 200)],
+                c=[c_map3(val) for val in normalize_array(PSNR200, np.min(PSNR200), np.max(PSNR200), 0.3, 1)], label='Compression 272')
 
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
@@ -422,7 +425,7 @@ def QuantbitsVSCompressionratio():
     plt.ylabel('#channels')
     plt.legend()
 
-    filepath = 'plots/' + 'mhd_p' + '_QuantbitsVSCompressionratio' + '.png'
+    filepath = 'plots/' + 'test_volume' + '_QuantbitsVSCompressionratio' + '.png'
     plt.savefig(filepath)
 
 
@@ -464,17 +467,18 @@ def CompressionGainVSPSNR():
 
 
 def PrunedVSUnpruned():
-    BASENAMEPruned = 'experiments/hyperparam_search/test_experiment_smallify_RandomSearch/test_experimentHyperSearch'
+    BASENAMEPruned = 'experiments/hyperparam_search/test_experiment_smallify_GridSearch/test_experimentHyperSearch'
+    #'experiments/hyperparam_search/test_experiment_smallify_RandomSearch/test_experimentHyperSearch'
     #'experiments/hyperparam_search/mhd_p_Random_betas/mhd_p_HyperSearch'
     #experimentNamesPruned = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     experimentNamesPruned = []
-    for i in range(0, 18):
+    for i in range(0, 54):
         experimentNamesPruned.append(i)
 
-    BASENAMEUnpruned = 'experiments/diff_comp_rates/test_experiment_diff_comp_rates/test_experimentComp'
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/test_experiment_diff_comp_rates_otherHyper/test_experiment'
     #'experiments/diff_comp_rates/mhd_p_diffCompRates/mhd_p_'
-    experimentNamesUnpruned = [20,50,100,150,200,300,400]
+    experimentNamesUnpruned = [50,100,150,200,300]
 
     QUANTNAMECONFIG = 'Dequant_Info.txt'
 
@@ -503,8 +507,61 @@ def PrunedVSUnpruned():
     plt.ylabel('psnr')
     plt.legend()
 
-    filepath = 'plots/' + 'test_volume_' + 'PrunedVSUnpruned' + '.png'
+    filepath = 'plots/' + 'test_volume_GridSearch_' + 'PrunedVSUnpruned' + '.png'
     plt.savefig(filepath)
+
+def influenceSmallifyParameter():
+    BASENAMEPruned = 'experiments/hyperparam_search/test_experiment_smallify_GridSearch/test_experimentHyperSearch'
+    experimentNamesPruned = []
+    for i in range(0, 54):
+        experimentNamesPruned.append(i)
+
+    CONFIGNAME = 'config.txt'
+    QUANTNAMECONFIG = 'Dequant_Info.txt'
+
+    lrPruned = []
+    grad_lambdaPruned = []
+    lambda_betasPruned = []
+    lambda_weightsPruned = []
+
+    compressionRatioPruned = []
+    rmsePruned = []
+
+    # M: generate lists...
+    generate_plot_lists(([lrPruned, grad_lambdaPruned, lambda_betasPruned, lambda_weightsPruned],
+                         [compressionRatioPruned, rmsePruned],),
+                        (['lr', 'grad_lambda', 'lambda_betas', 'lambda_weights'],
+                         ['Quant_Compression_Ratio', 'rmse'],),
+                        BASENAMEPruned, (CONFIGNAME, QUANTNAMECONFIG,), experiment_names=experimentNamesPruned)
+
+    random_search_spaces = {
+        "lr": ([0.0001, 0.0007]),
+        "grad_lambda": ([1e-04, 1e-05, 1e-06]),
+        "lambda_betas": ([3e-04, 3e-05, 3e-06]),
+        "lambda_weights": ([1e-06, 1e-05]),
+    }
+    for instance in product(*random_search_spaces.values()):
+
+        xAxis = []
+        compr_rmse = []
+
+        for i in range(0, 54):
+            if lrPruned[i] == instance[0] \
+                    and lambda_betasPruned[i] == instance[2]\
+                    and grad_lambdaPruned[i] == instance[1]\
+                    :
+                compr_rmse.append(compressionRatioPruned[i] / rmsePruned[i])
+                #xAxis.append(lambda_betasPruned[i])
+                xAxis.append(lambda_weightsPruned[i])
+
+        plt.plot(xAxis, compr_rmse, label='')
+
+    plt.xlabel('lambda_weight')
+    plt.ylabel('compr/rmse')
+    filepath = 'plots/' + 'test_volume_GridSearch_' + 'InfluenceParameter_weight' + '.png'
+    plt.savefig(filepath)
+
+
 
 
 if __name__ == '__main__':
@@ -514,6 +571,7 @@ if __name__ == '__main__':
     #QuantVsOrigExperiment()
     #OrigVSSelfImplmentation()
     #NumberOfChannelsVSCompression()
-    #QuantbitsVSCompressionratio()
+    QuantbitsVSCompressionratio()
     #CompressionGainVSPSNR()
-    PrunedVSUnpruned()
+    #PrunedVSUnpruned()
+    #influenceSmallifyParameter()

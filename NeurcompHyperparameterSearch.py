@@ -15,7 +15,7 @@ if __name__ == '__main__':
         "lr": ([0.0001, 0.0007]),
         "grad_lambda": ([1e-04, 1e-05, 1e-06]),
         "lambda_betas": ([3e-04, 3e-05, 3e-06]),
-        "lambda_weights": ([1e-06, 1e-05, 1e-06]),
+        "lambda_weights": ([1e-06, 1e-05, 1e-07]),
         #"pruning_threshold": ([0.7, 0.95], 'float')
     }
 
