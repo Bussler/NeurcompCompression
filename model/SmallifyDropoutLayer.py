@@ -85,68 +85,37 @@ class SmallifySignVarianceTracker():
     def __init__(self, c, sign_variance_momentum, betas):
         self.c = c
         self.sign_variance_momentum = sign_variance_momentum
-        self.EMA, self.EMAVar, self.pruned_already = self.init_variance_data(betas)
+        self.EMA, self.EMAVar = self.init_variance_data(betas)
 
     def init_variance_data(self, betas):
-        EMA = []
-        EMAVar = []
-        pruned_already = []
+        EMA = torch.sign(betas)
+        EMAVar = torch.zeros(self.c)
 
-        for b in betas:
-            if b.item() > 0.0:
-                EMA.append(1.0)
-            else:
-                EMA.append(-1.0)
-
-            EMAVar.append(0.0)
-            pruned_already.append(False)
-        return EMA, EMAVar, pruned_already
+        return EMA, EMAVar
 
     def sign_variance_pruning(self, threshold, device, betas):
-        prune_mask = torch.zeros(self.c)
-
         with torch.no_grad():
-            for i in range(self.c):
+            newVal = torch.sign(betas).cpu()
+            phi_i = newVal - self.EMA
+            self.EMA = self.EMA + (self.sign_variance_momentum * phi_i)
+            self.EMAVar = (torch.ones(self.c) - self.sign_variance_momentum) * \
+                             (self.EMAVar + (self.sign_variance_momentum * (phi_i ** 2)))
 
-                if self.pruned_already[i]:
-                    continue
-
-                if betas[i].item() > 0.0:  # M: save new data entry
-                    newVal = 1.0
-                else:
-                    newVal = -1.0
-
-                phi_i = newVal - self.EMA[i]
-                self.EMA[i] = self.EMA[i] + (self.sign_variance_momentum * phi_i)
-                self.EMAVar[i] = (1.0 - self.sign_variance_momentum) *\
-                            (self.EMAVar[i] + (self.sign_variance_momentum * (phi_i ** 2)))
-
-                if self.EMAVar[i] < threshold:
-                    prune_mask[i] = 1.0
-                else:
-                    self.pruned_already[i] = True
+            prune_mask = torch.where(self.EMAVar < threshold, 1.0, 0.0)
 
         return prune_mask.to(device)
 
     def sign_variance_pruning_onlyVar(self, betas):
         with torch.no_grad():
-            for i in range(self.c):
-                if betas[i].item() > 0.0:  # M: save new data entry
-                    newVal = 1.0
-                else:
-                    newVal = -1.0
-
-                phi_i = newVal - self.EMA[i]
-                self.EMA[i] = self.EMA[i] + (self.sign_variance_momentum * phi_i)
-                self.EMAVar[i] = (1.0 - self.sign_variance_momentum) *\
-                            (self.EMAVar[i] + (self.sign_variance_momentum * (phi_i ** 2)))
+            newVal = torch.sign(betas).cpu()
+            phi_i = newVal - self.EMA
+            self.EMA = self.EMA + (self.sign_variance_momentum * phi_i)
+            self.EMAVar = (torch.ones(self.c) - self.sign_variance_momentum) * \
+                             (self.EMAVar + (self.sign_variance_momentum * (phi_i ** 2)))
 
     def calculate_pruning_mask(self, threshold, device):
-        prune_mask = torch.zeros(self.c)
         with torch.no_grad():
-            for i in range(self.c):
-                if self.EMAVar[i] < threshold:
-                    prune_mask[i] = 1.0
+            prune_mask = torch.where(self.EMAVar < threshold, 1.0, 0.0)
 
         return prune_mask.to(device)
 
