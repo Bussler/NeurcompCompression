@@ -510,6 +510,7 @@ def PrunedVSUnpruned():
     filepath = 'plots/' + 'test_volume_GridSearch_' + 'PrunedVSUnpruned' + '.png'
     plt.savefig(filepath)
 
+
 def influenceSmallifyParameter():
     BASENAMEPruned = 'experiments/hyperparam_search/test_experiment_smallify_GridSearch/test_experimentHyperSearch'
     experimentNamesPruned = []
@@ -562,6 +563,63 @@ def influenceSmallifyParameter():
     plt.savefig(filepath)
 
 
+def SmallifyVSNeurcompLR():
+    BASENAMESmallify = 'experiments/diff_comp_rates/test_experiment_lrcomparison/Smallify/test_experiment_'
+    experimentNamesSmallify = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2']
+
+    BASENAMENeurcomp = 'experiments/diff_comp_rates/test_experiment_lrcomparison/Neurcomp/test_experiment_'
+    experimentNamesNeurcomp = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2']
+
+    QUANTNAMECONFIG = 'info.txt'
+
+    compressionRatioSmallify = []
+    PSNRPrunedSmallify = []
+
+    compressionRatioNeurcomp = []
+    PSNRNeurcomp = []
+
+    # M: generate lists...
+    generate_plot_lists(([compressionRatioSmallify, PSNRPrunedSmallify],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMESmallify, (QUANTNAMECONFIG,), experiment_names=experimentNamesSmallify)
+
+    generate_plot_lists(([compressionRatioNeurcomp, PSNRNeurcomp],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMENeurcomp, (QUANTNAMECONFIG,), experiment_names=experimentNamesNeurcomp)
+
+    plt.scatter(compressionRatioSmallify, PSNRPrunedSmallify, label='Smallify')
+    plt.scatter(compressionRatioNeurcomp, PSNRNeurcomp, label='Neurcomp')
+
+    compressionRatioSmallify_sum = []
+    PSNRPrunedSmallify_sum = []
+
+    for i in range(len(compressionRatioSmallify)-2):
+        cs = compressionRatioSmallify[i] + compressionRatioSmallify[i+1] + compressionRatioSmallify[i+2]
+        ps = PSNRPrunedSmallify[i] + PSNRPrunedSmallify[i + 1] + PSNRPrunedSmallify[i + 2]
+        compressionRatioSmallify_sum.append(cs / 3.0)
+        PSNRPrunedSmallify_sum.append(ps/3.0)
+        i += 3
+    plt.plot(compressionRatioSmallify_sum, PSNRPrunedSmallify_sum, label='Smallify')
+
+    compressionRatioNeurcomp_sum = []
+    PSNRPrunedneurcomp_sum = []
+
+    for i in range(len(compressionRatioSmallify)-2):
+        cs = compressionRatioNeurcomp[i] + compressionRatioNeurcomp[i+1] + compressionRatioNeurcomp[i+2]
+        ps = PSNRNeurcomp[i] + PSNRNeurcomp[i + 1] + PSNRNeurcomp[i + 2]
+        compressionRatioNeurcomp_sum.append(cs/3.0)
+        PSNRPrunedneurcomp_sum.append(ps/3.0)
+        i += 3
+    plt.plot(compressionRatioNeurcomp_sum, PSNRPrunedneurcomp_sum, label='Neurcomp')
+
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.xlabel('Compressionratio after Quantization 8 bits')
+    plt.ylabel('psnr')
+    plt.legend()
+
+    filepath = 'plots/' + 'test_volume_' + 'SmallifyVSNeurcompLR' + '.png'
+    plt.savefig(filepath)
 
 
 if __name__ == '__main__':
@@ -571,7 +629,8 @@ if __name__ == '__main__':
     #QuantVsOrigExperiment()
     #OrigVSSelfImplmentation()
     #NumberOfChannelsVSCompression()
-    QuantbitsVSCompressionratio()
+    #QuantbitsVSCompressionratio()
     #CompressionGainVSPSNR()
     #PrunedVSUnpruned()
     #influenceSmallifyParameter()
+    SmallifyVSNeurcompLR()
