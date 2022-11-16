@@ -32,6 +32,10 @@ def config_parser():
     parser.add_argument('--pass_decay', type=int, default=20,
                         help='training-pass-amount at which to decay learning rate, default=20')
     parser.add_argument('--lr_decay', type=float, default=.2, help='learning rate decay, default=.2')
+    parser.add_argument('--smallify_decay', type=int, default=0,
+                        help='Option to enable loss decay as presented in the smallify-paper:'
+                             'Every smallify_decay - epochs without improvement, the learning rate'
+                             'is divided by 10 up until 1e-7. Default: 0 to turn option off')
 
     parser.add_argument('--compression_ratio', type=float, default=50,
                         help='the data is compressed by #voxels / compression_ratio')

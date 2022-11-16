@@ -14,6 +14,7 @@ from mlflow import log_metric, log_param, log_artifacts
 from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy_dynamic,\
     SmallifyResidualSiren, sign_variance_pruning_strategy_do_prune
 from model.pruning import prune_dropout_threshold, prune_model
+import training.learning_rate_decay as lrdecay
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -109,6 +110,7 @@ def training(args, verbose=True):
 
     # M: Setup loss, optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])
+    lrStrategy = lrdecay.LearningRateDecayStrategy.create_instance(args, optimizer)
     loss_criterion = torch.nn.MSELoss().to(device)
     #loss_criterion = torch.nn.L1Loss().to(device)  # M: try L1 loss
 
@@ -116,13 +118,11 @@ def training(args, verbose=True):
     voxel_seen = 0.0
     volume_passes = 0.0
     step_iter = 0
-
-    last_loss = None
-    no_gain_iter = 0
+    lr_decay_stop = False
 
     mlflow.start_run(experiment_id=get_Mlfow_Experiment(args['expname']))
 
-    while int(volume_passes) + 1 < args['max_pass']:  # M: epochs
+    while int(volume_passes) + 1 < args['max_pass'] and not lr_decay_stop:  # M: epochs
 
         for idx, data in enumerate(data_loader):
             step_iter += 1
@@ -188,18 +188,17 @@ def training(args, verbose=True):
             voxel_seen += ground_truth_volume.shape[0]
             volume_passes = voxel_seen / dataset.n_voxels
 
-            if prior_volume_passes != int(volume_passes) and (int(volume_passes) + 1) % args['pass_decay'] == 0:
-                print('------ learning rate decay ------', volume_passes)
-                for param_group in optimizer.param_groups:
-                    param_group['lr'] *= args['lr_decay']
+            if lrStrategy.decay_learning_rate(prior_volume_passes, int(volume_passes), complete_loss):
+                lr_decay_stop = True
+                break
 
             # M: Print training statistics:
             if idx % 100 == 0 and verbose:
                 if args['grad_lambda'] > 0:
-                    print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, grad loss: {:.4f}, mse: {:.4f}'.format(
+                    print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, grad loss: {:.4f}, mse: {:.6f}'.format(
                         volume_passes, args['max_pass'], debug_for_volumeloss, grad_loss.item(), complete_loss.item()))
                 else:
-                    print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, mse: {:.4f}'.format(
+                    print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, mse: {:.6f}'.format(
                         volume_passes, args['max_pass'], debug_for_volumeloss, complete_loss.item()))
                 if args['dropout_technique']:
                     print('Beta Loss: {:.4f}, Weight loss: {:.4f}'.format(loss_Betas, loss_Weights))
@@ -212,18 +211,6 @@ def training(args, verbose=True):
             if args['dropout_technique']:
                 log_metric(key="beta_loss", value=loss_Betas, step=step_iter)
                 log_metric(key="nw_weight_loss", value=loss_Weights, step=step_iter)
-
-                #if last_loss is None or complete_loss < last_loss:  # M: complete loss or just beta_loss?
-                #    last_loss = complete_loss
-                #    no_gain_iter = 0
-                #else:
-                #    no_gain_iter += 1
-                #if no_gain_iter == 5:
-                #    for param_group in optimizer.param_groups:
-                #        if param_group['lr'] > 1e-7:
-                #            print('------ learning rate decay ------', volume_passes)
-                #            param_group['lr'] /= 10.0
-                #    no_gain_iter = 0
 
             # M: Stop training, if we reach max amount of passes over volume
             if (int(volume_passes) + 1) == args['max_pass']:
