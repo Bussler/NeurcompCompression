@@ -1,6 +1,6 @@
 from NeurcompTraining import config_parser
 import training.hyperparameter_search as hypersearch
-from model.model_utils import write_dict
+from model.model_utils import write_dict, write_list
 
 
 if __name__ == '__main__':
@@ -23,4 +23,4 @@ if __name__ == '__main__':
     #results = hypersearch.random_search(args, random_search_spaces, num_search=20)
     results = hypersearch.grid_search(args, random_search_spaces)
     print('All Results: ', results)
-    write_dict(results, "HyperparamSearch_Experiments.txt")
+    write_list(results, "HyperparamSearch_Experiments.txt")

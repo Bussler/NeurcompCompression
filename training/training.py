@@ -188,7 +188,7 @@ def training(args, verbose=True):
             voxel_seen += ground_truth_volume.shape[0]
             volume_passes = voxel_seen / dataset.n_voxels
 
-            if lrStrategy.decay_learning_rate(prior_volume_passes, int(volume_passes), complete_loss):
+            if lrStrategy.decay_learning_rate(prior_volume_passes, volume_passes, complete_loss):
                 lr_decay_stop = True
                 break
 

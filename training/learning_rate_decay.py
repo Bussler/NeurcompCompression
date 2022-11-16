@@ -24,7 +24,7 @@ class NeurcompDecayStrategy(LearningRateDecayStrategy):
         super().__init__(optimizer, pass_decay, lr_decay)
 
     def decay_learning_rate(self, prior_volume_passes, cur_volume_passes, complete_loss=0):
-        if prior_volume_passes != cur_volume_passes and (cur_volume_passes + 1) % self.epoch_delay == 0:
+        if prior_volume_passes != int(cur_volume_passes) and (int(cur_volume_passes) + 1) % self.epoch_delay == 0:
             print('------ learning rate decay ------', cur_volume_passes)
             for param_group in self.optimizer.param_groups:
                 param_group['lr'] *= self.lr_decay
@@ -40,7 +40,7 @@ class SmallifyDecayStrategy(LearningRateDecayStrategy):
         self.no_gain_epoch = 0
 
     def decay_learning_rate(self, prior_volume_passes, cur_volume_passes, complete_loss=0):
-        if prior_volume_passes != cur_volume_passes:
+        if prior_volume_passes != int(cur_volume_passes):
             if self.last_loss is None or complete_loss < self.last_loss:
                 self.last_loss = complete_loss
                 self.no_gain_epoch = 0
