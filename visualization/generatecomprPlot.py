@@ -4,7 +4,7 @@ from mlflow.tracking import MlflowClient
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from pltUtils import generate_array_MLFlow, dict_from_file, append_lists_from_dicts, generate_plot_lists,\
-    normalize_array_0_1, normalize_array, generate_orderedValues
+    normalize_array_0_1, normalize_array, generate_orderedValues, generateMeanValues
 import numpy as np
 from itertools import product
 
@@ -590,35 +590,70 @@ def SmallifyVSNeurcompLR():
     plt.scatter(compressionRatioSmallify, PSNRPrunedSmallify, label='Smallify')
     plt.scatter(compressionRatioNeurcomp, PSNRNeurcomp, label='Neurcomp')
 
-    compressionRatioSmallify_sum = []
-    PSNRPrunedSmallify_sum = []
+    compressionRatioSmallify_sum = generateMeanValues(compressionRatioSmallify, 3)
+    PSNRPrunedSmallify_sum = generateMeanValues(PSNRPrunedSmallify, 3)
 
-    for i in range(len(compressionRatioSmallify)-2):
-        cs = compressionRatioSmallify[i] + compressionRatioSmallify[i+1] + compressionRatioSmallify[i+2]
-        ps = PSNRPrunedSmallify[i] + PSNRPrunedSmallify[i + 1] + PSNRPrunedSmallify[i + 2]
-        compressionRatioSmallify_sum.append(cs / 3.0)
-        PSNRPrunedSmallify_sum.append(ps/3.0)
-        i += 3
     plt.plot(compressionRatioSmallify_sum, PSNRPrunedSmallify_sum, label='Smallify')
 
-    compressionRatioNeurcomp_sum = []
-    PSNRPrunedneurcomp_sum = []
+    compressionRatioNeurcomp_sum = generateMeanValues(compressionRatioNeurcomp, 3)
+    PSNRPrunedneurcomp_sum = generateMeanValues(PSNRNeurcomp, 3)
 
-    for i in range(len(compressionRatioSmallify)-2):
-        cs = compressionRatioNeurcomp[i] + compressionRatioNeurcomp[i+1] + compressionRatioNeurcomp[i+2]
-        ps = PSNRNeurcomp[i] + PSNRNeurcomp[i + 1] + PSNRNeurcomp[i + 2]
-        compressionRatioNeurcomp_sum.append(cs/3.0)
-        PSNRPrunedneurcomp_sum.append(ps/3.0)
-        i += 3
     plt.plot(compressionRatioNeurcomp_sum, PSNRPrunedneurcomp_sum, label='Neurcomp')
 
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-    plt.xlabel('Compressionratio after Quantization 8 bits')
+    plt.xlabel('Compressionratio')
     plt.ylabel('psnr')
     plt.legend()
 
     filepath = 'plots/' + 'test_volume_' + 'SmallifyVSNeurcompLR' + '.png'
+    plt.savefig(filepath)
+
+
+def SmallifyAftertrainingVSNoAftertrainig():
+    BASENAMERetrain = 'experiments/diff_comp_rates/test_experiment_Retraining/Retrain/test_experiment_'
+    experimentNamesRetrain = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2']
+
+    BASENAMENoRetrain = 'experiments/diff_comp_rates/test_experiment_Retraining/NoRetrain/test_experiment_'
+    experimentNamesNoRetrain = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2']
+
+    QUANTNAMECONFIG = 'info.txt'
+
+    compressionRatioRetrain = []
+    PSNRRetrain = []
+
+    compressionRatioNoRetrain = []
+    PSNRNoRetrain = []
+
+    # M: generate lists...
+    generate_plot_lists(([compressionRatioRetrain, PSNRRetrain],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMERetrain, (QUANTNAMECONFIG,), experiment_names=experimentNamesRetrain)
+
+    generate_plot_lists(([compressionRatioNoRetrain, PSNRNoRetrain],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMENoRetrain, (QUANTNAMECONFIG,), experiment_names=experimentNamesNoRetrain)
+
+    plt.scatter(compressionRatioRetrain, PSNRRetrain, label='With Retraining')
+    plt.scatter(compressionRatioNoRetrain, PSNRNoRetrain, label='No Retraining')
+
+    compressionRatioSmallify_sum = generateMeanValues(compressionRatioRetrain, 3)
+    PSNRPrunedSmallify_sum = generateMeanValues(PSNRRetrain, 3)
+
+    plt.plot(compressionRatioSmallify_sum, PSNRPrunedSmallify_sum, label='With Retraining')
+
+    compressionRatioNeurcomp_sum = generateMeanValues(compressionRatioNoRetrain, 3)
+    PSNRPrunedneurcomp_sum = generateMeanValues(PSNRNoRetrain, 3)
+
+    plt.plot(compressionRatioNeurcomp_sum, PSNRPrunedneurcomp_sum, label='No Retraining')
+
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.xlabel('Compressionratio')
+    plt.ylabel('psnr')
+    plt.legend()
+
+    filepath = 'plots/' + 'test_volume_' + 'SmallifyAftertrainingVSNoAftertrainig' + '.png'
     plt.savefig(filepath)
 
 
@@ -633,4 +668,5 @@ if __name__ == '__main__':
     #CompressionGainVSPSNR()
     #PrunedVSUnpruned()
     #influenceSmallifyParameter()
-    SmallifyVSNeurcompLR()
+    #SmallifyVSNeurcompLR()
+    SmallifyAftertrainingVSNoAftertrainig()

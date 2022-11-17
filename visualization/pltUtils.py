@@ -94,3 +94,16 @@ def generate_orderedValues(data, highestValue):
         np_array[index] = steps * (sort+1)
 
     return np_array
+
+
+def generateMeanValues(originalData, numbersOfElements):
+    data_sum = []
+
+    for i in range(len(originalData) - (numbersOfElements -1)):
+        cur = 0
+        for j in range(numbersOfElements):
+            cur += originalData[i+j]
+        data_sum.append(cur/numbersOfElements)
+        i += numbersOfElements
+
+    return data_sum
