@@ -3,6 +3,7 @@ import os
 import mlflow
 import numpy as np
 import torch
+from copy import deepcopy
 from torch.utils.data import DataLoader
 
 from data.IndexDataset import get_tensor, IndexDataset
@@ -93,34 +94,13 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
     return info
 
 
-def training(args, verbose=True):
-    # M: Get volume data, set up data
-    volume = get_tensor(args['data'])
-    dataset = IndexDataset(volume, args['sample_size'])
-    data_loader = DataLoader(dataset, batch_size=args['batch_size'], shuffle=True,
-                             num_workers=args['num_workers'])  # M: create dataloader from dataset to use in training
-    volume = volume.to(device)
-
-    # M: Setup model
-    model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
-                           args['d_out'], args['omega_0'], args['checkpoint_path'], args['dropout_technique'],
-                           args['pruning_momentum'])
-    model.to(device)
-    model.train()
-
-    # M: Setup loss, optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])
-    lrStrategy = lrdecay.LearningRateDecayStrategy.create_instance(args, optimizer)
-    loss_criterion = torch.nn.MSELoss().to(device)
-    #loss_criterion = torch.nn.L1Loss().to(device)  # M: try L1 loss
-
+def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, dataset, data_loader, args, verbose):
     # M: Training loop
+    model = model_init
     voxel_seen = 0.0
     volume_passes = 0.0
     step_iter = 0
     lr_decay_stop = False
-
-    mlflow.start_run(experiment_id=get_Mlfow_Experiment(args['expname']))
 
     while int(volume_passes) + 1 < args['max_pass'] and not lr_decay_stop:  # M: epochs
 
@@ -167,11 +147,11 @@ def training(args, verbose=True):
             if args['dropout_technique']:
                 if args['dropout_technique'] == 'smallify':
                     loss_Betas, loss_Weights = calculte_smallify_loss(model)
-                    complete_loss = complete_loss + (loss_Betas * args['lambda_betas'])\
+                    complete_loss = complete_loss + (loss_Betas * args['lambda_betas']) \
                                     + (loss_Weights * args['lambda_weights'])
 
-                    #pruned = sign_variance_pruning_strategy_dynamic(model, device, threshold=args['pruning_threshold'])
-                    #if pruned:
+                    # pruned = sign_variance_pruning_strategy_dynamic(model, device, threshold=args['pruning_threshold'])
+                    # if pruned:
                     #    lr_list = []
                     #    print("--CHANGING OPTIM--")
                     #    for param_group in optimizer.param_groups:
@@ -215,9 +195,43 @@ def training(args, verbose=True):
             # M: Stop training, if we reach max amount of passes over volume
             if (int(volume_passes) + 1) == args['max_pass']:
                 break
+    return model
+
+
+def training(args, verbose=True):
+    # M: Get volume data, set up data
+    volume = get_tensor(args['data'])
+    dataset = IndexDataset(volume, args['sample_size'])
+    data_loader = DataLoader(dataset, batch_size=args['batch_size'], shuffle=True,
+                             num_workers=args['num_workers'])  # M: create dataloader from dataset to use in training
+    volume = volume.to(device)
+
+    # M: Setup model
+    model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
+                           args['d_out'], args['omega_0'], args['checkpoint_path'], args['dropout_technique'],
+                           args['pruning_momentum'])
+    model.to(device)
+    model.train()
+
+    # M: Setup loss, optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])
+    lrStrategy = lrdecay.LearningRateDecayStrategy.create_instance(args, optimizer)
+    loss_criterion = torch.nn.MSELoss().to(device)
+    #loss_criterion = torch.nn.L1Loss().to(device)  # M: try L1 loss
+
+    mlflow.start_run(experiment_id=get_Mlfow_Experiment(args['expname']))
 
     # M: remove dropout layers from model
     if args['dropout_technique']:
+        args_first = deepcopy(args)
+        args_second = deepcopy(args)
+        args_first['max_pass'] *= (2.0/3.0)
+        args_second['max_pass'] *= (1.0/3.0)
+        args_second['dropout_technique'] = ''
+
+        model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume,
+                           dataset, data_loader, args_first, verbose)
+
         #intermed_layers = [model.d_in, model.layer_sizes[1]]
         if args['dropout_technique'] == 'smallify':
             sign_variance_pruning_strategy_do_prune(model, device, args['pruning_threshold'])  # M: pre-prune
@@ -231,8 +245,17 @@ def training(args, verbose=True):
         #intermed_layers.append(model.d_out)
         #model.layer_sizes = intermed_layers
 
+        # M: retraining after pruning
+        print('---Retraining after pruning---')
+        optimizer = torch.optim.Adam(model.parameters(), lr=args['lr']/100.0)
+        model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume, dataset,
+                           data_loader, args_second, verbose)
+    else:
+        model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume, dataset,
+                           data_loader, args, verbose)
+
     info = gather_training_info(model, dataset, volume, args, verbose)
     mlflow.end_run()
-
     return info
+
 

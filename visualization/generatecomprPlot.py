@@ -611,10 +611,12 @@ def SmallifyVSNeurcompLR():
 
 
 def SmallifyAftertrainingVSNoAftertrainig():
-    BASENAMERetrain = 'experiments/diff_comp_rates/test_experiment_Retraining/Retrain/test_experiment_'
+    #BASENAMERetrain = 'experiments/diff_comp_rates/test_experiment_Retraining/Retrain/test_experiment_'
+    BASENAMERetrain = 'experiments/diff_comp_rates/test_experiment_Retraining/4C_Retrain/test_experiment_'
     experimentNamesRetrain = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2']
 
-    BASENAMENoRetrain = 'experiments/diff_comp_rates/test_experiment_Retraining/NoRetrain/test_experiment_'
+    #BASENAMENoRetrain = 'experiments/diff_comp_rates/test_experiment_Retraining/NoRetrain/test_experiment_'
+    BASENAMENoRetrain = 'experiments/diff_comp_rates/test_experiment_BroaderNW/4C/test_experiment_'
     experimentNamesNoRetrain = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2']
 
     QUANTNAMECONFIG = 'info.txt'
@@ -640,20 +642,142 @@ def SmallifyAftertrainingVSNoAftertrainig():
     compressionRatioSmallify_sum = generateMeanValues(compressionRatioRetrain, 3)
     PSNRPrunedSmallify_sum = generateMeanValues(PSNRRetrain, 3)
 
-    plt.plot(compressionRatioSmallify_sum, PSNRPrunedSmallify_sum, label='With Retraining')
+    plt.plot(compressionRatioSmallify_sum, PSNRPrunedSmallify_sum, label='With Retraining 4 Layers')
 
     compressionRatioNeurcomp_sum = generateMeanValues(compressionRatioNoRetrain, 3)
     PSNRPrunedneurcomp_sum = generateMeanValues(PSNRNoRetrain, 3)
 
-    plt.plot(compressionRatioNeurcomp_sum, PSNRPrunedneurcomp_sum, label='No Retraining')
+    plt.plot(compressionRatioNeurcomp_sum, PSNRPrunedneurcomp_sum, label='No Retraining 4 Layers')
 
-    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-    plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    #plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    #plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.xlabel('Compressionratio')
     plt.ylabel('psnr')
     plt.legend()
 
-    filepath = 'plots/' + 'test_volume_' + 'SmallifyAftertrainingVSNoAftertrainig' + '.png'
+    filepath = 'plots/' + 'test_volume_' + 'SmallifyAftertrainingVSNoAftertrainig_4Layer' + '.png'
+    plt.savefig(filepath)
+
+
+def SmallifyDifferentNWSizes():
+
+    BASENAMEUnpruned8 = 'experiments/diff_comp_rates/test_experiment_diff_comp_rates_otherHyper/test_experiment'
+    experimentNamesUnpruned8 = [50, 100, 200]
+
+    experimentNames = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2']
+    experimentNames2 = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2', '300_0', '300_1', '300_2', '400_0', '400_1', '400_2']
+
+    BASENAMEUnpruned6 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/6C_NoPrune/test_experiment'
+    BASENAMEUnpruned4 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/4C_NoPrune/test_experiment'
+    BASENAMEUnpruned2 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/2C_NoPrune/test_experiment'
+
+    BASENAMEPruned8 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/8C/test_experiment_'
+    BASENAMEPruned6 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/6C/test_experiment_'
+    BASENAMEPruned4 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/4C/test_experiment_'
+    BASENAMEPruned2 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/2C/test_experiment_'
+
+    InfoName = 'info.txt'
+
+    compressionRatioUnpruned8 = []
+    PSNRUnpruned8 = []
+
+    compressionRatioUnpruned6 = []
+    PSNRUnpruned6 = []
+
+    compressionRatioUnpruned4 = []
+    PSNRUnpruned4 = []
+
+    compressionRatioUnpruned2 = []
+    PSNRUnpruned2 = []
+
+    compressionRatioPruned8 = []
+    PSNRPruned8 = []
+
+    compressionRatioPruned6 = []
+    PSNRPruned6 = []
+
+    compressionRatioPruned4 = []
+    PSNRPruned4 = []
+
+    compressionRatioPruned2 = []
+    PSNRPruned2 = []
+
+    # M: generate lists...
+    generate_plot_lists(([compressionRatioUnpruned8, PSNRUnpruned8],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMEUnpruned8, (InfoName,), experiment_names=experimentNamesUnpruned8)
+
+    generate_plot_lists(([compressionRatioUnpruned6, PSNRUnpruned6],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMEUnpruned6, (InfoName,), experiment_names=experimentNames)
+
+    generate_plot_lists(([compressionRatioUnpruned4, PSNRUnpruned4],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMEUnpruned4, (InfoName,), experiment_names=experimentNames)
+
+    generate_plot_lists(([compressionRatioUnpruned2, PSNRUnpruned2],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMEUnpruned2, (InfoName,), experiment_names=experimentNames2)
+
+    generate_plot_lists(([compressionRatioPruned8, PSNRPruned8],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMEPruned8, (InfoName,), experiment_names=experimentNames)
+
+    generate_plot_lists(([compressionRatioPruned6, PSNRPruned6],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMEPruned6, (InfoName,), experiment_names=experimentNames)
+
+    generate_plot_lists(([compressionRatioPruned4, PSNRPruned4],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMEPruned4, (InfoName,), experiment_names=experimentNames)
+
+    generate_plot_lists(([compressionRatioPruned2, PSNRPruned2],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMEPruned2, (InfoName,), experiment_names=experimentNames2)
+
+    # M: generate avg values
+    #compressionRatioUnpruned8 = generateMeanValues(compressionRatioUnpruned8, 3)
+    #PSNRUnpruned8 = generateMeanValues(PSNRUnpruned8, 3)
+
+    compressionRatioUnpruned6 = generateMeanValues(compressionRatioUnpruned6, 3)
+    PSNRUnpruned6 = generateMeanValues(PSNRUnpruned6, 3)
+
+    compressionRatioUnpruned4 = generateMeanValues(compressionRatioUnpruned4, 3)
+    PSNRUnpruned4 = generateMeanValues(PSNRUnpruned4, 3)
+
+    compressionRatioUnpruned2 = generateMeanValues(compressionRatioUnpruned2, 3)
+    PSNRUnpruned2 = generateMeanValues(PSNRUnpruned2, 3)
+
+    compressionRatioPruned8 = generateMeanValues(compressionRatioPruned8, 3)
+    PSNRPruned8 = generateMeanValues(PSNRPruned8, 3)
+
+    compressionRatioPruned6 = generateMeanValues(compressionRatioPruned6, 3)
+    PSNRPruned6 = generateMeanValues(PSNRPruned6, 3)
+
+    compressionRatioPruned4 = generateMeanValues(compressionRatioPruned4, 3)
+    PSNRPruned4 = generateMeanValues(PSNRPruned4, 3)
+
+    compressionRatioPruned2 = generateMeanValues(compressionRatioPruned2, 3)
+    PSNRPruned2 = generateMeanValues(PSNRPruned2, 3)
+
+    # M: plot
+    #plt.plot(compressionRatioUnpruned8, PSNRUnpruned8, label='Unpruned 8', alpha=0.6)
+    #plt.plot(compressionRatioUnpruned6, PSNRUnpruned6, label='Unpruned 6', alpha=0.6)
+    #plt.plot(compressionRatioUnpruned4, PSNRUnpruned4, label='Unpruned 4', alpha=0.6)
+    plt.plot(compressionRatioUnpruned2, PSNRUnpruned2, label='Unpruned 2', alpha=0.6)
+
+    #plt.plot(compressionRatioPruned8, PSNRPruned8, label='Pruned 8')
+    #plt.plot(compressionRatioPruned6, PSNRPruned6, label='Pruned 6')
+    #plt.plot(compressionRatioPruned4, PSNRPruned4, label='Pruned 4')
+    plt.plot(compressionRatioPruned2, PSNRPruned2, label='Pruned 2')
+
+    #plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    #plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.xlabel('Compressionratio')
+    plt.ylabel('psnr')
+    plt.legend()
+
+    filepath = 'plots/' + 'test_volume_' + 'SmallifyDifferentNWSizes_2' + '.png'
     plt.savefig(filepath)
 
 
@@ -670,3 +794,4 @@ if __name__ == '__main__':
     #influenceSmallifyParameter()
     #SmallifyVSNeurcompLR()
     SmallifyAftertrainingVSNoAftertrainig()
+    #SmallifyDifferentNWSizes()
