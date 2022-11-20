@@ -829,6 +829,81 @@ def SmallifyDifferentNWSizes():
     plt.savefig(filepath)
 
 
+def ResnetVSNoResnet():
+    BASENAMENoResnetPruned = 'experiments/diff_comp_rates/test_experiment_NoResNetSiren/4C/test_experiment_'
+
+    experimentNames = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2']
+
+    BASENAMENoResnetUnPruned = 'experiments/diff_comp_rates/test_experiment_NoResNetSiren/4C_NoPrune/test_experiment'
+    experimentNamesUnPruned = ['100_0', '100_1', '100_2', '200_0', '200_1', '200_2']
+
+    BASENAMEResnetPruned = 'experiments/diff_comp_rates/test_experiment_BroaderNW/4C/test_experiment_'
+
+    BASENAMEResnetUnPruned = 'experiments/diff_comp_rates/test_experiment_BroaderNW/4C_NoPrune/test_experiment'
+
+    InfoName = 'info.txt'
+
+    compressionRatioNoResnetPruned = []
+    PSNRNoResnetPruned = []
+
+    compressionRatioNoResnetUnPruned = []
+    PSNRNoResnetUnPruned = []
+
+    compressionRatioResnetPruned = []
+    PSNRResnetPruned = []
+
+    compressionRatioResnetUnPruned = []
+    PSNRResnetUnPruned = []
+
+
+    # M: generate lists...
+    generate_plot_lists(([compressionRatioNoResnetPruned, PSNRNoResnetPruned],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMENoResnetPruned, (InfoName,), experiment_names=experimentNames)
+
+    generate_plot_lists(([compressionRatioNoResnetUnPruned, PSNRNoResnetUnPruned],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMENoResnetUnPruned, (InfoName,), experiment_names=experimentNamesUnPruned)
+
+    generate_plot_lists(([compressionRatioResnetPruned, PSNRResnetPruned],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMEResnetPruned, (InfoName,), experiment_names=experimentNames)
+
+    generate_plot_lists(([compressionRatioResnetUnPruned, PSNRResnetUnPruned],),
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMEResnetUnPruned, (InfoName,), experiment_names=experimentNames)
+
+    # M: generate avg values
+
+    compressionRatioNoResnetPruned = generateMeanValues(compressionRatioNoResnetPruned, 3)
+    PSNRNoResnetPruned = generateMeanValues(PSNRNoResnetPruned, 3)
+
+    compressionRatioNoResnetUnPruned = generateMeanValues(compressionRatioNoResnetUnPruned, 3)
+    PSNRNoResnetUnPruned = generateMeanValues(PSNRNoResnetUnPruned, 3)
+
+    compressionRatioResnetPruned = generateMeanValues(compressionRatioResnetPruned, 3)
+    PSNRResnetPruned = generateMeanValues(PSNRResnetPruned, 3)
+
+    compressionRatioResnetUnPruned = generateMeanValues(compressionRatioResnetUnPruned, 3)
+    PSNRResnetUnPruned = generateMeanValues(PSNRResnetUnPruned, 3)
+
+    # M: plot
+    plt.plot(compressionRatioNoResnetPruned, PSNRNoResnetPruned, label='No Resnet, Pruned')
+    plt.plot(compressionRatioNoResnetUnPruned, PSNRNoResnetUnPruned, label='No Resnet, not Pruned', alpha=0.6)
+
+    plt.plot(compressionRatioResnetPruned, PSNRResnetPruned, label='Use Resnet, Pruned')
+    plt.plot(compressionRatioResnetUnPruned, PSNRResnetUnPruned, label='Use Resnet, not Pruned', alpha=0.6)
+
+    # plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    # plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.xlabel('Compressionratio')
+    plt.ylabel('psnr')
+    plt.legend()
+
+    filepath = 'plots/' + 'test_volume_' + 'ResnetVSNoResnet_4Channel' + '.png'
+    plt.savefig(filepath)
+
+
 if __name__ == '__main__':
     #rmseTTHRESHExperiment()
     #paramExperiment()
@@ -843,4 +918,5 @@ if __name__ == '__main__':
     #influenceHyperSearchParams()
     #SmallifyVSNeurcompLR()
     #SmallifyAftertrainingVSNoAftertrainig()
-    SmallifyDifferentNWSizes()
+    #SmallifyDifferentNWSizes()
+    ResnetVSNoResnet()
