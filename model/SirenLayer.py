@@ -9,7 +9,7 @@ from model.SmallifyDropoutLayer import SmallifyDropout
 class SineLayer(nn.Module):
 
     def __init__(self, in_features, out_features, bias=True, is_first=False, omega_0=30,
-                 dropout_layer: DropoutLayer = None):
+                 dropout_layer: DropoutLayer = None, sign_variance_momentum=0.02):
         super().__init__()
         self.omega_0 = omega_0
         self.is_first = is_first
@@ -19,7 +19,7 @@ class SineLayer(nn.Module):
 
         self.drop1 = None
         if dropout_layer is not None:
-           self.drop1 = dropout_layer.create_instance(out_features)
+           self.drop1 = dropout_layer.create_instance(out_features, sign_variance_momentum)
 
         self.init_weights()
 
@@ -48,7 +48,7 @@ class SineLayer(nn.Module):
 class ResidualSineBlock(nn.Module):
 
     def __init__(self, in_features, intermed_features, bias=True, ave_first=False, ave_second=False, omega_0=30,
-                 dropout_layer: DropoutLayer = None):
+                 dropout_layer: DropoutLayer = None, sign_variance_momentum=0.02):
         super().__init__()
         self.omega_0 = omega_0
 
@@ -62,7 +62,7 @@ class ResidualSineBlock(nn.Module):
         self.drop1 = None
         #self.drop2 = None
         if dropout_layer is not None:
-            self.drop1 = dropout_layer.create_instance(intermed_features)
+            self.drop1 = dropout_layer.create_instance(intermed_features, sign_variance_momentum)
             #self.drop2 = dropout_layer.create_instance(in_features)
 
         self.init_weights()

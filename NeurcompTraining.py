@@ -24,6 +24,10 @@ def config_parser():
     parser.add_argument('--n_layers', type=int, default=8, help='number of layers for the network')
     parser.add_argument('--checkpoint_path', type=str, default='', help='checkpoint from where to load model')
     parser.add_argument('--feature_list', type=int, nargs="+", default=None, help='list of internal features to handle')
+    parser.add_argument('--use_resnet', dest='use_resnet', action='store_true', help='Use residual blocks in the model')
+    parser.add_argument('--dont_use_resnet', dest='use_resnet', action='store_false',
+                        help='Do not use residual blocks in the model')
+    parser.set_defaults(use_resnet=True)
 
     parser.add_argument('--omega_0', default=30, help='scale for SIREN')
     parser.add_argument('--lr', type=float, default=5e-4, help='learning rate, default=5e-5')

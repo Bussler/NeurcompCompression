@@ -14,7 +14,7 @@ from visualization.OutputToVTK import tiled_net_out
 from mlflow import log_metric, log_param, log_artifacts
 from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy_dynamic,\
     SmallifyResidualSiren, sign_variance_pruning_strategy_do_prune
-from model.pruning import prune_dropout_threshold, prune_model
+from model.pruning import prune_dropout_threshold, prune_model, prune_model_no_Resnet
 import training.learning_rate_decay as lrdecay
 
 
@@ -209,7 +209,7 @@ def training(args, verbose=True):
     # M: Setup model
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
                            args['d_out'], args['omega_0'], args['checkpoint_path'], args['dropout_technique'],
-                           args['pruning_momentum'])
+                           args['pruning_momentum'], use_resnet=args['use_resnet'])
     model.to(device)
     model.train()
 
@@ -217,17 +217,13 @@ def training(args, verbose=True):
     optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'])
     lrStrategy = lrdecay.LearningRateDecayStrategy.create_instance(args, optimizer)
     loss_criterion = torch.nn.MSELoss().to(device)
-    #loss_criterion = torch.nn.L1Loss().to(device)  # M: try L1 loss
 
     mlflow.start_run(experiment_id=get_Mlfow_Experiment(args['expname']))
 
     # M: remove dropout layers from model
     if args['dropout_technique']:
         args_first = deepcopy(args)
-        args_second = deepcopy(args)
-        args_first['max_pass'] *= (2.0/3.0)
-        args_second['max_pass'] *= (1.0/3.0)
-        args_second['dropout_technique'] = ''
+        #args_first['max_pass'] *= (2.0/3.0)
 
         model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume,
                            dataset, data_loader, args_first, verbose)
@@ -235,7 +231,10 @@ def training(args, verbose=True):
         #intermed_layers = [model.d_in, model.layer_sizes[1]]
         if args['dropout_technique'] == 'smallify':
             sign_variance_pruning_strategy_do_prune(model, device, args['pruning_threshold'])  # M: pre-prune
-            model = prune_model(model, SmallifyDropout)  # M: prune and mult betas
+            if args['use_resnet']:
+                model = prune_model(model, SmallifyDropout)  # M: prune and mult betas
+            else:
+                model = prune_model_no_Resnet(model, SmallifyDropout)  # M: prune and mult betas
             model.to(device)
             #for module in model.net_layers.modules():
             #    if isinstance(module, SmallifyResidualSiren):
@@ -246,10 +245,13 @@ def training(args, verbose=True):
         #model.layer_sizes = intermed_layers
 
         # M: retraining after pruning
-        print('---Retraining after pruning---')
-        optimizer = torch.optim.Adam(model.parameters(), lr=args['lr']/100.0)
-        model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume, dataset,
-                           data_loader, args_second, verbose)
+        #print('---Retraining after pruning---')
+        #args_second = deepcopy(args)
+        #args_second['max_pass'] *= (1.0/3.0)
+        #args_second['dropout_technique'] = ''
+        #optimizer = torch.optim.Adam(model.parameters(), lr=args['lr']/100.0)
+        #model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume, dataset,
+        #                   data_loader, args_second, verbose)
     else:
         model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume, dataset,
                            data_loader, args, verbose)

@@ -27,7 +27,7 @@ class OldNetDecoder:
         self.d_out = self.layer_sizes[-1]
 
         # M: TODO: make this generic
-        net = Neurcomp(input_ch=self.d_in, output_ch=self.d_out, features=self.middle_layer_sizes)
+        net = Neurcomp(input_ch=self.d_in, output_ch=self.d_out, features=self.middle_layer_sizes) #M: Todo, tell is use resnets or not!
 
         # first layer: matrix and bias
         w_pos_format = ''.join(['f' for _ in range(self.d_in * self.middle_layer_sizes[0])])

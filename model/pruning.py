@@ -101,3 +101,61 @@ def prune_model(model, dropout_type):
     new_model.load_state_dict(state_dict)
     return new_model
 
+
+def prune_model_no_Resnet(model, dropout_type):
+
+    pruned_dropout_channel = []
+    state_dict = model.state_dict()
+    cached_mask = None
+
+    with torch.no_grad():
+        for name, param, in model.state_dict().items():
+            if 'betas' in name and 'betas_mask' not in name:
+                layer_split = name.split('.')
+                betas_name = layer_split[0] + '.' + layer_split[1] + '.' + layer_split[2] + '.betas_orig'
+                mask_name = layer_split[0] + '.' + layer_split[1] + '.' + layer_split[2] + '.betas_mask'
+
+                layer_name = layer_split[0]+'.'+layer_split[1]+'.linear_1'
+
+                weight_name = layer_name+'.weight'
+                bias_name = layer_name+'.bias'
+
+                betas = state_dict[betas_name]
+
+                if mask_name in state_dict:
+                    mask = state_dict[mask_name]
+                else:
+                    mask = torch.ones(param.shape[0])
+
+                # M: mult betas and mask to get pruned betas
+                pruned_betas = betas.mul(mask)
+                # M: delete pruned rows
+                resized_betas = pruned_betas[mask > 0]
+                pruned_dropout_channel.append(resized_betas.shape[0])
+
+                # M: resize weight and biases and remove betas by multiplying them out with weights and biases
+                resized_weights = state_dict[weight_name][mask > 0, :]
+                resized_bias = state_dict[bias_name][mask > 0]
+
+                # M: change input dimension to match previous input
+                if cached_mask is not None:
+                    nonzero_indices = cached_mask.nonzero().squeeze(1)
+                    resized_weights = torch.index_select(resized_weights, 1, nonzero_indices)
+                cached_mask = mask
+
+                state_dict[weight_name] = resized_weights.mul(resized_betas[:, None])
+                state_dict[bias_name] = resized_bias.mul(resized_betas)
+
+                state_dict.pop(betas_name)
+                state_dict.pop(mask_name)
+
+    # M: fast fix: set output channel
+    last_linear_name = list(state_dict)[len(state_dict)-2]
+    nonzero_indices = cached_mask.nonzero().squeeze(1)
+    state_dict[last_linear_name] = torch.index_select(state_dict[last_linear_name], 1, nonzero_indices)
+
+    new_model = Neurcomp(input_ch=model.d_in, output_ch=model.d_out, features=pruned_dropout_channel,
+                     omega_0=model.omega_0, dropout_technique='', use_resnet=False)
+    new_model.load_state_dict(state_dict)
+    return new_model
+

@@ -76,9 +76,13 @@ class SmallifyDropout(DropoutLayer):
     def sign_variance_dynamic_pruning(self, threshold, device):
         return self.tracker.sign_variance_pruning(threshold, device, self.betas)
 
+    def prune_dropout_threshold(self, device, threshold=0.1):
+        prune_mask = (torch.abs(self.betas) > threshold).float()
+        return prune_mask
+
     @classmethod
-    def create_instance(cls, c):
-        return SmallifyDropout(c)
+    def create_instance(cls, c, sign_variance_momentum=0.02):
+        return SmallifyDropout(c, sign_variance_momentum)
 
 
 class SmallifySignVarianceTracker():
