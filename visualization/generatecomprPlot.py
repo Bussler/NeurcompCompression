@@ -591,11 +591,11 @@ def influenceHyperSearchParams():
         comprRMSE.append(compressionRatioPruned[i] / rmsePruned[i])
 
     #plt.scatter(pruning_momentum, comprRMSE, label='pruning_momentum')
-    plt.scatter(pruning_threshold, comprRMSE, label='pruning_threshold')
+    plt.scatter(pruning_momentum, comprRMSE, label='pruning_momentum')
 
-    plt.xlabel('pruning_threshold')
+    plt.xlabel('pruning_Momentum')
     plt.ylabel('compr/rmse')
-    filepath = 'plots/' + 'test_volume_HyperSearch_' + 'Influence_PruningThreshold' + '.png'
+    filepath = 'plots/' + 'test_volume_HyperSearch_' + 'Influence_PruningMomentum' + '.png'
     plt.savefig(filepath)
 
 
@@ -714,6 +714,7 @@ def SmallifyDifferentNWSizes():
     BASENAMEPruned2 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/2C/test_experiment_'
 
     InfoName = 'info.txt'
+    InfoNameDequant = 'Dequant_Info.txt'
 
     compressionRatioUnpruned8 = []
     PSNRUnpruned8 = []
@@ -815,7 +816,7 @@ def SmallifyDifferentNWSizes():
 
     #plt.plot(compressionRatioPruned8, PSNRPruned8, label='Pruned 8')
     #plt.plot(compressionRatioPruned6, PSNRPruned6, label='Pruned 6')
-    plt.plot(compressionRatioPruned4_Other, PSNRPruned4, label='Pruned 4')
+    plt.plot(compressionRatioPruned4, PSNRPruned4, label='Pruned 4')
     #plt.plot(compressionRatioPruned4_Other, PSNRPruned4_Other, label='Pruned 4_0.04Momentum')
     #plt.plot(compressionRatioPruned2, PSNRPruned2, label='Pruned 2')
 
@@ -918,5 +919,5 @@ if __name__ == '__main__':
     #influenceHyperSearchParams()
     #SmallifyVSNeurcompLR()
     #SmallifyAftertrainingVSNoAftertrainig()
-    #SmallifyDifferentNWSizes()
-    ResnetVSNoResnet()
+    SmallifyDifferentNWSizes()
+    #ResnetVSNoResnet()

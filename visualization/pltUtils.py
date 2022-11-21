@@ -50,7 +50,10 @@ def dict_from_file(filename):
                     except ValueError:
                         value = [float(x) for x in value]
                 else:
-                    value = lineParts[1]
+                    if value == 'True' or value == 'False':
+                        value = bool(value)
+                    else:  # M: normal string
+                        value = lineParts[1]
 
         d[lineParts[0]] = value
 

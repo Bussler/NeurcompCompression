@@ -132,6 +132,8 @@ class NetEncoder():
         layer_sizes = self.net.layer_sizes[1:-1] # M: TODO: Find a way to generalize this for all nn
         n_layers = len(layer_sizes)  # M: haben hier noch in/ out dabei, das ist bei dem orig anders!
 
+        is_residual = 1 if self.net.use_resnet else 0
+
         all_weights, all_biases = get_net_weights_biases(self.net)
 
         # header: number of layers
@@ -140,6 +142,8 @@ class NetEncoder():
         header += file.write(struct.pack('B', self.net.d_in))
         # header: d_out
         header += file.write(struct.pack('B', self.net.d_out))
+        # header: use_residual
+        header += file.write(struct.pack('B', is_residual))
         # header: layers
         header += file.write(struct.pack(''.join(['I' for _ in range(len(layer_sizes))]), *layer_sizes))
         # header: number of bits for clustering

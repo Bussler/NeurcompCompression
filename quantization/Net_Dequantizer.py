@@ -27,7 +27,7 @@ class OldNetDecoder:
         self.d_out = self.layer_sizes[-1]
 
         # M: TODO: make this generic
-        net = Neurcomp(input_ch=self.d_in, output_ch=self.d_out, features=self.middle_layer_sizes) #M: Todo, tell is use resnets or not!
+        net = Neurcomp(input_ch=self.d_in, output_ch=self.d_out, features=self.middle_layer_sizes)
 
         # first layer: matrix and bias
         w_pos_format = ''.join(['f' for _ in range(self.d_in * self.middle_layer_sizes[0])])
@@ -111,13 +111,15 @@ class NetDecoder:
         self.d_in = struct.unpack('B', file.read(1))[0]
         # header: d_out
         self.d_out = struct.unpack('B', file.read(1))[0]
+        # header: use_residual
+        self.is_residual = struct.unpack('B', file.read(1))[0]
         # header: layers
         self.layers = struct.unpack(''.join(['I' for _ in range(self.n_layers)]), file.read(4*(self.n_layers)))
         # header: number of bits for clustering
         self.n_bits = struct.unpack('B', file.read(1))[0]
         self.n_clusters = int(math.pow(2,self.n_bits))
 
-        net = Neurcomp(input_ch=self.d_in, output_ch=self.d_out, features=self.layers)
+        net = Neurcomp(input_ch=self.d_in, output_ch=self.d_out, features=self.layers, use_resnet=self.is_residual == 1)
 
         # first layer: matrix and bias
         w_pos_format = ''.join(['f' for _ in range(self.d_in*self.layers[0])])
@@ -129,7 +131,7 @@ class NetDecoder:
         all_bs = [b_pos]
 
         # middle layers: cluster, store clusters, then map matrix indices to indices
-        total_n_layers = 2*(self.n_layers-1)
+        total_n_layers = 2*(self.n_layers-1) if self.is_residual == 1 else self.n_layers-1
         res_idx = 0
         for ldx in range(total_n_layers):
             # weights

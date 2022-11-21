@@ -14,6 +14,7 @@ class Neurcomp(nn.Module):
         self.d_in = input_ch
         self.d_out = output_ch
         self.omega_0 = omega_0  # M: scale hyperparameter for SIREN
+        self.use_resnet = use_resnet
 
         self.layer_sizes = [self.d_in]
         self.layer_sizes.extend(features)
