@@ -34,14 +34,17 @@ class Neurcomp(nn.Module):
             layer_in = self.layer_sizes[ndx]
             layer_out = self.layer_sizes[ndx + 1]
             if ndx != self.n_layers - 1:
+
+                if not use_resnet:  # M: add option to skip residual blocks
+                    self.net_layers.append(SineLayer(layer_in, layer_out, bias=True, is_first=True,
+                                                     dropout_layer=dropout_layer,
+                                                     sign_variance_momentum=sign_variance_momentum))
+                    continue
+
                 if ndx == 0:
                     # M: first layer
-                    if use_resnet:
-                        self.net_layers.append(SineLayer(layer_in, layer_out, bias=True, is_first=True,
-                                                         dropout_layer=None))  # M: TODO also try dropout_layer
-                    else:
-                        self.net_layers.append(SineLayer(layer_in, layer_out, bias=True, is_first=True,
-                                                        dropout_layer=dropout_layer))  # M: TODO also try dropout_layer
+                    self.net_layers.append(SineLayer(layer_in, layer_out, bias=True, is_first=True,
+                                                     dropout_layer=None))
                 else:
                     # M: intermed layers
                     if False:#dropout_technique and 'smallify' in dropout_technique:
@@ -50,20 +53,15 @@ class Neurcomp(nn.Module):
                                                                      ave_second=ndx == (self.n_layers - 2),
                                                                      dropout_technique=dropout_technique))
                     else:
-                        if use_resnet:
-                            self.net_layers.append(ResidualSineBlock(self.layer_sizes[1], layer_out, bias=True,
-                                                                     dropout_layer=dropout_layer, ave_first=ndx > 1,
-                                                                     ave_second=ndx == (self.n_layers - 2),
-                                                                     sign_variance_momentum=sign_variance_momentum))
-                        else:
-                            self.net_layers.append(SineLayer(layer_in, layer_out, bias=True, is_first=True,
-                                                             dropout_layer=dropout_layer,
-                                                             sign_variance_momentum=sign_variance_momentum))
+                        self.net_layers.append(ResidualSineBlock(self.layer_sizes[1], layer_out, bias=True,
+                                                                 dropout_layer=dropout_layer, ave_first=ndx > 1,
+                                                                 ave_second=ndx == (self.n_layers - 2),
+                                                                 sign_variance_momentum=sign_variance_momentum))
             else:
                 if use_resnet:
                     final_linear = nn.Linear(self.layer_sizes[1], layer_out) #nn.Linear(layer_in, layer_out)
                 else:
-                    final_linear = nn.Linear(layer_in, layer_out)  # nn.Linear(layer_in, layer_out)
+                    final_linear = nn.Linear(layer_in, layer_out)
                 with torch.no_grad():
                     # M: uniform init, like in SIREN
                     final_linear.weight.uniform_(-np.sqrt(6 / (layer_in)) / 30.0, np.sqrt(6 / (layer_in)) / 30.0)
