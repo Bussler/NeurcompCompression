@@ -102,11 +102,10 @@ def generate_orderedValues(data, highestValue):
 def generateMeanValues(originalData, numbersOfElements):
     data_sum = []
 
-    for i in range(len(originalData) - (numbersOfElements -1)):
+    for i in range(0, len(originalData) - (numbersOfElements -1), numbersOfElements):
         cur = 0
         for j in range(numbersOfElements):
             cur += originalData[i+j]
         data_sum.append(cur/numbersOfElements)
-        i += numbersOfElements
 
     return data_sum

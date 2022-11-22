@@ -648,11 +648,11 @@ def SmallifyVSNeurcompLR():
 
 def SmallifyAftertrainingVSNoAftertrainig():
     #BASENAMERetrain = 'experiments/diff_comp_rates/test_experiment_Retraining/Retrain/test_experiment_'
-    BASENAMERetrain = 'experiments/diff_comp_rates/test_experiment_Retraining/2C_Retrain/test_experiment_'
+    BASENAMERetrain = 'experiments/diff_comp_rates/test_experiment_Retraining/4C_Retrain/test_experiment_'
     experimentNamesRetrain = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2', '300_0', '300_1', '300_2', '400_0', '400_1', '400_2']
 
     #BASENAMENoRetrain = 'experiments/diff_comp_rates/test_experiment_Retraining/NoRetrain/test_experiment_'
-    BASENAMENoRetrain = 'experiments/diff_comp_rates/test_experiment_BroaderNW/2C/test_experiment_'
+    BASENAMENoRetrain = 'experiments/diff_comp_rates/test_experiment_BroaderNW/4C/test_experiment_'
     experimentNamesNoRetrain = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2', '300_0', '300_1', '300_2', '400_0', '400_1', '400_2']
 
     QUANTNAMECONFIG = 'info.txt'
@@ -691,7 +691,7 @@ def SmallifyAftertrainingVSNoAftertrainig():
     plt.ylabel('psnr')
     plt.legend()
 
-    filepath = 'plots/' + 'test_volume_' + 'SmallifyAftertrainingVSNoAftertrainig_2Layer' + '.png'
+    filepath = 'plots/' + 'test_volume_' + 'SmallifyAftertrainingVSNoAftertrainig' + '.png'
     plt.savefig(filepath)
 
 
@@ -811,14 +811,14 @@ def SmallifyDifferentNWSizes():
     # M: plot
     #plt.plot(compressionRatioUnpruned8, PSNRUnpruned8, label='Unpruned 8', alpha=0.6)
     #plt.plot(compressionRatioUnpruned6, PSNRUnpruned6, label='Unpruned 6', alpha=0.6)
-    plt.plot(compressionRatioUnpruned4, PSNRUnpruned4, label='Unpruned 4', alpha=0.6)
-    #plt.plot(compressionRatioUnpruned2, PSNRUnpruned2, label='Unpruned 2', alpha=0.6)
+    #plt.plot(compressionRatioUnpruned4, PSNRUnpruned4, label='Unpruned 4', alpha=0.6)
+    plt.plot(compressionRatioUnpruned2, PSNRUnpruned2, label='Unpruned 2', alpha=0.6)
 
     #plt.plot(compressionRatioPruned8, PSNRPruned8, label='Pruned 8')
     #plt.plot(compressionRatioPruned6, PSNRPruned6, label='Pruned 6')
-    plt.plot(compressionRatioPruned4, PSNRPruned4, label='Pruned 4')
+    #plt.plot(compressionRatioPruned4, PSNRPruned4, label='Pruned 4')
     #plt.plot(compressionRatioPruned4_Other, PSNRPruned4_Other, label='Pruned 4_0.04Momentum')
-    #plt.plot(compressionRatioPruned2, PSNRPruned2, label='Pruned 2')
+    plt.plot(compressionRatioPruned2, PSNRPruned2, label='Pruned 2')
 
     #plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     #plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
@@ -826,7 +826,7 @@ def SmallifyDifferentNWSizes():
     plt.ylabel('psnr')
     plt.legend()
 
-    filepath = 'plots/' + 'test_volume_' + 'SmallifyDifferentNWSizes_4' + '.png'
+    filepath = 'plots/' + 'test_volume_' + 'SmallifyDifferentNWSizes_2' + '.png'
     plt.savefig(filepath)
 
 
@@ -919,5 +919,5 @@ if __name__ == '__main__':
     #influenceHyperSearchParams()
     #SmallifyVSNeurcompLR()
     #SmallifyAftertrainingVSNoAftertrainig()
-    SmallifyDifferentNWSizes()
-    #ResnetVSNoResnet()
+    #SmallifyDifferentNWSizes()
+    ResnetVSNoResnet()
