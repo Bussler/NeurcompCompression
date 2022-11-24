@@ -709,8 +709,8 @@ def SmallifyDifferentNWSizes():
 
     BASENAMEPruned8 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/8C/test_experiment_'
     BASENAMEPruned6 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/6C/test_experiment_'
-    BASENAMEPruned4 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/4C/test_experiment_'
-    BASENAMEPruned4_Other = 'experiments/diff_comp_rates/test_experiment_BroaderNW/4C_OtherPruningMomentum/test_experiment_'
+    #BASENAMEPruned4 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/4C/test_experiment_'
+    BASENAMEPruned4 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/4C_BiggerWeightLambda/test_experiment_'
     BASENAMEPruned2 = 'experiments/diff_comp_rates/test_experiment_BroaderNW/2C/test_experiment_'
 
     InfoName = 'info.txt'
@@ -772,10 +772,6 @@ def SmallifyDifferentNWSizes():
                         (['compression_ratio', 'psnr'],),
                         BASENAMEPruned4, (InfoName,), experiment_names=experimentNames2)
 
-    generate_plot_lists(([compressionRatioPruned4_Other, PSNRPruned4_Other],),
-                        (['compression_ratio', 'psnr'],),
-                        BASENAMEPruned4_Other, (InfoName,), experiment_names=experimentNames2)
-
     generate_plot_lists(([compressionRatioPruned2, PSNRPruned2],),
                         (['compression_ratio', 'psnr'],),
                         BASENAMEPruned2, (InfoName,), experiment_names=experimentNames2)
@@ -802,23 +798,19 @@ def SmallifyDifferentNWSizes():
     compressionRatioPruned4 = generateMeanValues(compressionRatioPruned4, 3)
     PSNRPruned4 = generateMeanValues(PSNRPruned4, 3)
 
-    compressionRatioPruned4_Other = generateMeanValues(compressionRatioPruned4_Other, 3)
-    PSNRPruned4_Other = generateMeanValues(PSNRPruned4_Other, 3)
-
     compressionRatioPruned2 = generateMeanValues(compressionRatioPruned2, 3)
     PSNRPruned2 = generateMeanValues(PSNRPruned2, 3)
 
     # M: plot
     #plt.plot(compressionRatioUnpruned8, PSNRUnpruned8, label='Unpruned 8', alpha=0.6)
     #plt.plot(compressionRatioUnpruned6, PSNRUnpruned6, label='Unpruned 6', alpha=0.6)
-    #plt.plot(compressionRatioUnpruned4, PSNRUnpruned4, label='Unpruned 4', alpha=0.6)
-    plt.plot(compressionRatioUnpruned2, PSNRUnpruned2, label='Unpruned 2', alpha=0.6)
+    plt.plot(compressionRatioUnpruned4, PSNRUnpruned4, label='Unpruned 4', alpha=0.6)
+    #plt.plot(compressionRatioUnpruned2, PSNRUnpruned2, label='Unpruned 2', alpha=0.6)
 
     #plt.plot(compressionRatioPruned8, PSNRPruned8, label='Pruned 8')
     #plt.plot(compressionRatioPruned6, PSNRPruned6, label='Pruned 6')
-    #plt.plot(compressionRatioPruned4, PSNRPruned4, label='Pruned 4')
-    #plt.plot(compressionRatioPruned4_Other, PSNRPruned4_Other, label='Pruned 4_0.04Momentum')
-    plt.plot(compressionRatioPruned2, PSNRPruned2, label='Pruned 2')
+    plt.plot(compressionRatioPruned4, PSNRPruned4, label='Pruned 4')
+    #plt.plot(compressionRatioPruned2, PSNRPruned2, label='Pruned 2')
 
     #plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     #plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
@@ -826,7 +818,7 @@ def SmallifyDifferentNWSizes():
     plt.ylabel('psnr')
     plt.legend()
 
-    filepath = 'plots/' + 'test_volume_' + 'SmallifyDifferentNWSizes_2' + '.png'
+    filepath = 'plots/' + 'test_volume_' + 'SmallifyDifferentNWSizes_4_Hypersearch_For_Each_Compression' + '.png'
     plt.savefig(filepath)
 
 
@@ -919,5 +911,5 @@ if __name__ == '__main__':
     #influenceHyperSearchParams()
     #SmallifyVSNeurcompLR()
     #SmallifyAftertrainingVSNoAftertrainig()
-    #SmallifyDifferentNWSizes()
-    ResnetVSNoResnet()
+    SmallifyDifferentNWSizes()
+    #ResnetVSNoResnet()
