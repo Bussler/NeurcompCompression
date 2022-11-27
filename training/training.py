@@ -150,16 +150,6 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     loss_Betas, loss_Weights = calculte_smallify_loss(model)
                     complete_loss = complete_loss + (loss_Betas * args['lambda_betas']) \
                                     + (loss_Weights * args['lambda_weights'])
-
-                    # pruned = sign_variance_pruning_strategy_dynamic(model, device, threshold=args['pruning_threshold'])
-                    # if pruned:
-                    #    lr_list = []
-                    #    print("--CHANGING OPTIM--")
-                    #    for param_group in optimizer.param_groups:
-                    #        lr_list.append(param_group['lr'])
-                    #    optimizer = torch.optim.Adam(model.parameters(), lr=lr_list[0])
-                    #    for index, param_group in enumerate(optimizer.param_groups):
-                    #        param_group['lr'] = lr_list[index]
                 if args['dropout_technique'] == 'variational':
                     complete_loss = calculate_variational_dropout_loss(model, vol_loss, sigma=1)
 
@@ -240,19 +230,12 @@ def training(args, verbose=True):
             else:
                 model = prune_smallify_no_Resnet(model, SmallifyDropout)  # M: prune and mult betas
             model.to(device)
-            #for module in model.net_layers.modules():
-            #    if isinstance(module, SmallifyResidualSiren):
-            #        c = module.remove_dropout_layers()
-            #        intermed_layers.append(c)
 
         if args['dropout_technique'] == 'variational':
             # TODO: pruning
             pass
 
-        #intermed_layers.append(model.d_out)
-        #model.layer_sizes = intermed_layers
-
-        # M: retraining after pruning
+        # M: finetuning after pruning
         #print('---Retraining after pruning---')
         #args_second = deepcopy(args)
         #args_second['max_pass'] *= (1.0/3.0)

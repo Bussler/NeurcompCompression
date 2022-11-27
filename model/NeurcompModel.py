@@ -52,19 +52,14 @@ class Neurcomp(nn.Module):
                                                      dropout_layer=None))
                 else:
                     # M: intermed layers
-                    if False:#dropout_technique and 'smallify' in dropout_technique:
-                        self.net_layers.append(SmallifyResidualSiren(self.layer_sizes[1], layer_out, bias=True,
-                                                                     ave_first=ndx > 1,
-                                                                     ave_second=ndx == (self.n_layers - 2),
-                                                                     dropout_technique=dropout_technique))
-                    else:
-                        self.net_layers.append(ResidualSineBlock(self.layer_sizes[1], layer_out, bias=True,
-                                                                 dropout_layer=dropout_layer, ave_first=ndx > 1,
-                                                                 ave_second=ndx == (self.n_layers - 2),
-                                                                 sign_variance_momentum=sign_variance_momentum))
+                    self.net_layers.append(ResidualSineBlock(self.layer_sizes[1], layer_out, bias=True,
+                                                                dropout_layer=dropout_layer, ave_first=ndx > 1,
+                                                                ave_second=ndx == (self.n_layers - 2),
+                                                                sign_variance_momentum=sign_variance_momentum))
             else:
+                # M: final layer
                 if use_resnet:
-                    final_linear = nn.Linear(self.layer_sizes[1], layer_out) #nn.Linear(layer_in, layer_out)
+                    final_linear = nn.Linear(self.layer_sizes[1], layer_out)
                 else:
                     final_linear = nn.Linear(layer_in, layer_out)
                 with torch.no_grad():
