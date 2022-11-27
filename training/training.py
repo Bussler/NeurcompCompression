@@ -15,6 +15,7 @@ from mlflow import log_metric, log_param, log_artifacts
 from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy_dynamic,\
     SmallifyResidualSiren, sign_variance_pruning_strategy_do_prune
 from model.pruning import prune_dropout_threshold, prune_smallify_use_resnet, prune_smallify_no_Resnet
+from model.VariationalDropoutLayer import calculate_variational_dropout_loss
 import training.learning_rate_decay as lrdecay
 
 
@@ -159,6 +160,8 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     #    optimizer = torch.optim.Adam(model.parameters(), lr=lr_list[0])
                     #    for index, param_group in enumerate(optimizer.param_groups):
                     #        param_group['lr'] = lr_list[index]
+                if args['dropout_technique'] == 'variational':
+                    complete_loss = calculate_variational_dropout_loss(model, vol_loss, sigma=1)
 
             complete_loss.backward()
             optimizer.step()
@@ -181,7 +184,8 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, mse: {:.6f}'.format(
                         volume_passes, args['max_pass'], debug_for_volumeloss, complete_loss.item()))
                 if args['dropout_technique']:
-                    print('Beta Loss: {:.4f}, Weight loss: {:.4f}'.format(loss_Betas, loss_Weights))
+                    if args['dropout_technique'] == 'smallify':
+                        print('Beta Loss: {:.4f}, Weight loss: {:.4f}'.format(loss_Betas, loss_Weights))
 
             log_metric(key="loss", value=complete_loss.item(), step=step_iter)
             log_metric(key="volume_loss", value=debug_for_volumeloss, step=step_iter)
@@ -240,6 +244,10 @@ def training(args, verbose=True):
             #    if isinstance(module, SmallifyResidualSiren):
             #        c = module.remove_dropout_layers()
             #        intermed_layers.append(c)
+
+        if args['dropout_technique'] == 'variational':
+            # TODO: pruning
+            pass
 
         #intermed_layers.append(model.d_out)
         #model.layer_sizes = intermed_layers

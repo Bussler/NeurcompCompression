@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 from model.SirenLayer import SineLayer, ResidualSineBlock
 from model.SmallifyDropoutLayer import SmallifyDropout, SmallifyResidualSiren
+from model.VariationalDropoutLayer import VariationalDropout
 
 
 # M: Neurcomp according to "Compressive Neural Representations of Volumetric Scalar Fields"
@@ -40,6 +41,9 @@ class Neurcomp(nn.Module):
                     self.net_layers.append(SineLayer(layer_in, layer_out, bias=True, is_first=True,
                                                      dropout_layer=dropout_layer,
                                                      sign_variance_momentum=sign_variance_momentum))
+                    if dropout_technique and '_quant' not in dropout_technique:
+                        if 'variational' in dropout_technique:
+                            self.net_layers.append(VariationalDropout(layer_out))
                     continue
 
                 if ndx == 0:
