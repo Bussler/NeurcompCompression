@@ -14,7 +14,7 @@ from visualization.OutputToVTK import tiled_net_out
 from mlflow import log_metric, log_param, log_artifacts
 from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy_dynamic,\
     SmallifyResidualSiren, sign_variance_pruning_strategy_do_prune
-from model.pruning import prune_dropout_threshold, prune_model, prune_model_no_Resnet
+from model.pruning import prune_dropout_threshold, prune_smallify_use_resnet, prune_smallify_no_Resnet
 import training.learning_rate_decay as lrdecay
 
 
@@ -232,9 +232,9 @@ def training(args, verbose=True):
         if args['dropout_technique'] == 'smallify':
             sign_variance_pruning_strategy_do_prune(model, device, args['pruning_threshold'])  # M: pre-prune
             if args['use_resnet']:
-                model = prune_model(model, SmallifyDropout)  # M: prune and mult betas
+                model = prune_smallify_use_resnet(model, SmallifyDropout)  # M: prune and mult betas
             else:
-                model = prune_model_no_Resnet(model, SmallifyDropout)  # M: prune and mult betas
+                model = prune_smallify_no_Resnet(model, SmallifyDropout)  # M: prune and mult betas
             model.to(device)
             #for module in model.net_layers.modules():
             #    if isinstance(module, SmallifyResidualSiren):

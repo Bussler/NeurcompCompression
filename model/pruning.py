@@ -22,7 +22,7 @@ def prune_dropout_threshold(model, dropout_type, threshold=0.1):
 
 # M: TODO rewrite for generalization
 # M: reconstruct the parameter weights according to pruning and remove dropout from network
-def prune_model(model, dropout_type):
+def prune_smallify_use_resnet(model, dropout_type):
 
     pruned_dropout_channel = []
     state_dict = model.state_dict()
@@ -102,7 +102,7 @@ def prune_model(model, dropout_type):
     return new_model
 
 
-def prune_model_no_Resnet(model, dropout_type):
+def prune_smallify_no_Resnet(model, dropout_type):
 
     pruned_dropout_channel = []
     state_dict = model.state_dict()
@@ -159,3 +159,7 @@ def prune_model_no_Resnet(model, dropout_type):
     new_model.load_state_dict(state_dict)
     return new_model
 
+
+# TODO
+def prune_variational_dropout():
+    pass
