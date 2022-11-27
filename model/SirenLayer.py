@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 from model.DropoutLayer import DropoutLayer
 from model.SmallifyDropoutLayer import SmallifyDropout
+from model.VariationalDropoutLayer import VariationalDropout
 
 
 # M: taken from https://github.com/vsitzmann/siren
@@ -34,10 +35,15 @@ class SineLayer(nn.Module):
 
     def forward(self, input):
         sine = self.linear_1(input)
-        if self.drop1 is not None:
+        if self.drop1 is not None and isinstance(self.drop1, SmallifyDropout):
             sine = self.drop1(sine)
 
-        return torch.sin(self.omega_0 * sine)
+        sine = torch.sin(self.omega_0 * sine)
+
+        if self.drop1 is not None and isinstance(self.drop1, VariationalDropout):
+            sine = self.drop1(sine)
+
+        return sine
 
     def p_norm_loss(self):
         return torch.sqrt(torch.abs(self.linear_1.weight).sum() ** 2) + \
@@ -60,10 +66,8 @@ class ResidualSineBlock(nn.Module):
         self.weight_2 = .5 if ave_second else 1
 
         self.drop1 = None
-        #self.drop2 = None
         if dropout_layer is not None:
             self.drop1 = dropout_layer.create_instance(intermed_features, sign_variance_momentum)
-            #self.drop2 = dropout_layer.create_instance(in_features)
 
         self.init_weights()
 
@@ -78,7 +82,7 @@ class ResidualSineBlock(nn.Module):
     # M: concat residual block according to paper with two linear layers
     def forward(self, input):
         sine_1 = self.linear_1(self.weight_1 * input)
-        if self.drop1 is not None:
+        if self.drop1 is not None and isinstance(self.drop1, SmallifyDropout):
             sine_1 = self.drop1(sine_1)
 
         sine_1 = torch.sin(self.omega_0 * sine_1)

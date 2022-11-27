@@ -5,6 +5,9 @@ import math
 from model.DropoutLayer import DropoutLayer
 
 
+def inference_variational_model(mu, sigma):
+    return torch.normal(mu, sigma)
+
 
 def calculate_Log_Likelyhood(loss, sigma):
     x_mu_loss = - loss
@@ -48,12 +51,16 @@ class VariationalDropout(DropoutLayer):
     def dropout_rates(self):
         return self.alphas / (1.0 + self.alphas)
 
+    @property
+    def sigma(self):
+        return torch.exp(self.log_var / 2.0)
+
     def forward(self, x):
         # M: w = theta * (1+sqrt(alpha)*xi)
         # M: w = theta + sigma * xi according to Molchanov additive noise reparamerization
         thetas = torch.exp(self.log_thetas)  # M: revert the log with exp
         xi = torch.randn_like(x)  # M: draw xi from N(0,1)
-        w = thetas + torch.exp(self.log_var / 2.0) * xi
+        w = thetas + self.sigma * xi
         return x * w
 
     def calculate_Dkl(self):
@@ -68,5 +75,5 @@ class VariationalDropout(DropoutLayer):
         return torch.sum(dkl)  # M: Kevins code has sign swapped
 
     @classmethod
-    def create_instance(cls, c):
+    def create_instance(cls, c, m):
         return VariationalDropout(c)
