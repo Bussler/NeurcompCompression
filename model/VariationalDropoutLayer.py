@@ -68,5 +68,5 @@ class VariationalDropout(DropoutLayer):
         return torch.sum(dkl)  # M: Kevins code has sign swapped
 
     @classmethod
-    def create_instance(cls, c):
+    def create_instance(cls, c, m):
         return VariationalDropout(c)

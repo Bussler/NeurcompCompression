@@ -29,8 +29,8 @@ class Neurcomp(nn.Module):
         if dropout_technique and '_quant' not in dropout_technique:
             if 'smallify' in dropout_technique:
                 dropout_layer = SmallifyDropout(self.layer_sizes[1])
-            if dropout_technique == 'variational':
-                pass
+            if 'variational' in dropout_technique:
+                dropout_layer = VariationalDropout(self.layer_sizes[1])
 
         for ndx in range(self.n_layers):
             layer_in = self.layer_sizes[ndx]
@@ -41,9 +41,6 @@ class Neurcomp(nn.Module):
                     self.net_layers.append(SineLayer(layer_in, layer_out, bias=True, is_first=True,
                                                      dropout_layer=dropout_layer,
                                                      sign_variance_momentum=sign_variance_momentum))
-                    if dropout_technique and '_quant' not in dropout_technique:
-                        if 'variational' in dropout_technique:
-                            self.net_layers.append(VariationalDropout(layer_out))
                     continue
 
                 if ndx == 0:
