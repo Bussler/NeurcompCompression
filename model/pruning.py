@@ -2,6 +2,7 @@ import torch
 from torch import nn
 import torch.nn.utils.prune as prune
 from model.NeurcompModel import Neurcomp
+from model.VariationalDropoutLayer import VariationalDropout
 
 
 # M: Search for zero beta parameters of layer_type dropout layer
@@ -160,6 +161,38 @@ def prune_smallify_no_Resnet(model, dropout_type):
     return new_model
 
 
-# TODO
-def prune_variational_dropout():
-    pass
+def prune_variational_dropout(model):
+    pruned_dropout_channel = []
+    B = None
+    indices = None
+    last_linear = None
+
+    with torch.no_grad():
+        for module in model.net_layers.modules():
+            if isinstance(module, VariationalDropout):
+                B, indices = module.get_valid_thetas()
+                pruned_dropout_channel.append(B.shape[0])
+
+            if isinstance(module, torch.nn.Linear):
+                if B is not None:
+                    # M: prune input of linear and mult thetas out to remove them
+                    w_ = torch.index_select(module.weight, 1, indices).mul(B)
+                    module.weight = torch.nn.Parameter(w_, requires_grad=True)
+
+                    # M: prune output of last linear to match new input
+                    w_last = torch.index_select(last_linear.weight, 0, indices)
+                    last_linear.weight = torch.nn.Parameter(w_last, requires_grad=True)
+                    b_ = torch.index_select(last_linear.bias, 0, indices)
+                    last_linear.bias = torch.nn.Parameter(b_, requires_grad=True)
+                last_linear = module
+
+        # M: prune param 'log_thetas', 'log_var' from state dict
+        state_dict = model.state_dict()
+        for name, param, in model.state_dict().items():
+            if 'log_thetas' in name or 'log_var' in name:
+                state_dict.pop(name)
+
+        new_model = Neurcomp(input_ch=model.d_in, output_ch=model.d_out, features=pruned_dropout_channel,
+                             omega_0=model.omega_0, dropout_technique='', use_resnet=model.use_resnet)
+        new_model.load_state_dict(state_dict)
+        return new_model

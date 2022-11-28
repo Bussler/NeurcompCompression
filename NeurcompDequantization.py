@@ -21,6 +21,7 @@ def dequantize(args):
         print('compression ratio:', compression_ratio, 'with ', bits, ' used bits')
 
         psnr, l1_diff, mse, rmse = tiled_net_out(dataset, net, True, gt_vol=volume.cpu(), evaluate=True,
+                                                 probalistic_model=False,  # M: TODO: encode if Model is variational
                                                  write_vols=True, filename=args['decompressed_file'])
 
         info = {}

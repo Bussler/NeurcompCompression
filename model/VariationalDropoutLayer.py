@@ -15,6 +15,7 @@ def calculate_Log_Likelyhood(loss, sigma):
     b = - torch.log(torch.sqrt(2 * torch.tensor(math.pi) * (sigma**2)))
 
     return a * x_mu_loss + b
+    #return loss
 
 
 # TODO nicht vergessen: da muss auch noch Regularisierung für nw weights dran!
@@ -26,7 +27,7 @@ def calculate_variational_dropout_loss(model, loss, sigma):
 
     Log_Likelyhood = calculate_Log_Likelyhood(loss, sigma)
 
-    return Log_Likelyhood + Dkl_sum  # M: TODO: wir minimieren, also + dkl hier? Bei Maximieren wird ja Dkl abgezogen
+    return Log_Likelyhood - Dkl_sum  # M: TODO: wir minimieren, also + dkl hier? Bei Maximieren wird ja Dkl abgezogen
 
 
 class VariationalDropout(DropoutLayer):
@@ -73,6 +74,14 @@ class VariationalDropout(DropoutLayer):
         log_alphas = torch.log(self.alphas)
         dkl = k1 * torch.sigmoid(k2 + k3 * log_alphas) - 0.5 * torch.log(1 + torch.pow(self.alphas, -1.0)) + C
         return torch.sum(dkl)  # M: Kevins code has sign swapped
+
+    # M: If dropout_rates close to 1: alpha >> 1 and theta has no useful information
+    def get_valid_thetas(self):
+        dropout_rates = self.dropout_rates
+
+        # M: find indices of thetas to remove
+        indices = torch.where(dropout_rates < self.pruning_threshold, 1, 0).nonzero().squeeze(1)
+        return torch.exp(self.log_thetas)[dropout_rates < self.pruning_threshold], indices  # M: TODO hier nochmal die nummern ansehen!
 
     @classmethod
     def create_instance(cls, c, m):

@@ -14,8 +14,9 @@ from visualization.OutputToVTK import tiled_net_out
 from mlflow import log_metric, log_param, log_artifacts
 from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy_dynamic,\
     SmallifyResidualSiren, sign_variance_pruning_strategy_do_prune
-from model.pruning import prune_dropout_threshold, prune_smallify_use_resnet, prune_smallify_no_Resnet
-from model.VariationalDropoutLayer import calculate_variational_dropout_loss
+from model.pruning import prune_dropout_threshold, prune_smallify_use_resnet, prune_smallify_no_Resnet,\
+    prune_variational_dropout
+from model.VariationalDropoutLayer import calculate_variational_dropout_loss, inference_variational_model
 import training.learning_rate_decay as lrdecay
 
 
@@ -39,8 +40,9 @@ def get_Mlfow_Experiment(name):
 
 
 def gather_training_info(model, dataset, volume, args, verbose=True):
+    is_probalistic_model = 'variational' in args['dropout_technique']
     psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True,
-                                                 write_vols=True)
+                                             probalistic_model=is_probalistic_model, write_vols=True)
 
     # M: print, save verbose information
     info = {}
@@ -151,7 +153,9 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     complete_loss = complete_loss + (loss_Betas * args['lambda_betas']) \
                                     + (loss_Weights * args['lambda_weights'])
                 if args['dropout_technique'] == 'variational':
-                    complete_loss = calculate_variational_dropout_loss(model, vol_loss, sigma=1)
+                    #predicted_volume = inference_variational_model(predicted_volume, 1)
+                    mse = loss_criterion(predicted_volume, ground_truth_volume)
+                    complete_loss = calculate_variational_dropout_loss(model, mse, sigma=1)
 
             complete_loss.backward()
             optimizer.step()
@@ -183,8 +187,9 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
             if args['grad_lambda'] > 0:
                 log_metric(key="grad_loss", value=grad_loss.item(), step=step_iter)
             if args['dropout_technique']:
-                log_metric(key="beta_loss", value=loss_Betas, step=step_iter)
-                log_metric(key="nw_weight_loss", value=loss_Weights, step=step_iter)
+                if args['dropout_technique'] == 'smallify':
+                    log_metric(key="beta_loss", value=loss_Betas, step=step_iter)
+                    log_metric(key="nw_weight_loss", value=loss_Weights, step=step_iter)
 
             # M: Stop training, if we reach max amount of passes over volume
             if (int(volume_passes) + 1) == args['max_pass']:
@@ -214,7 +219,6 @@ def training(args, verbose=True):
 
     mlflow.start_run(experiment_id=get_Mlfow_Experiment(args['expname']))
 
-    # M: remove dropout layers from model
     if args['dropout_technique']:
         args_first = deepcopy(args)
         #args_first['max_pass'] *= (2.0/3.0)
@@ -222,18 +226,17 @@ def training(args, verbose=True):
         model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume,
                            dataset, data_loader, args_first, verbose)
 
-        #intermed_layers = [model.d_in, model.layer_sizes[1]]
+        # M: remove dropout layers from model
         if args['dropout_technique'] == 'smallify':
             sign_variance_pruning_strategy_do_prune(model, device, args['pruning_threshold'])  # M: pre-prune
             if args['use_resnet']:
                 model = prune_smallify_use_resnet(model, SmallifyDropout)  # M: prune and mult betas
             else:
                 model = prune_smallify_no_Resnet(model, SmallifyDropout)  # M: prune and mult betas
-            model.to(device)
 
         if args['dropout_technique'] == 'variational':
-            # TODO: pruning
-            pass
+            model = prune_variational_dropout(model)
+        model.to(device)
 
         # M: finetuning after pruning
         #print('---Retraining after pruning---')

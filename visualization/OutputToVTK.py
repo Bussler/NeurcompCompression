@@ -1,10 +1,11 @@
 import torch as th
 import numpy as np
 from pyevtk.hl import imageToVTK
+from model.VariationalDropoutLayer import inference_variational_model
 
 
 # taken from https://github.com/matthewberger/neurcomp
-def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False):
+def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False, probalistic_model=False):
     target_res = dataset.vol_res_touple
     #target_res = dataset.vol_res
     full_vol = th.zeros(target_res)
@@ -39,6 +40,8 @@ def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False):
                     if is_cuda:
                         tile_positions = tile_positions.unsqueeze(0).cuda()
                     tile_vol = net(tile_positions.unsqueeze(0)).squeeze(0).squeeze(-1)
+                    if probalistic_model:
+                        tile_vol = inference_variational_model(tile_vol, 1) # M: In case of var dropout: use inference_variational_model
                     full_vol[x_begin:x_end,y_begin:y_end,z_begin:z_end] = tile_vol.cpu()
                 #
             #
@@ -61,11 +64,11 @@ def calculate_deviation_statistics(prediction, ground_truth):
 
 
 # taken from https://github.com/matthewberger/neurcomp
-def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, write_vols=False, filename='vol'):
+def tiled_net_out(dataset, net, is_cuda, gt_vol=None, evaluate=True, probalistic_model=False, write_vols=False, filename='vol'):
     if is_cuda:
         net = net.cuda()
     net.eval()
-    full_vol = field_from_net(dataset, net, is_cuda, tiled_res=32)
+    full_vol = field_from_net(dataset, net, is_cuda, tiled_res=32, probalistic_model=probalistic_model)
     psnr = 0
     print('writing to VTK...')
     if evaluate and gt_vol is not None:

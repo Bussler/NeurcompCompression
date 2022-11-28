@@ -16,6 +16,9 @@ if __name__ == '__main__':
                            args['d_out'], args['omega_0'], args['checkpoint_path'], args['dropout_technique'],
                            args['pruning_momentum'], use_resnet=args['use_resnet'])
 
-    tiled_net_out(dataset, model, True, gt_vol=volume, evaluate=True, write_vols=True)
+    is_probalistic_model = 'variational' in args['dropout_technique']
+
+    tiled_net_out(dataset, model, True, gt_vol=volume, evaluate=True, probalistic_model=is_probalistic_model,
+                  write_vols=True)
 
     print("Finished visualization.")
