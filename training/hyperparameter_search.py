@@ -42,6 +42,10 @@ def find_best_config(configs, args):
     best_val = None
     best_config = None
     best_name = None
+
+    best_val_ratio = None
+    best_config_ratio = None
+    best_name_ratio = None
     results = []
 
     baseExpName = args['expname']
@@ -62,8 +66,15 @@ def find_best_config(configs, args):
         if not best_val or info['rmse'] < best_val:
             best_val, best_config, best_name = info['rmse'], configs[i], args['expname']
 
-    print("\nSearch done. Best Val Loss = {}".format(best_val))
+        if not best_val_ratio or info['compression_ratio'] / info['rmse'] < best_val_ratio:
+            best_val_ratio, best_config_ratio, best_name_ratio = info['compression_ratio'] / info['rmse'],\
+                                                                     configs[i], args['expname']
+
+    print("\nSearch done. Best Val Loss = {}, Best Ratio = {}".format(best_val, best_val_ratio))
     print("Best Config:", best_config, ' Name of config: ', best_name)
+    print("Best Config_Ratio:", best_config_ratio, ' Name of config: ', best_name_ratio)
+    results.append('Best Config: '+best_name)
+    results.append('Best Config_Ratio: ' + best_name_ratio)
     return list(zip(configs, results))
 
 
