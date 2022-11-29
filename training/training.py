@@ -18,9 +18,11 @@ from model.pruning import prune_dropout_threshold, prune_smallify_use_resnet, pr
     prune_variational_dropout
 from model.VariationalDropoutLayer import calculate_variational_dropout_loss, inference_variational_model
 import training.learning_rate_decay as lrdecay
+from torch.utils.tensorboard import SummaryWriter
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+writer = None
 
 
 def get_Mlfow_Experiment(name):
@@ -64,19 +66,25 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
     info['mse'] = mse
     info['rmse'] = rmse
 
-    log_param("num_net_params", num_net_params)
-    log_param("compression_ratio", compression_ratio)
-    log_param("volume_size", dataset.vol_res)
-    log_param("volume_num_voxels", dataset.n_voxels)
-    log_param("network_layer_sizes", model.layer_sizes)
-    log_param("psnr", psnr)
-    log_param("l1_diff", l1_diff)
-    log_param("mse", mse)
-    log_param("rmse", rmse)
+    #log_param("num_net_params", num_net_params)
+    #log_param("compression_ratio", compression_ratio)
+    #log_param("volume_size", dataset.vol_res)
+    #log_param("volume_num_voxels", dataset.n_voxels)
+    #log_param("network_layer_sizes", model.layer_sizes)
+    #log_param("psnr", psnr)
+    #log_param("l1_diff", l1_diff)
+    #log_param("mse", mse)
+    #log_param("rmse", rmse)
+    writer.add_scalar("compression_ratio", compression_ratio)
+    writer.add_scalar("psnr", psnr)
+    writer.add_scalar("mse", mse)
+    writer.add_scalar("rmse", rmse)
 
     if args['dropout_technique']:
-        log_param("lambda_Betas", args['lambda_betas'])
-        log_param("lambda_Weights", args['lambda_weights'])
+    #    log_param("lambda_Betas", args['lambda_betas'])
+    #    log_param("lambda_Weights", args['lambda_weights'])
+        writer.add_scalar("lambda_Betas", args['lambda_betas'])
+        writer.add_scalar("lambda_Weights", args['lambda_weights'])
 
     if verbose:
         print("Layers: ", model.layer_sizes)
@@ -181,15 +189,20 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     if args['dropout_technique'] == 'smallify':
                         print('Beta Loss: {:.4f}, Weight loss: {:.4f}'.format(loss_Betas, loss_Weights))
 
-            log_metric(key="loss", value=complete_loss.item(), step=step_iter)
-            log_metric(key="volume_loss", value=debug_for_volumeloss, step=step_iter)
+            #log_metric(key="loss", value=complete_loss.item(), step=step_iter)
+            #log_metric(key="volume_loss", value=debug_for_volumeloss, step=step_iter)
+            writer.add_scalar("loss", complete_loss.item(), step_iter)
+            writer.add_scalar("volume_loss", debug_for_volumeloss, step_iter)
 
             if args['grad_lambda'] > 0:
-                log_metric(key="grad_loss", value=grad_loss.item(), step=step_iter)
+                #log_metric(key="grad_loss", value=grad_loss.item(), step=step_iter)
+                writer.add_scalar("grad_loss", grad_loss.item(), step_iter)
             if args['dropout_technique']:
                 if args['dropout_technique'] == 'smallify':
-                    log_metric(key="beta_loss", value=loss_Betas, step=step_iter)
-                    log_metric(key="nw_weight_loss", value=loss_Weights, step=step_iter)
+                    #log_metric(key="beta_loss", value=loss_Betas, step=step_iter)
+                    #log_metric(key="nw_weight_loss", value=loss_Weights, step=step_iter)
+                    writer.add_scalar("beta_loss", loss_Betas, step_iter)
+                    writer.add_scalar("nw_weight_loss", loss_Weights, step_iter)
 
             # M: Stop training, if we reach max amount of passes over volume
             if (int(volume_passes) + 1) == args['max_pass']:
@@ -217,7 +230,12 @@ def training(args, verbose=True):
     lrStrategy = lrdecay.LearningRateDecayStrategy.create_instance(args, optimizer)
     loss_criterion = torch.nn.MSELoss().to(device)
 
-    mlflow.start_run(experiment_id=get_Mlfow_Experiment(args['expname']))
+    #mlflow.start_run(experiment_id=get_Mlfow_Experiment(args['expname']))
+    global writer
+    if args['Tensorboard_log_dir']:
+        writer = SummaryWriter(args['Tensorboard_log_dir'])
+    else:
+        writer = SummaryWriter('runs/'+args['expname'])
 
     if args['dropout_technique']:
         args_first = deepcopy(args)
@@ -251,7 +269,8 @@ def training(args, verbose=True):
                            data_loader, args, verbose)
 
     info = gather_training_info(model, dataset, volume, args, verbose)
-    mlflow.end_run()
+    #mlflow.end_run()
+    writer.close()
     return info
 
 

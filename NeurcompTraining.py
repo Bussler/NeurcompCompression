@@ -14,6 +14,8 @@ def config_parser():
                         help='path to volume data set; is required')
     parser.add_argument("--basedir", type=str, default='/experiments/',
                         help='where to store ckpts and logs')
+    parser.add_argument("--Tensorboard_log_dir", type=str, default='',
+                        help='where to store tensorboard logs')
 
     parser.add_argument('--d_in', type=int, default=3, help='spatial input dimension')
     parser.add_argument('--d_out', type=int, default=1, help='spatial output dimension')
