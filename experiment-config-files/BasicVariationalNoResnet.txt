@@ -1,0 +1,29 @@
+expname = test_experiment_Variational_
+data = datasets/test_vol.npy
+basedir = /experiments/diff_comp_rates/test_experiment_Variational/4C_NoResnet/
+
+d_in = 3
+d_out = 1
+
+n_layers = 4
+checkpoint_path = ''
+
+dont_use_resnet
+
+compression_ratio = 100
+
+grad_lambda = 3e-04
+lr = 0.0007
+max_pass = 75
+pass_decay = 20
+lr_decay = 0.2
+smallify_decay = 0
+
+batch_size = 1024
+sample_size = 16
+
+dropout_technique = variational
+lambda_betas = 1e-06
+lambda_weights = 1e-06
+pruning_momentum = 0.025
+pruning_threshold = 0.75
