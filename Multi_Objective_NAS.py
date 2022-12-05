@@ -20,7 +20,7 @@ from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.service.scheduler import Scheduler, SchedulerOptions
 
 
-def create_experiment_scheduler(scriptname="NeurcompTraining.py", total_trials=48):
+def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", total_trials=48):
 
     def trainer(
         log_path: str,
@@ -32,8 +32,6 @@ def create_experiment_scheduler(scriptname="NeurcompTraining.py", total_trials=4
         # define the log path so we can pass it to the TorchX AppDef
         if trial_idx >= 0:
             log_path = Path(log_path).joinpath(str(trial_idx)).absolute().as_posix()
-
-        config = 'experiment-config-files/mhd_p_HyperParamSearch.txt'  # TODO M: parse this in
 
         return utils.python(
             # command line args to the training script
@@ -78,14 +76,14 @@ def create_experiment_scheduler(scriptname="NeurcompTraining.py", total_trials=4
         RangeParameter(
             name="lambda_betas",
             lower=5e-08,
-            upper=5e-05,
+            upper=5e-04,
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
         ),
         RangeParameter(
             name="lambda_weights",
             lower=5e-08,
-            upper=5e-05,
+            upper=5e-04,
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
         ),
@@ -123,22 +121,22 @@ def create_experiment_scheduler(scriptname="NeurcompTraining.py", total_trials=4
         curve_name="compression_ratio",
         lower_is_better=False,
     )
-    rmse = MyTensorboardMetric(
-        name="rmse",
-        curve_name="rmse",
-        lower_is_better=True,
+    psnr = MyTensorboardMetric(
+        name="psnr",
+        curve_name="psnr",
+        lower_is_better=False,
     )
 
     opt_config = MultiObjectiveOptimizationConfig(
         objective=MultiObjective(
             objectives=[
                 Objective(metric=compression_ratio, minimize=False),
-                Objective(metric=rmse, minimize=True),
+                Objective(metric=psnr, minimize=False),
             ],
         ),
         objective_thresholds=[
-            ObjectiveThreshold(metric=compression_ratio, bound=105.0, relative=False),
-            ObjectiveThreshold(metric=rmse, bound=0.011, relative=False),
+            ObjectiveThreshold(metric=compression_ratio, bound=55.0, relative=False),
+            ObjectiveThreshold(metric=psnr, bound=49.0, relative=False),
         ],
     )
 

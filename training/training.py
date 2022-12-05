@@ -16,7 +16,7 @@ from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, 
     SmallifyResidualSiren, sign_variance_pruning_strategy_do_prune
 from model.pruning import prune_dropout_threshold, prune_smallify_use_resnet, prune_smallify_no_Resnet,\
     prune_variational_dropout
-from model.VariationalDropoutLayer import calculate_variational_dropout_loss, inference_variational_model
+from model.VariationalDropoutLayer import calculate_variational_dropout_loss, inference_variational_model, VariationalDropout
 import training.learning_rate_decay as lrdecay
 from torch.utils.tensorboard import SummaryWriter
 
@@ -100,7 +100,7 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
     write_dict(args, 'config.txt', ExperimentPath)
     write_dict(info, 'info.txt', ExperimentPath)
 
-    log_artifacts(ExperimentPath)
+    #log_artifacts(ExperimentPath)
 
     return info
 
@@ -161,9 +161,9 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     complete_loss = complete_loss + (loss_Betas * args['lambda_betas']) \
                                     + (loss_Weights * args['lambda_weights'])
                 if args['dropout_technique'] == 'variational':
-                    #predicted_volume = inference_variational_model(predicted_volume, 1)
+                    #mse = loss_criterion(predicted_volume, ground_truth_volume)
                     mse = loss_criterion(predicted_volume, ground_truth_volume)
-                    complete_loss = calculate_variational_dropout_loss(model, mse, sigma=1)
+                    complete_loss, dkl, ll = calculate_variational_dropout_loss(model, mse, log_sigma=0)
 
             complete_loss.backward()
             optimizer.step()
@@ -179,15 +179,26 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
 
             # M: Print training statistics:
             if idx % 100 == 0 and verbose:
-                if args['grad_lambda'] > 0:
-                    print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, grad loss: {:.4f}, mse: {:.6f}'.format(
-                        volume_passes, args['max_pass'], debug_for_volumeloss, grad_loss.item(), complete_loss.item()))
+                if args['dropout_technique'] and args['dropout_technique'] == 'variational':
+                    print(
+                        'Pass [{:.4f} / {:.1f}]: volume mse: {:.4f}, LL: {:.4f}, DKL: {:.4f}, complete loss: {:.4f} '
+                        .format(volume_passes, args['max_pass'], mse.item(), ll, dkl, complete_loss.item()))
+
+                    valid_fraction = []
+                    for module in model.net_layers.modules():
+                        if isinstance(module, VariationalDropout):
+                            valid_fraction.append(module.get_valid_fraction())
+                    print('Valid Fraction: ', valid_fraction)
                 else:
-                    print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, mse: {:.6f}'.format(
-                        volume_passes, args['max_pass'], debug_for_volumeloss, complete_loss.item()))
-                if args['dropout_technique']:
-                    if args['dropout_technique'] == 'smallify':
-                        print('Beta Loss: {:.4f}, Weight loss: {:.4f}'.format(loss_Betas, loss_Weights))
+                    if args['grad_lambda'] > 0:
+                        print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, grad loss: {:.4f}, mse: {:.6f}'.format(
+                            volume_passes, args['max_pass'], debug_for_volumeloss, grad_loss.item(), complete_loss.item()))
+                    else:
+                        print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, mse: {:.6f}'.format(
+                            volume_passes, args['max_pass'], debug_for_volumeloss, complete_loss.item()))
+                    if args['dropout_technique']:
+                        if args['dropout_technique'] == 'smallify':
+                            print('Beta Loss: {:.4f}, Weight loss: {:.4f}'.format(loss_Betas, loss_Weights))
 
             #log_metric(key="loss", value=complete_loss.item(), step=step_iter)
             #log_metric(key="volume_loss", value=debug_for_volumeloss, step=step_iter)
@@ -203,6 +214,9 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     #log_metric(key="nw_weight_loss", value=loss_Weights, step=step_iter)
                     writer.add_scalar("beta_loss", loss_Betas, step_iter)
                     writer.add_scalar("nw_weight_loss", loss_Weights, step_iter)
+                if args['dropout_technique'] == 'variational':
+                    writer.add_scalar("Log_Likelyhood", ll, step_iter)
+                    writer.add_scalar("DKL", dkl, step_iter)
 
             # M: Stop training, if we reach max amount of passes over volume
             if (int(volume_passes) + 1) == args['max_pass']:

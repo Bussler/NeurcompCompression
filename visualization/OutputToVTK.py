@@ -40,8 +40,6 @@ def field_from_net(dataset, net, is_cuda, tiled_res=32, verbose=False, probalist
                     if is_cuda:
                         tile_positions = tile_positions.unsqueeze(0).cuda()
                     tile_vol = net(tile_positions.unsqueeze(0)).squeeze(0).squeeze(-1)
-                    if probalistic_model:
-                        tile_vol = inference_variational_model(tile_vol, 1) # M: In case of var dropout: use inference_variational_model
                     full_vol[x_begin:x_end,y_begin:y_end,z_begin:z_end] = tile_vol.cpu()
                 #
             #
