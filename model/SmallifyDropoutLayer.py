@@ -13,14 +13,14 @@ def calculte_smallify_loss(model):
 
     for module in model.net_layers.modules():
         if isinstance(module, SirenLayer.SineLayer):
-            loss_Weights += module.p_norm_loss()
+            loss_Weights = loss_Weights + module.p_norm_loss()
         if isinstance(module, SirenLayer.ResidualSineBlock):
-            loss_Weights += module.p_norm_loss()
+            loss_Weights = loss_Weights + module.p_norm_loss()
         if isinstance(module, SmallifyResidualSiren):
-            loss_Weights += module.p_norm_loss()
-            loss_Betas += module.l1_loss_betas()
+            loss_Weights = loss_Weights + module.p_norm_loss()
+            loss_Betas = loss_Betas + module.l1_loss_betas()
         if isinstance(module, SmallifyDropout):
-            loss_Betas += module.l1_loss()
+            loss_Betas = loss_Betas + module.l1_loss()
 
     return loss_Betas, loss_Weights
 

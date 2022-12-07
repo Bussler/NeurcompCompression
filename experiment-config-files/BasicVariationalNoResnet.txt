@@ -1,14 +1,12 @@
-expname = test_experiment_Variational_
+expname = test_experiment_Variational_WithResnet_SM2_DKLNotNormalized
 data = datasets/test_vol.npy
-basedir = /experiments/diff_comp_rates/test_experiment_Variational/4C_NoResnet/
+basedir = /experiments/diff_comp_rates/test_experiment_Variational/4C_Resnet/
 
 d_in = 3
 d_out = 1
 
 n_layers = 4
 checkpoint_path = ''
-
-dont_use_resnet
 
 compression_ratio = 100
 
@@ -27,3 +25,5 @@ lambda_betas = 1e-06
 lambda_weights = 1e-06
 pruning_momentum = 0.025
 pruning_threshold = 0.75
+
+variational_sigma = -2.0

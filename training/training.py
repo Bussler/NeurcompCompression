@@ -15,7 +15,7 @@ from mlflow import log_metric, log_param, log_artifacts
 from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy_dynamic,\
     SmallifyResidualSiren, sign_variance_pruning_strategy_do_prune
 from model.pruning import prune_dropout_threshold, prune_smallify_use_resnet, prune_smallify_no_Resnet,\
-    prune_variational_dropout
+    prune_variational_dropout_no_resnet, prune_variational_dropout_use_resnet
 from model.VariationalDropoutLayer import calculate_variational_dropout_loss, inference_variational_model, VariationalDropout
 import training.learning_rate_decay as lrdecay
 from torch.utils.tensorboard import SummaryWriter
@@ -152,7 +152,7 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                                                      grad_outputs=torch.ones_like(predicted_volume),
                                                      retain_graph=True, create_graph=True, allow_unused=False)[0]
                 grad_loss = loss_criterion(predicted_grad, target_grad)
-                complete_loss += args['grad_lambda'] * grad_loss
+                complete_loss = complete_loss + (args['grad_lambda'] * grad_loss)
 
             # M: Special loss for Dropout
             if args['dropout_technique']:
@@ -161,9 +161,9 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     complete_loss = complete_loss + (loss_Betas * args['lambda_betas']) \
                                     + (loss_Weights * args['lambda_weights'])
                 if args['dropout_technique'] == 'variational':
-                    #mse = loss_criterion(predicted_volume, ground_truth_volume)
-                    mse = loss_criterion(predicted_volume, ground_truth_volume)
-                    complete_loss, dkl, ll = calculate_variational_dropout_loss(model, mse, log_sigma=0)
+                    complete_loss, dkl, ll, mse = calculate_variational_dropout_loss(model, loss_criterion,
+                                                                         predicted_volume, ground_truth_volume,
+                                                                         log_sigma=args['variational_sigma'])
 
             complete_loss.backward()
             optimizer.step()
@@ -200,18 +200,13 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                         if args['dropout_technique'] == 'smallify':
                             print('Beta Loss: {:.4f}, Weight loss: {:.4f}'.format(loss_Betas, loss_Weights))
 
-            #log_metric(key="loss", value=complete_loss.item(), step=step_iter)
-            #log_metric(key="volume_loss", value=debug_for_volumeloss, step=step_iter)
             writer.add_scalar("loss", complete_loss.item(), step_iter)
             writer.add_scalar("volume_loss", debug_for_volumeloss, step_iter)
 
             if args['grad_lambda'] > 0:
-                #log_metric(key="grad_loss", value=grad_loss.item(), step=step_iter)
                 writer.add_scalar("grad_loss", grad_loss.item(), step_iter)
             if args['dropout_technique']:
                 if args['dropout_technique'] == 'smallify':
-                    #log_metric(key="beta_loss", value=loss_Betas, step=step_iter)
-                    #log_metric(key="nw_weight_loss", value=loss_Weights, step=step_iter)
                     writer.add_scalar("beta_loss", loss_Betas, step_iter)
                     writer.add_scalar("nw_weight_loss", loss_Weights, step_iter)
                 if args['dropout_technique'] == 'variational':
@@ -267,7 +262,10 @@ def training(args, verbose=True):
                 model = prune_smallify_no_Resnet(model, SmallifyDropout)  # M: prune and mult betas
 
         if args['dropout_technique'] == 'variational':
-            model = prune_variational_dropout(model)
+            if args['use_resnet']:
+                model = prune_variational_dropout_use_resnet(model)
+            else:
+                model = prune_variational_dropout_no_resnet(model)
         model.to(device)
 
         # M: finetuning after pruning

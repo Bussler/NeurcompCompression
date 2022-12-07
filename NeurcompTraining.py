@@ -57,6 +57,7 @@ def config_parser():
     parser.add_argument('--pruning_momentum', type=float, default=0.02, help='momentum for sign variance')
     parser.add_argument('--pruning_threshold', type=float, default=0.9,
                         help='betas with a higher variance than this will get pruned')
+    parser.add_argument('--variational_sigma', type=float, default=0.0, help='')
 
     return parser
 
