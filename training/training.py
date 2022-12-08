@@ -161,7 +161,7 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     complete_loss = complete_loss + (loss_Betas * args['lambda_betas']) \
                                     + (loss_Weights * args['lambda_weights'])
                 if args['dropout_technique'] == 'variational':
-                    complete_loss, dkl, ll, mse = calculate_variational_dropout_loss(model, loss_criterion,
+                    complete_loss, dkl, ll, mse, loss_Weights = calculate_variational_dropout_loss(model, loss_criterion,
                                                                          predicted_volume, ground_truth_volume,
                                                                          log_sigma=args['variational_sigma'])
 
@@ -185,9 +185,25 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                         .format(volume_passes, args['max_pass'], mse.item(), ll, dkl, complete_loss.item()))
 
                     valid_fraction = []
+                    bin1 = []
+                    bin2 = []
+                    bin3= []
                     for module in model.net_layers.modules():
                         if isinstance(module, VariationalDropout):
-                            valid_fraction.append(module.get_valid_fraction())
+                            d, b1, b2, b3 = module.get_valid_fraction()
+                            valid_fraction.append(d)
+                            bin1.append(b1)
+                            bin2.append(b2)
+                            bin3.append(b3)
+                    writer.add_scalar("bin1_layer1", bin1[0], step_iter)
+                    writer.add_scalar("bin1_layer2", bin1[1], step_iter)
+                    writer.add_scalar("bin1_layer3", bin1[2], step_iter)
+                    writer.add_scalar("bin2_layer1", bin2[0], step_iter)
+                    writer.add_scalar("bin2_layer2", bin2[1], step_iter)
+                    writer.add_scalar("bin2_layer3", bin2[2], step_iter)
+                    writer.add_scalar("bin3_layer1", bin3[0], step_iter)
+                    writer.add_scalar("bin3_layer2", bin3[1], step_iter)
+                    writer.add_scalar("bin3_layer3", bin3[2], step_iter)
                     print('Valid Fraction: ', valid_fraction)
                 else:
                     if args['grad_lambda'] > 0:
@@ -212,6 +228,7 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                 if args['dropout_technique'] == 'variational':
                     writer.add_scalar("Log_Likelyhood", ll, step_iter)
                     writer.add_scalar("DKL", dkl, step_iter)
+                    writer.add_scalar("nw_weight_loss", loss_Weights, step_iter)
 
             # M: Stop training, if we reach max amount of passes over volume
             if (int(volume_passes) + 1) == args['max_pass']:
@@ -264,8 +281,10 @@ def training(args, verbose=True):
         if args['dropout_technique'] == 'variational':
             if args['use_resnet']:
                 model = prune_variational_dropout_use_resnet(model)
+                #pass
             else:
                 model = prune_variational_dropout_no_resnet(model)
+                #pass
         model.to(device)
 
         # M: finetuning after pruning

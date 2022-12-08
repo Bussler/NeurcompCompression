@@ -4,6 +4,7 @@ import numpy as np
 import math
 from model.DropoutLayer import DropoutLayer
 import torch.nn.functional as F
+import model.SirenLayer as SirenLayer
 
 
 # M: better to infer directly
@@ -19,20 +20,37 @@ def calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volu
 
     return a * (-x_mu_loss) + b, x_mu_loss
 
+def calculte_weight_loss(model):
+    loss_Weights = 0
+
+    for module in model.net_layers.modules():
+        if isinstance(module, SirenLayer.SineLayer):
+            loss_Weights = loss_Weights + module.p_norm_loss()
+        if isinstance(module, SirenLayer.ResidualSineBlock):
+            loss_Weights = loss_Weights + module.p_norm_loss()
+
+    return loss_Weights
 
 # TODO nicht vergessen: da muss auch noch Regularisierung für nw weights dran!
 def calculate_variational_dropout_loss(model, loss_criterion, predicted_volume, ground_truth_volume, log_sigma):
     Dkl_sum = 0.0
+    Entropy_sum = 0.0
     for module in model.net_layers.modules():
         if isinstance(module, VariationalDropout):
             Dkl_sum = Dkl_sum + module.calculate_Dkl()
-    Dkl_sum = (1/predicted_volume.shape[0]) * Dkl_sum
+            Entropy_sum = Entropy_sum + module.calculate_Dropout_Entropy()
+    Dkl_sum = (1/predicted_volume.shape[0]) * Dkl_sum  # 0.1
+    Entropy_sum = 0.0001 * (1/predicted_volume.shape[0]) * Entropy_sum  # 0.00001
 
     Log_Likelyhood, mse = calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volume, log_sigma)
 
-    complete_loss = -(Log_Likelyhood - Dkl_sum)
+    weight_loss = 0.00001 * calculte_weight_loss(model)
 
-    return complete_loss, Dkl_sum, Log_Likelyhood, mse
+    complete_loss = -(Log_Likelyhood - Dkl_sum)# - weight_loss - Entropy_sum)
+
+
+
+    return complete_loss, Dkl_sum, Log_Likelyhood, mse, weight_loss
 
 
 class VariationalDropout(DropoutLayer):
@@ -42,7 +60,7 @@ class VariationalDropout(DropoutLayer):
     k3 = 1.48695
     C = -k1
 
-    def __init__(self, number_thetas, threshold=0.8, init_dropout=0.5):
+    def __init__(self, number_thetas, threshold=0.9, init_dropout=0.5):
         super(VariationalDropout, self).__init__()
         self.c = number_thetas
         self.log_thetas = torch.nn.Parameter(torch.zeros(number_thetas), requires_grad=True)
@@ -73,15 +91,6 @@ class VariationalDropout(DropoutLayer):
         w = thetas + self.sigma * xi
         return x * w
 
-        #w = torch.exp(self.log_thetas)
-        #log_alpha = self.log_var - torch.log(w ** 2)
-        #mu = x * w
-        #si_helper = torch.exp(log_alpha) * (w ** 2)
-        #si = torch.sqrt((x**2) * si_helper)
-        #xi = torch.randn_like(x)
-        #erg = mu + si * xi
-        #return erg
-
     def calculate_Dkl(self):
         log_alphas = self.log_var - 2.0 * self.log_thetas
         #dkl = self.k1 * torch.sigmoid(self.k2 + self.k3 * log_alphas)\
@@ -93,6 +102,11 @@ class VariationalDropout(DropoutLayer):
 
         return torch.sum(dkl)
 
+    def calculate_Dropout_Entropy(self):
+        drop_rate = self.dropout_rates
+        h = drop_rate * torch.log(drop_rate) + (1.0 - drop_rate) * torch.log(1 - drop_rate)
+        return torch.sum(h)
+
     # M: If dropout_rates close to 1: alpha >> 1 and theta has no useful information
     def get_valid_thetas(self):
         dropout_rates = self.dropout_rates
@@ -101,7 +115,11 @@ class VariationalDropout(DropoutLayer):
         return torch.exp(self.log_thetas)[dropout_rates < self.pruning_threshold], indices
 
     def get_valid_fraction(self):
-        return torch.mean((self.dropout_rates < self.pruning_threshold).to(torch.float)).item()
+        dropped = torch.mean((self.dropout_rates < self.pruning_threshold).to(torch.float)).item()
+        bin1 = torch.mean((self.dropout_rates < 0.1).to(torch.float)).item()
+        bin3 = torch.mean((self.dropout_rates > 0.9).to(torch.float)).item()
+        bin2 = 1.0-bin1-bin3
+        return dropped, bin1, bin2, bin3
 
     @classmethod
     def create_instance(cls, c, m):
