@@ -20,12 +20,16 @@ from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.service.scheduler import Scheduler, SchedulerOptions
 
 
-def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", total_trials=48):
+def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expname='mhd_p_', total_trials=48):
 
     def trainer(
         log_path: str,
         lambda_betas: float,
         lambda_weights: float,
+        lr: float,
+        grad_lambda: float,
+        n_layers: float,
+        lr_decay: float,
         trial_idx: int = -1,
     ) -> specs.AppDef:
 
@@ -33,12 +37,16 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", total_
         if trial_idx >= 0:
             log_path = Path(log_path).joinpath(str(trial_idx)).absolute().as_posix()
 
+        experiment_name = expname+str(trial_idx)
+
         return utils.python(
             # command line args to the training script
             "--config",
             config,
             "--Tensorboard_log_dir",
             log_path,
+            "--expname",
+            experiment_name,
 
             # M: hyperparam
             "--lambda_betas",
@@ -47,6 +55,15 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", total_
             str(lambda_weights),
 
             # M: TODO search for best rmse for compression rate: Diff NW Size + Num Layers + Pruning
+
+            "--lr",
+            str(lr),
+            "--grad_lambda",
+            str(grad_lambda),
+            "--n_layers",
+            str(n_layers),
+            "--lr_decay",
+            str(lr_decay),
 
             # other config options
             name="trainer",
@@ -84,6 +101,34 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", total_
             name="lambda_weights",
             lower=5e-08,
             upper=5e-04,
+            parameter_type=ParameterType.FLOAT,
+            log_scale=True,
+        ),
+
+        RangeParameter(
+            name="lr",
+            lower=1e-08,
+            upper=1e-03,
+            parameter_type=ParameterType.FLOAT,
+            log_scale=True,
+        ),
+        RangeParameter(
+            name="grad_lambda",
+            lower=1e-09,
+            upper=1e-04,
+            parameter_type=ParameterType.FLOAT,
+            log_scale=True,
+        ),
+        RangeParameter(
+            name="n_layers",
+            lower=2,
+            upper=8,
+            parameter_type=ParameterType.INT,
+        ),
+        RangeParameter(
+            name="lr_decay",
+            lower=0.1,
+            upper=0.8,
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
         ),
@@ -127,6 +172,12 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", total_
         lower_is_better=False,
     )
 
+    rmse = MyTensorboardMetric(
+        name="rmse",
+        curve_name="rmse",
+        lower_is_better=True,
+    )
+
     opt_config = MultiObjectiveOptimizationConfig(
         objective=MultiObjective(
             objectives=[
@@ -135,8 +186,8 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", total_
             ],
         ),
         objective_thresholds=[
-            ObjectiveThreshold(metric=compression_ratio, bound=55.0, relative=False),
-            ObjectiveThreshold(metric=psnr, bound=49.0, relative=False),
+            ObjectiveThreshold(metric=compression_ratio, bound=105.0, relative=False),
+            ObjectiveThreshold(metric=psnr, bound=45.0, relative=False),
         ],
     )
 
