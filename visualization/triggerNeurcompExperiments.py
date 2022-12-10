@@ -13,9 +13,25 @@ def neurcompRunsDiffComprRates():
 
     BASEEXPNAME = args['expname']
 
-    for compr in [50, 43.09, 36.99, 31.49, 26.39, 21.09, 15.99, 10.69, 5.49]:#[20, 50, 100, 200, 400]:
+    for compr in [50.0, 100.0, 200.0, 300.0, 400.0]:#[20.0, 50.0, 100.0, 200.0, 400.0]:
+
         args['compression_ratio'] = compr
         args['expname'] = BASEEXPNAME + str(int(compr))
+        args['checkpoint_path'] = ''
+        args['feature_list'] = None
+        training(args)
+
+
+def neurcompRunsVariational():
+    parser = config_parser()
+    args = vars(parser.parse_args())
+
+    BASEEXPNAME = args['expname']
+    BASELOGDIR = args['Tensorboard_log_dir']
+
+    for run in [0,1,2]:
+        args['expname'] = BASEEXPNAME + str(int(run))
+        args['Tensorboard_log_dir'] = BASELOGDIR + str(run)
         args['checkpoint_path'] = ''
         args['feature_list'] = None
         training(args)
@@ -49,17 +65,19 @@ def Do_QuantizeDequantize_shifted():
 
 
 def Do_QuantizeDequantize():
-    BASENAME = 'experiments/hyperparam_search/test_experiment_smallify_RandomSearch/test_experimentHyperSearch'
+    BASENAME = 'experiments/diff_comp_rates/test_experiment_BroaderNW/2C/test_experiment_'
     CONFIGNAME = 'config.txt'
     QUANTNAME = 'modelQuant'
 
     results = {}
 
-    experimentNames = []
-    for i in range(0,20):
-        experimentNames.append(i)
+    experimentNames = [50,100,150,200,300]
+    experimentNames2 = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2', '300_0', '300_1',
+                        '300_2', '400_0', '400_1', '400_2']
+    #for i in range(0,54):
+    #    experimentNames.append(i)
 
-    for compr in experimentNames:
+    for compr in experimentNames2:
 
         config_name = BASENAME + str(compr) + '/' + CONFIGNAME
         args = pu.dict_from_file(config_name)
@@ -75,6 +93,7 @@ def Do_QuantizeDequantize():
 
 if __name__ == '__main__':
     #neurcompRunsDiffComprRates()
-    Do_QuantizeDequantize()
+    neurcompRunsVariational()
+    #Do_QuantizeDequantize()
     #Do_QuantizeDequantize_shifted()
 

@@ -37,7 +37,8 @@ def compute_num_neurons(num_layer, target_size, input_ch=3, output_ch=1):
 
 
 def setup_neurcomp(compression_ratio, dataset_size, n_layers, d_in, d_out, omega_0, checkpoint_path,
-                   dropout_technique='', sign_variance_momentum=0.02, featureList=None, use_resnet=True):
+                   dropout_technique='', sign_variance_momentum=0.02, featureList=None, use_resnet=True,
+                   pruning_threshold=0.9, variational_init_droprate=0.5):
 
     if featureList is not None and len(featureList) > 0:
         feature_list = featureList
@@ -51,7 +52,8 @@ def setup_neurcomp(compression_ratio, dataset_size, n_layers, d_in, d_out, omega
 
     model = Neurcomp(input_ch=d_in, output_ch=d_out, features=feature_list,
                      omega_0=omega_0, dropout_technique=dropout_technique,
-                     sign_variance_momentum=sign_variance_momentum, use_resnet=use_resnet)
+                     sign_variance_momentum=sign_variance_momentum, use_resnet=use_resnet,
+                     pruning_threshold=pruning_threshold, variational_init_droprate=variational_init_droprate)
 
     if checkpoint_path:
         model.load_state_dict(torch.load(checkpoint_path))

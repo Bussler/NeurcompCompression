@@ -10,7 +10,7 @@ from model.VariationalDropoutLayer import VariationalDropout
 class SineLayer(nn.Module):
 
     def __init__(self, in_features, out_features, bias=True, is_first=False, omega_0=30,
-                 dropout_layer: DropoutLayer = None, sign_variance_momentum=0.02):
+                 dropout_layer: DropoutLayer = None):
         super().__init__()
         self.omega_0 = omega_0
         self.is_first = is_first
@@ -20,7 +20,7 @@ class SineLayer(nn.Module):
 
         self.drop1 = None
         if dropout_layer is not None:
-           self.drop1 = dropout_layer.create_instance(out_features, sign_variance_momentum)
+           self.drop1 = dropout_layer.create_instance(out_features, dropout_layer.p, dropout_layer.threshold)
 
         self.init_weights()
 
@@ -54,7 +54,7 @@ class SineLayer(nn.Module):
 class ResidualSineBlock(nn.Module):
 
     def __init__(self, in_features, intermed_features, bias=True, ave_first=False, ave_second=False, omega_0=30,
-                 dropout_layer: DropoutLayer = None, sign_variance_momentum=0.02):
+                 dropout_layer: DropoutLayer = None):
         super().__init__()
         self.omega_0 = omega_0
 
@@ -62,12 +62,12 @@ class ResidualSineBlock(nn.Module):
         self.linear_1 = nn.Linear(in_features, intermed_features, bias=bias) # M: Each Res Block has two layers
         self.linear_2 = nn.Linear(intermed_features, in_features, bias=bias)
 
-        self.weight_1 = .5 if ave_first else 1 # M: TODO: correct like this?
+        self.weight_1 = .5 if ave_first else 1
         self.weight_2 = .5 if ave_second else 1
 
         self.drop1 = None
         if dropout_layer is not None:
-            self.drop1 = dropout_layer.create_instance(intermed_features, sign_variance_momentum)
+            self.drop1 = dropout_layer.create_instance(intermed_features, dropout_layer.p, dropout_layer.threshold)
 
         self.init_weights()
 

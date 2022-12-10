@@ -9,7 +9,7 @@ from model.VariationalDropoutLayer import VariationalDropout
 # M: Neurcomp according to "Compressive Neural Representations of Volumetric Scalar Fields"
 class Neurcomp(nn.Module):
     def __init__(self, input_ch=3, output_ch=1, features=[], omega_0=30, dropout_technique='',
-                 sign_variance_momentum=0.02, use_resnet=True):
+                 sign_variance_momentum=0.02, use_resnet=True, pruning_threshold=0.9, variational_init_droprate=0.5):
         super(Neurcomp, self).__init__()
 
         self.d_in = input_ch
@@ -28,9 +28,9 @@ class Neurcomp(nn.Module):
         dropout_layer = None
         if dropout_technique and '_quant' not in dropout_technique:
             if 'smallify' in dropout_technique:
-                dropout_layer = SmallifyDropout(self.layer_sizes[1])
+                dropout_layer = SmallifyDropout(self.layer_sizes[1], sign_variance_momentum, pruning_threshold)
             if 'variational' in dropout_technique:
-                dropout_layer = VariationalDropout(self.layer_sizes[1])
+                dropout_layer = VariationalDropout(self.layer_sizes[1], variational_init_droprate, pruning_threshold)
 
         for ndx in range(self.n_layers):
             layer_in = self.layer_sizes[ndx]
@@ -39,8 +39,7 @@ class Neurcomp(nn.Module):
 
                 if not use_resnet:  # M: add option to skip residual blocks
                     self.net_layers.append(SineLayer(layer_in, layer_out, bias=True, is_first=True,
-                                                     dropout_layer=dropout_layer,
-                                                     sign_variance_momentum=sign_variance_momentum))
+                                                     dropout_layer=dropout_layer))
                     continue
 
                 if ndx == 0:
@@ -51,8 +50,8 @@ class Neurcomp(nn.Module):
                     # M: intermed layers
                     self.net_layers.append(ResidualSineBlock(self.layer_sizes[1], layer_out, bias=True,
                                                                 dropout_layer=dropout_layer, ave_first=ndx > 1,
-                                                                ave_second=ndx == (self.n_layers - 2),
-                                                                sign_variance_momentum=sign_variance_momentum))
+                                                                ave_second=ndx == (self.n_layers - 2)
+                                                             ))
             else:
                 # M: final layer
                 if use_resnet:

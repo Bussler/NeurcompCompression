@@ -39,14 +39,15 @@ def calculate_variational_dropout_loss(model, loss_criterion, predicted_volume, 
         if isinstance(module, VariationalDropout):
             Dkl_sum = Dkl_sum + module.calculate_Dkl()
             Entropy_sum = Entropy_sum + module.calculate_Dropout_Entropy()
-    Dkl_sum = (1/predicted_volume.shape[0]) * Dkl_sum  # 0.1
-    Entropy_sum = 0.0001 * (1/predicted_volume.shape[0]) * Entropy_sum  # 0.00001
+    #Dkl_sum = (1/predicted_volume.shape[0]) * Dkl_sum  # 0.1 (1/predicted_volume.shape[0]) *
+    Dkl_sum = 0.0001 * Dkl_sum
+    Entropy_sum = 0.00001 * (1/predicted_volume.shape[0]) * Entropy_sum  # 0.00001
 
     Log_Likelyhood, mse = calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volume, log_sigma)
 
     weight_loss = 0.00001 * calculte_weight_loss(model)
 
-    complete_loss = -(Log_Likelyhood - Dkl_sum)# - weight_loss - Entropy_sum)
+    complete_loss = -(Log_Likelyhood)# - Dkl_sum)# - weight_loss)# - Entropy_sum)
 
 
 
@@ -60,8 +61,8 @@ class VariationalDropout(DropoutLayer):
     k3 = 1.48695
     C = -k1
 
-    def __init__(self, number_thetas, threshold=0.9, init_dropout=0.5):
-        super(VariationalDropout, self).__init__()
+    def __init__(self, number_thetas, init_dropout=0.5, threshold=0.9):
+        super(VariationalDropout, self).__init__(init_dropout, threshold)
         self.c = number_thetas
         self.log_thetas = torch.nn.Parameter(torch.zeros(number_thetas), requires_grad=True)
 
@@ -112,6 +113,10 @@ class VariationalDropout(DropoutLayer):
         dropout_rates = self.dropout_rates
         # M: find indices of thetas to remove
         indices = torch.where(dropout_rates < self.pruning_threshold, 1, 0).nonzero().squeeze(1)
+
+        if indices.shape[0] == 0:
+            return torch.ones(1).to('cuda'), torch.zeros(1, dtype=torch.int).to('cuda')
+
         return torch.exp(self.log_thetas)[dropout_rates < self.pruning_threshold], indices
 
     def get_valid_fraction(self):
@@ -122,5 +127,5 @@ class VariationalDropout(DropoutLayer):
         return dropped, bin1, bin2, bin3
 
     @classmethod
-    def create_instance(cls, c, m):
-        return VariationalDropout(c)
+    def create_instance(cls, c, init_dropout=0.5, threshold=0.9):
+        return VariationalDropout(c, init_dropout, threshold)

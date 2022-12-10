@@ -81,10 +81,10 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
     writer.add_scalar("rmse", rmse)
 
     if args['dropout_technique']:
-    #    log_param("lambda_Betas", args['lambda_betas'])
-    #    log_param("lambda_Weights", args['lambda_weights'])
         writer.add_scalar("lambda_Betas", args['lambda_betas'])
         writer.add_scalar("lambda_Weights", args['lambda_weights'])
+        writer.add_scalar("variational_init_droprate", args['variational_init_droprate'])
+        writer.add_scalar("pruning_threshold", args['pruning_threshold'])
 
     if verbose:
         print("Layers: ", model.layer_sizes)
@@ -247,7 +247,9 @@ def training(args, verbose=True):
     # M: Setup model
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
                            args['d_out'], args['omega_0'], args['checkpoint_path'], args['dropout_technique'],
-                           args['pruning_momentum'], use_resnet=args['use_resnet'])
+                           args['pruning_momentum'], use_resnet=args['use_resnet'],
+                           pruning_threshold= args['pruning_threshold'],
+                           variational_init_droprate=args['variational_init_droprate'])
     model.to(device)
     model.train()
 

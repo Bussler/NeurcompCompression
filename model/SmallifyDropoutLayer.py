@@ -29,7 +29,7 @@ def calculte_smallify_loss(model):
 def sign_variance_pruning_strategy_do_prune(model, device, threshold=0.9):
     for module in model.net_layers.modules():
         if isinstance(module, SmallifyDropout):
-            prune_mask = module.sign_variance_pruning_calculate_pruning_mask(threshold, device)
+            prune_mask = module.sign_variance_pruning_calculate_pruning_mask(device)
             prune.custom_from_mask(module, name='betas', mask=prune_mask)
 
 
@@ -46,7 +46,7 @@ def sign_variance_pruning_strategy_dynamic(model, device, threshold=0.9):
                 pruned_something = True
 
         if isinstance(module, SmallifyDropout):
-            prune_mask = module.sign_variance_dynamic_pruning(threshold, device)
+            prune_mask = module.sign_variance_dynamic_pruning(device)
             prune.custom_from_mask(module, name='betas', mask=prune_mask)
 
     return pruned_something
@@ -54,12 +54,12 @@ def sign_variance_pruning_strategy_dynamic(model, device, threshold=0.9):
 
 class SmallifyDropout(DropoutLayer):
 
-    def __init__(self, number_betas, sign_variance_momentum=0.02):
-        super(SmallifyDropout, self).__init__()
+    def __init__(self, number_betas, sign_variance_momentum=0.02, threshold=0.9):
+        super(SmallifyDropout, self).__init__(sign_variance_momentum, threshold)
         self.c = number_betas
         self.betas = torch.nn.Parameter(torch.empty(number_betas).normal_(0, 1),
                                         requires_grad=True)  # M: uniform_ or normal_
-        self.tracker = SmallifySignVarianceTracker(self.c, sign_variance_momentum, self.betas)
+        self.tracker = SmallifySignVarianceTracker(self.c, sign_variance_momentum, threshold, self.betas)
 
     def forward(self, x):
         if self.training:
@@ -70,26 +70,27 @@ class SmallifyDropout(DropoutLayer):
     def l1_loss(self):
         return torch.abs(self.betas).sum()
 
-    def sign_variance_pruning_calculate_pruning_mask(self, threshold, device):
-        return self.tracker.calculate_pruning_mask(threshold, device)
+    def sign_variance_pruning_calculate_pruning_mask(self, device):
+        return self.tracker.calculate_pruning_mask(device)
 
-    def sign_variance_dynamic_pruning(self, threshold, device):
-        return self.tracker.sign_variance_pruning(threshold, device, self.betas)
+    def sign_variance_dynamic_pruning(self, device):
+        return self.tracker.sign_variance_pruning(device, self.betas)
 
     def prune_dropout_threshold(self, device, threshold=0.1):
         prune_mask = (torch.abs(self.betas) > threshold).float()
         return prune_mask
 
     @classmethod
-    def create_instance(cls, c, sign_variance_momentum=0.02):
-        return SmallifyDropout(c, sign_variance_momentum)
+    def create_instance(cls, c, sign_variance_momentum=0.02, threshold = 0.9):
+        return SmallifyDropout(c, sign_variance_momentum, threshold)
 
 
 class SmallifySignVarianceTracker():
-    def __init__(self, c, sign_variance_momentum, betas):
+    def __init__(self, c, sign_variance_momentum, threshold, betas):
         self.c = c
         self.sign_variance_momentum = sign_variance_momentum
         self.EMA, self.EMAVar = self.init_variance_data(betas)
+        self.threshold = threshold
 
     def init_variance_data(self, betas):
         EMA = torch.sign(betas)
@@ -97,7 +98,7 @@ class SmallifySignVarianceTracker():
 
         return EMA, EMAVar
 
-    def sign_variance_pruning(self, threshold, device, betas):
+    def sign_variance_pruning(self, device, betas):
         with torch.no_grad():
             newVal = torch.sign(betas).cpu()
             phi_i = newVal - self.EMA
@@ -105,7 +106,7 @@ class SmallifySignVarianceTracker():
             self.EMAVar = (torch.ones(self.c) - self.sign_variance_momentum) * \
                              (self.EMAVar + (self.sign_variance_momentum * (phi_i ** 2)))
 
-            prune_mask = torch.where(self.EMAVar < threshold, 1.0, 0.0)
+            prune_mask = torch.where(self.EMAVar < self.threshold, 1.0, 0.0)
 
         return prune_mask.to(device)
 
@@ -117,9 +118,9 @@ class SmallifySignVarianceTracker():
             self.EMAVar = (torch.ones(self.c) - self.sign_variance_momentum) * \
                              (self.EMAVar + (self.sign_variance_momentum * (phi_i ** 2)))
 
-    def calculate_pruning_mask(self, threshold, device):
+    def calculate_pruning_mask(self, device):
         with torch.no_grad():
-            prune_mask = torch.where(self.EMAVar < threshold, 1.0, 0.0)
+            prune_mask = torch.where(self.EMAVar < self.threshold, 1.0, 0.0)
 
         return prune_mask.to(device)
 
@@ -157,13 +158,14 @@ class SmallifyResidualSiren(nn.Module):
         self.weight_2 = .5 if ave_second else 1
 
         self.c = intermed_features
+        self.threshold = 0.9
 
         self.betas = None
         if dropout_technique and 'smallify' in dropout_technique and '_quant' not in dropout_technique:
             self.betas = torch.nn.Parameter(torch.empty(intermed_features).normal_(0, 1),
                                             requires_grad=True)  # M: uniform_ or normal_
 
-            self.tracker = SmallifySignVarianceTracker(self.c, sign_variance_momentum, self.betas)
+            self.tracker = SmallifySignVarianceTracker(self.c, sign_variance_momentum, self.threshold, self.betas)
 
     def forward(self, input):
         sine_1 = linear(self.weight_1 * input, self.linear_weights_1, self.linear_bias_1)
