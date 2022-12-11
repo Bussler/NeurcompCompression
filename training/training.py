@@ -137,6 +137,11 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                                                             dataset.min_idx.to(device), dataset.max_idx.to(device),
                                                             dataset.vol_res.to(device))
 
+            # M: Used for Learning rate decay
+            prior_volume_passes = int(voxel_seen / dataset.n_voxels)
+            voxel_seen += ground_truth_volume.shape[0]
+            volume_passes = voxel_seen / dataset.n_voxels
+
             vol_loss = loss_criterion(predicted_volume, ground_truth_volume)
             debug_for_volumeloss = vol_loss.item()
             grad_loss = 0.0
@@ -163,16 +168,16 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                 if args['dropout_technique'] == 'variational':
                     complete_loss, dkl, ll, mse, loss_Weights = calculate_variational_dropout_loss(model, loss_criterion,
                                                                          predicted_volume, ground_truth_volume,
-                                                                         log_sigma=args['variational_sigma'])
+                                                                         log_sigma=args['variational_sigma'],
+                                                                         pass_init_losses=args['variational_dkl_scalinginit'],
+                                                                         current_pass=0, lambda_dkl=args['variational_lambda_dkl'],
+                                                                         lambda_weights=args['variational_lambda_weight'],
+                                                                         lambda_entropy=args['variational_lambda_entropy'])
 
             complete_loss.backward()
             optimizer.step()
 
             # M: Learning rate decay
-            prior_volume_passes = int(voxel_seen / dataset.n_voxels)
-            voxel_seen += ground_truth_volume.shape[0]
-            volume_passes = voxel_seen / dataset.n_voxels
-
             if lrStrategy.decay_learning_rate(prior_volume_passes, volume_passes, complete_loss):
                 lr_decay_stop = True
                 break
