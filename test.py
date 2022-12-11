@@ -14,42 +14,32 @@ from itertools import product
 
 
 def emaTest2():
+    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100_2/mhd_p_100_'
+    experimentNames = np.linspace(0, 47, 48, dtype=int)
 
-    #momentum = 0.5
-    momentum = 2/(100+1)
-    print("Momentum: ",momentum)
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_diffCompRates4Layers/mhd_p_50'
+    experimentNamesUnpruned = [100]
 
-    threshold = 0.9
+    InfoName = 'info.txt'
+    configName = 'config.txt'
 
-    breaks = []
+    PSNR = []
+    CompressionRatio = []
 
-    for j in range(100):
+    PSNRUnpruned = []
+    CompressionRatioUnpruned = []
 
-        oldEMA = 1
-        oldEMAVar = 0
+    pu.generate_plot_lists(([PSNR, CompressionRatio],),
+                           (['psnr', 'compression_ratio'],),
+                           BASENAME, (InfoName,), experiment_names=experimentNames)
 
-        numbers = [1]
+    pu.generate_plot_lists(([PSNRUnpruned, CompressionRatioUnpruned],),
+                        (['psnr', 'compression_ratio'],),
+                        BASENAMEUnpruned, (InfoName,), experiment_names=experimentNamesUnpruned)
 
-        for i in range(1000):
-            #rand = np.random.randint(2, size=1)[0]
-            rand = random.choices([1, -1], cum_weights=(0.7, 1.0), k=1)[0]
-            newVal = rand
+    filepath = 'plots/' + 'mhd_p_' + 'Compression100_ParetoFrontier' + '.png'
+    pu.plot_pareto_frontier(CompressionRatio, PSNR, 'Compression_Ratio', 'PSNR', filepath, BaseX=CompressionRatioUnpruned, BaseY=PSNRUnpruned)
 
-            numbers.append(newVal)
-
-            phi_i = newVal - oldEMA
-            oldEMA = oldEMA + (momentum * phi_i)
-            oldEMAVar = (1.0-momentum) * (oldEMAVar + (momentum*(phi_i ** 2)))
-
-            #print("EMA: ", oldEMAVar)
-            if oldEMAVar > threshold:
-                #print('DAB ', i)
-                #print(numbers)
-                breaks.append(i)
-                break
-
-    b = np.asarray(breaks)
-    print("Mean break: ", np.mean(b))
 
 
 def calculate_variance_of_data():
@@ -82,7 +72,7 @@ def psnr_test():
                                              write_vols=False)
 
 
-def plotTest():
+def Hyperparam_Best_Runs():
     BASENAMEPruned = 'experiments/hyperparam_search/test_experiment_smallify_GridSearch/test_experimentHyperSearch'
     # 'experiments/hyperparam_search/test_experiment_smallify_RandomSearch/test_experimentHyperSearch'
     # 'experiments/hyperparam_search/mhd_p_Random_betas/mhd_p_HyperSearch'
@@ -121,8 +111,9 @@ def plotTest():
     pass
 
 
+
 if __name__ == '__main__':
-    #emaTest2()
+    emaTest2()
     #calculate_variance_of_data()
     #psnr_test()
-    plotTest()
+    #Hyperparam_Best_Runs()

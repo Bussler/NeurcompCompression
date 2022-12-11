@@ -1,10 +1,11 @@
 from cProfile import label
+
 from mlflow import log_metric, log_param, log_artifacts
 from mlflow.tracking import MlflowClient
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from pltUtils import generate_array_MLFlow, dict_from_file, append_lists_from_dicts, generate_plot_lists,\
-    normalize_array_0_1, normalize_array, generate_orderedValues, generateMeanValues
+    normalize_array_0_1, normalize_array, generate_orderedValues, generateMeanValues, plot_pareto_frontier
 import numpy as np
 from itertools import product
 
@@ -467,20 +468,15 @@ def CompressionGainVSPSNR():
 
 
 def PrunedVSUnpruned():
-    BASENAMEPruned = 'experiments/hyperparam_search/test_experiment_smallify_GridSearch/test_experimentHyperSearch'
-    #'experiments/hyperparam_search/test_experiment_smallify_RandomSearch/test_experimentHyperSearch'
-    #'experiments/hyperparam_search/mhd_p_Random_betas/mhd_p_HyperSearch'
-    #experimentNamesPruned = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    BASENAMEPruned = 'experiments/diff_comp_rates/mhd_p_diffCompRates4Layers/mhd_p_dropped'
 
-    experimentNamesPruned = []
-    for i in range(0, 54):
-        experimentNamesPruned.append(i)
+    experimentNamesPruned = [100,200,300,400]
 
-    BASENAMEUnpruned = 'experiments/diff_comp_rates/test_experiment_diff_comp_rates_otherHyper/test_experiment'
-    #'experiments/diff_comp_rates/mhd_p_diffCompRates/mhd_p_'
-    experimentNamesUnpruned = [50,100,150,200,300]
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_diffCompRates4Layers/mhd_p_50'
+    #experimentNamesUnpruned = ['5050', '50100', '50200', '50300', '50400']
 
-    QUANTNAMECONFIG = 'Dequant_Info.txt'
+    QUANTNAMECONFIG = 'info.txt'
+    #QUANTNAMECONFIG = 'Dequant_Info.txt'
 
     compressionRatioPruned = []
     PSNRPruned = []
@@ -490,24 +486,25 @@ def PrunedVSUnpruned():
 
     # M: generate lists...
     generate_plot_lists(([compressionRatioPruned, PSNRPruned],),
-                        (['Quant_Compression_Ratio', 'psnr'],),
+                        (['compression_ratio', 'psnr'],),
                         BASENAMEPruned, (QUANTNAMECONFIG,), experiment_names=experimentNamesPruned)
 
     generate_plot_lists(([compressionRatioUnpruned, PSNRUnpruned],),
-                        (['Quant_Compression_Ratio', 'psnr'],),
-                        BASENAMEUnpruned, (QUANTNAMECONFIG,), experiment_names=experimentNamesUnpruned)
+                        (['compression_ratio', 'psnr'],),
+                        BASENAMEUnpruned, (QUANTNAMECONFIG,), experiment_names=experimentNamesPruned)
 
 
-    plt.scatter(compressionRatioPruned, PSNRPruned, label = 'Pruned')
+    #plt.scatter(compressionRatioPruned, PSNRPruned, label = 'Pruned')
+    plt.plot(compressionRatioPruned, PSNRPruned, label='Pruning')
     plt.plot(compressionRatioUnpruned, PSNRUnpruned, label='No Pruning')
 
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-    plt.xlabel('Compressionratio after Quantization 8 bits')
+    plt.xlabel('Compressionratio')
     plt.ylabel('psnr')
     plt.legend()
 
-    filepath = 'plots/' + 'test_volume_GridSearch_' + 'PrunedVSUnpruned' + '.png'
+    filepath = 'plots/' + 'mhd_p_4Layers_' + 'PrunedVSUnpruned' + '.png'
     plt.savefig(filepath)
 
 
@@ -896,6 +893,102 @@ def ResnetVSNoResnet():
     filepath = 'plots/' + 'test_volume_' + 'ResnetVSNoResnet_4Channel' + '.png'
     plt.savefig(filepath)
 
+def DifferentRuns():
+    BASENAME = 'experiments/diff_comp_rates/test_experiment_Variational/4C_Resnet/test_experiment_Variational_WithResnet_'
+    experimentNames = ['SP1', 'SM0', 'SM1', 'SM2', 'SM3', 'SM4']
+
+    InfoName = 'info.txt'
+    configName = 'config.txt'
+
+    PSNR = []
+    Sigma = []
+
+    generate_plot_lists(([PSNR, ], [Sigma, ]),
+                        (['psnr', ], ['variational_sigma', ]),
+                        BASENAME, (InfoName, configName), experiment_names=experimentNames)
+
+    plt.scatter(Sigma, PSNR, label='Orig_Compression 100')
+
+    plt.xlabel('Log_Sigma')
+    plt.ylabel('psnr')
+    plt.legend()
+
+    filepath = 'plots/' + 'test_volume_' + 'VariationalDropout_4Channel' + '.png'
+    plt.savefig(filepath)
+
+
+def generateParetoFrontier():
+    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100_2/mhd_p_100_'
+    experimentNames = np.linspace(0, 47, 48, dtype=int)
+
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_diffCompRates4Layers/mhd_p_50'
+    experimentNamesUnpruned = [100]
+
+    InfoName = 'info.txt'
+    configName = 'config.txt'
+
+    PSNR = []
+    CompressionRatio = []
+
+    PSNRUnpruned = []
+    CompressionRatioUnpruned = []
+
+    generate_plot_lists(([PSNR, CompressionRatio],),
+                           (['psnr', 'compression_ratio'],),
+                           BASENAME, (InfoName,), experiment_names=experimentNames)
+
+    generate_plot_lists(([PSNRUnpruned, CompressionRatioUnpruned],),
+                        (['psnr', 'compression_ratio'],),
+                        BASENAMEUnpruned, (InfoName,), experiment_names=experimentNamesUnpruned)
+
+    filepath = 'plots/' + 'mhd_p_' + 'Compression100_ParetoFrontier' + '.png'
+    plot_pareto_frontier(CompressionRatio, PSNR, 'Compression_Ratio', 'PSNR', filepath, BaseX=CompressionRatioUnpruned, BaseY=PSNRUnpruned)
+
+
+def CompressionVSRMSE():
+    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100_2/mhd_p_100_'
+    experimentNames = np.linspace(0, 47, 48, dtype=int)
+
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_diffCompRates4Layers/mhd_p_50'
+    experimentNamesUnpruned = [100]
+
+    InfoName = 'info.txt'
+    configName = 'config.txt'
+
+    PSNR = []
+    CompressionRatio = []
+    RMSE = []
+
+    PSNRUnpruned = []
+    CompressionRatioUnpruned = []
+    RMSEUnpruned = []
+
+    generate_plot_lists(([PSNR, CompressionRatio, RMSE],),
+                           (['psnr', 'compression_ratio', 'rmse'],),
+                           BASENAME, (InfoName,), experiment_names=experimentNames)
+
+    generate_plot_lists(([PSNRUnpruned, CompressionRatioUnpruned, RMSEUnpruned],),
+                        (['psnr', 'compression_ratio', 'rmse'],),
+                        BASENAMEUnpruned, (InfoName,), experiment_names=experimentNamesUnpruned)
+
+    comprRMSE = []
+    for i in range(len(CompressionRatio)):
+        comprRMSE.append(CompressionRatio[i] / RMSE[i])
+
+    comprRMSEUnpruned = []
+    for i in range(len(CompressionRatioUnpruned)):
+        comprRMSEUnpruned.append(CompressionRatioUnpruned[i] / RMSEUnpruned[i])
+
+    plt.scatter(CompressionRatio, comprRMSE, label='Pruned')
+    plt.axhline(y=comprRMSEUnpruned[0], color='r', linestyle='-', label='Baseline Unpruned')
+
+    plt.xlabel('Compression_Ratio')
+    plt.ylabel('CompressionRatio/RMSE')
+    plt.legend()
+
+    filepath = 'plots/' + 'mhd_p_' + 'Compression100_RatioVSRMSE' + '.png'
+    plt.savefig(filepath)
+
 
 if __name__ == '__main__':
     #rmseTTHRESHExperiment()
@@ -911,5 +1004,9 @@ if __name__ == '__main__':
     #influenceHyperSearchParams()
     #SmallifyVSNeurcompLR()
     #SmallifyAftertrainingVSNoAftertrainig()
-    SmallifyDifferentNWSizes()
+    #SmallifyDifferentNWSizes()
     #ResnetVSNoResnet()
+    #DifferentRuns()
+    #generateParetoFrontier()
+    CompressionVSRMSE()
+
