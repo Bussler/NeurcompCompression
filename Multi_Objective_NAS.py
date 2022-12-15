@@ -186,7 +186,7 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
             ],
         ),
         objective_thresholds=[
-            ObjectiveThreshold(metric=compression_ratio, bound=105.0, relative=False),
+            ObjectiveThreshold(metric=compression_ratio, bound=100.0, relative=False),
             ObjectiveThreshold(metric=psnr, bound=45.0, relative=False),
         ],
     )

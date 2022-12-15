@@ -62,8 +62,8 @@ def config_parser():
                         help='sigma for the stochastical nw prediction')
     parser.add_argument('--variational_init_droprate', type=float, default=0.5,
                         help='Droprate to initialize drop layers with')
-    parser.add_argument('--variational_dkl_scalinginit', type=float, default=0,
-                        help='passes after which to begin with dkl')
+    parser.add_argument('--variational_dkl_multiplier', type=float, default=1e-8,
+                        help='increase dkl during training')
     parser.add_argument('--variational_lambda_dkl', type=float, default=1e-5,
                         help='lambda scaling term for dkl in case of variational dropout')
     parser.add_argument('--variational_lambda_weight', type=float, default=1e-5,

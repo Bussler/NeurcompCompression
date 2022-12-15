@@ -26,34 +26,29 @@ def calculte_weight_loss(model):
 
     for module in model.net_layers.modules():
         if isinstance(module, SirenLayer.SineLayer):
-            loss_Weights = loss_Weights + module.p_norm_loss()
+            loss_Weights = loss_Weights + module.p_norm_loss(with_bias=False)
         if isinstance(module, SirenLayer.ResidualSineBlock):
-            loss_Weights = loss_Weights + module.p_norm_loss()
+            loss_Weights = loss_Weights + module.p_norm_loss(with_bias=False)
 
     return loss_Weights
 
 
 def calculate_variational_dropout_loss(model, loss_criterion, predicted_volume, ground_truth_volume, log_sigma,
-                                       pass_init_losses, current_pass, lambda_dkl, lambda_weights, lambda_entropy):
+                                    lambda_dkl, lambda_weights, lambda_entropy):
     Dkl_sum = 0.0
     Entropy_sum = 0.0
     for module in model.net_layers.modules():
         if isinstance(module, VariationalDropout):
             Dkl_sum = Dkl_sum + module.calculate_Dkl()
             Entropy_sum = Entropy_sum + module.calculate_Dropout_Entropy()
-    #Dkl_sum = (1/predicted_volume.shape[0]) * Dkl_sum  # 0.1 (1/predicted_volume.shape[0]) *
-    Dkl_sum = lambda_dkl * Dkl_sum
+    Dkl_sum = (lambda_dkl/predicted_volume.shape[0]) * Dkl_sum  # 0.1 (1/predicted_volume.shape[0]) *
+    #Dkl_sum = lambda_dkl * Dkl_sum
     Entropy_sum = lambda_weights * Entropy_sum  # 0.00001
     weight_loss = lambda_entropy * calculte_weight_loss(model)  # 0.00001
 
     Log_Likelyhood, mse = calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volume, log_sigma)
 
-    if current_pass < pass_init_losses:
-        complete_loss = -Log_Likelyhood
-    else:
-        complete_loss = -(Log_Likelyhood - Dkl_sum - weight_loss - Entropy_sum)
-
-    #complete_loss = -(Log_Likelyhood - Dkl_sum - weight_loss - Entropy_sum)
+    complete_loss = -(Log_Likelyhood - Dkl_sum - weight_loss)# - Entropy_sum)
 
     return complete_loss, Dkl_sum, Log_Likelyhood, mse, weight_loss
 

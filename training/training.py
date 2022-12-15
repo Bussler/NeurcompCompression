@@ -113,6 +113,8 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
     step_iter = 0
     lr_decay_stop = False
 
+    variational_dkl_lambda = dataset.n_voxels
+
     while int(volume_passes) + 1 < args['max_pass'] and not lr_decay_stop:  # M: epochs
 
         for idx, data in enumerate(data_loader):
@@ -169,10 +171,13 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     complete_loss, dkl, ll, mse, loss_Weights = calculate_variational_dropout_loss(model, loss_criterion,
                                                                          predicted_volume, ground_truth_volume,
                                                                          log_sigma=args['variational_sigma'],
-                                                                         pass_init_losses=args['variational_dkl_scalinginit'],
-                                                                         current_pass=0, lambda_dkl=args['variational_lambda_dkl'],
+                                                                         #lambda_dkl=args['variational_lambda_dkl'],
+                                                                         lambda_dkl=variational_dkl_lambda,
                                                                          lambda_weights=args['variational_lambda_weight'],
                                                                          lambda_entropy=args['variational_lambda_entropy'])
+
+                    # M: Gradual scaling of variational dkl
+                    variational_dkl_lambda = variational_dkl_lambda * (1.0 + args['variational_dkl_multiplier'])
 
             complete_loss.backward()
             optimizer.step()
@@ -272,7 +277,7 @@ def training(args, verbose=True):
 
     if args['dropout_technique']:
         args_first = deepcopy(args)
-        #args_first['max_pass'] *= (2.0/3.0)
+        args_first['max_pass'] *= (2.0/3.0)
 
         model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume,
                            dataset, data_loader, args_first, verbose)
@@ -288,20 +293,18 @@ def training(args, verbose=True):
         if args['dropout_technique'] == 'variational':
             if args['use_resnet']:
                 model = prune_variational_dropout_use_resnet(model)
-                #pass
             else:
                 model = prune_variational_dropout_no_resnet(model)
-                #pass
         model.to(device)
 
         # M: finetuning after pruning
-        #print('---Retraining after pruning---')
-        #args_second = deepcopy(args)
-        #args_second['max_pass'] *= (1.0/3.0)
-        #args_second['dropout_technique'] = ''
-        #optimizer = torch.optim.Adam(model.parameters(), lr=args['lr']/100.0)
-        #model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume, dataset,
-        #                   data_loader, args_second, verbose)
+        print('---Retraining after pruning---')
+        args_second = deepcopy(args)
+        args_second['max_pass'] *= (1.0/3.0)
+        args_second['dropout_technique'] = ''
+        optimizer = torch.optim.Adam(model.parameters(), lr=args['lr']/100.0)
+        model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume, dataset,
+                           data_loader, args_second, verbose)
     else:
         model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume, dataset,
                            data_loader, args, verbose)
