@@ -60,6 +60,8 @@ class VariationalDropout(DropoutLayer):
     k3 = 1.48695
     C = -k1
 
+    i = 0
+
     def __init__(self, number_thetas, init_dropout=0.5, threshold=0.9):
         super(VariationalDropout, self).__init__(init_dropout, threshold)
         self.c = number_thetas
@@ -70,6 +72,13 @@ class VariationalDropout(DropoutLayer):
         self.log_var = torch.nn.Parameter(torch.empty(number_thetas).fill_(log_alphas), requires_grad=True)
 
         self.pruning_threshold = threshold
+        #if VariationalDropout.i == 1:
+        #    self.pruning_threshold = 0.9
+        #if VariationalDropout.i == 2:
+        #    self.pruning_threshold = 0.9
+        #if VariationalDropout.i == 3:
+        #    self.pruning_threshold = 0.9
+        #VariationalDropout.i = VariationalDropout.i +1
 
     @property
     def alphas(self):
@@ -93,8 +102,6 @@ class VariationalDropout(DropoutLayer):
 
     def calculate_Dkl(self):
         log_alphas = self.log_var - 2.0 * self.log_thetas
-        #dkl = self.k1 * torch.sigmoid(self.k2 + self.k3 * log_alphas)\
-        #      - 0.5 * torch.log(1 + torch.pow(self.alphas, -1.0)) + self.C
 
         t1 = self.k1 * torch.sigmoid(self.k2 + self.k3 * log_alphas)
         t2 = 0.5 * F.softplus(-log_alphas, beta=1.)
@@ -123,7 +130,7 @@ class VariationalDropout(DropoutLayer):
         bin1 = torch.mean((self.dropout_rates < 0.1).to(torch.float)).item()
         bin3 = torch.mean((self.dropout_rates > 0.9).to(torch.float)).item()
         bin2 = 1.0-bin1-bin3
-        return dropped, bin1, bin2, bin3
+        return dropped, self.dropout_rates
 
     @classmethod
     def create_instance(cls, c, init_dropout=0.5, threshold=0.9):

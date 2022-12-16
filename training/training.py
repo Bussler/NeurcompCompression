@@ -177,6 +177,7 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                                                                          lambda_entropy=args['variational_lambda_entropy'])
 
                     # M: Gradual scaling of variational dkl
+                    #if variational_dkl_lambda < variational_dkl_lambda * (1.0 + 1e-03):
                     variational_dkl_lambda = variational_dkl_lambda * (1.0 + args['variational_dkl_multiplier'])
 
             complete_loss.backward()
@@ -195,25 +196,15 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                         .format(volume_passes, args['max_pass'], mse.item(), ll, dkl, complete_loss.item()))
 
                     valid_fraction = []
-                    bin1 = []
-                    bin2 = []
-                    bin3= []
+                    droprates = []
                     for module in model.net_layers.modules():
                         if isinstance(module, VariationalDropout):
-                            d, b1, b2, b3 = module.get_valid_fraction()
+                            d, dropr = module.get_valid_fraction()
                             valid_fraction.append(d)
-                            bin1.append(b1)
-                            bin2.append(b2)
-                            bin3.append(b3)
-                    writer.add_scalar("bin1_layer1", bin1[0], step_iter)
-                    writer.add_scalar("bin1_layer2", bin1[1], step_iter)
-                    writer.add_scalar("bin1_layer3", bin1[2], step_iter)
-                    writer.add_scalar("bin2_layer1", bin2[0], step_iter)
-                    writer.add_scalar("bin2_layer2", bin2[1], step_iter)
-                    writer.add_scalar("bin2_layer3", bin2[2], step_iter)
-                    writer.add_scalar("bin3_layer1", bin3[0], step_iter)
-                    writer.add_scalar("bin3_layer2", bin3[1], step_iter)
-                    writer.add_scalar("bin3_layer3", bin3[2], step_iter)
+                            droprates.append(dropr)
+                    writer.add_histogram("droprates_layer1", droprates[0], step_iter)
+                    writer.add_histogram("droprates_layer2", droprates[1], step_iter)
+                    writer.add_histogram("droprates_layer3", droprates[2], step_iter)
                     print('Valid Fraction: ', valid_fraction)
                 else:
                     if args['grad_lambda'] > 0:
@@ -241,7 +232,7 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     writer.add_scalar("nw_weight_loss", loss_Weights, step_iter)
 
             # M: Stop training, if we reach max amount of passes over volume
-            if (int(volume_passes) + 1) == args['max_pass']:
+            if (int(volume_passes)) >= args['max_pass']:
                 break
     return model
 
@@ -277,7 +268,7 @@ def training(args, verbose=True):
 
     if args['dropout_technique']:
         args_first = deepcopy(args)
-        args_first['max_pass'] *= (2.0/3.0)
+        args_first['max_pass'] *= (3.0/3.0)  # #M: obacht!
 
         model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume,
                            dataset, data_loader, args_first, verbose)
@@ -300,7 +291,7 @@ def training(args, verbose=True):
         # M: finetuning after pruning
         print('---Retraining after pruning---')
         args_second = deepcopy(args)
-        args_second['max_pass'] *= (1.0/3.0)
+        args_second['max_pass'] *= (2.0/3.0)  #M: obacht!
         args_second['dropout_technique'] = ''
         optimizer = torch.optim.Adam(model.parameters(), lr=args['lr']/100.0)
         model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume, dataset,
