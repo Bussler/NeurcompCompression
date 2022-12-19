@@ -15,7 +15,7 @@ from mlflow import log_metric, log_param, log_artifacts
 from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy_dynamic,\
     SmallifyResidualSiren, sign_variance_pruning_strategy_do_prune
 from model.pruning import prune_dropout_threshold, prune_smallify_use_resnet, prune_smallify_no_Resnet,\
-    prune_variational_dropout_no_resnet, prune_variational_dropout_use_resnet
+    prune_variational_dropout_no_resnet, prune_variational_dropout_use_resnet, analyzeVariationalPruning
 from model.VariationalDropoutLayer import calculate_variational_dropout_loss, inference_variational_model, VariationalDropout
 import training.learning_rate_decay as lrdecay
 from torch.utils.tensorboard import SummaryWriter
@@ -52,6 +52,7 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
     for layer in model.parameters():
         num_net_params += layer.numel()
     compression_ratio = dataset.n_voxels / num_net_params
+    compr_rmse = compression_ratio / rmse
 
     if verbose:
         print("Trained Model: ", num_net_params, " parameters; ", compression_ratio, " compression ratio")
@@ -65,6 +66,7 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
     info['l1_diff'] = l1_diff
     info['mse'] = mse
     info['rmse'] = rmse
+    info['compr_rmse'] = compr_rmse
 
     #log_param("num_net_params", num_net_params)
     #log_param("compression_ratio", compression_ratio)
@@ -79,6 +81,7 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
     writer.add_scalar("psnr", psnr)
     writer.add_scalar("mse", mse)
     writer.add_scalar("rmse", rmse)
+    writer.add_scalar("compr_rmse", compr_rmse)
 
     if args['dropout_technique']:
         writer.add_scalar("lambda_Betas", args['lambda_betas'])
@@ -172,13 +175,13 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                                                                          predicted_volume, ground_truth_volume,
                                                                          log_sigma=args['variational_sigma'],
                                                                          #lambda_dkl=args['variational_lambda_dkl'],
-                                                                         lambda_dkl=variational_dkl_lambda,
+                                                                         lambda_dkl=variational_dkl_lambda * args['variational_lambda_dkl'],
                                                                          lambda_weights=args['variational_lambda_weight'],
                                                                          lambda_entropy=args['variational_lambda_entropy'])
 
                     # M: Gradual scaling of variational dkl
-                    #if variational_dkl_lambda < variational_dkl_lambda * (1.0 + 1e-03):
-                    variational_dkl_lambda = variational_dkl_lambda * (1.0 + args['variational_dkl_multiplier'])
+                    if variational_dkl_lambda < variational_dkl_lambda * (1.0 + 1e-03):
+                        variational_dkl_lambda = variational_dkl_lambda * (1.0 + args['variational_dkl_multiplier'])
 
             complete_loss.backward()
             optimizer.step()
@@ -192,8 +195,8 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
             if idx % 100 == 0 and verbose:
                 if args['dropout_technique'] and args['dropout_technique'] == 'variational':
                     print(
-                        'Pass [{:.4f} / {:.1f}]: volume mse: {:.4f}, LL: {:.4f}, DKL: {:.4f}, complete loss: {:.4f} '
-                        .format(volume_passes, args['max_pass'], mse.item(), ll, dkl, complete_loss.item()))
+                        'Pass [{:.4f} / {:.1f}]: volume mse: {:.4f}, LL: {:.4f}, DKL: {:.4f}, Weights: {:.4f}, complete loss: {:.4f} '
+                        .format(volume_passes, args['max_pass'], mse.item(), ll, dkl, loss_Weights, complete_loss.item()))
 
                     valid_fraction = []
                     droprates = []
@@ -280,6 +283,14 @@ def training(args, verbose=True):
                 model = prune_smallify_use_resnet(model, SmallifyDropout)  # M: prune and mult betas
             else:
                 model = prune_smallify_no_Resnet(model, SmallifyDropout)  # M: prune and mult betas
+
+        #weightsp, weights = analyzeVariationalPruning(model)
+        #writer.add_histogram("weights_invalid_layer1", weights[0],0)
+        #writer.add_histogram("weights_invalid_layer2", weightsp[1],0)
+        #writer.add_histogram("weights_invalid_layer3", weightsp[2],0)
+        #writer.add_histogram("weights_valid_layer1", weights[0],0)
+        #writer.add_histogram("weights_valid_layer2", weights[1],0)
+        #writer.add_histogram("weights_valid_layer3", weights[2],0)
 
         if args['dropout_technique'] == 'variational':
             if args['use_resnet']:

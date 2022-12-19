@@ -22,7 +22,7 @@ def calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volu
 
 
 def calculte_weight_loss(model):
-    loss_Weights = 0
+    loss_Weights = 0.0
 
     for module in model.net_layers.modules():
         if isinstance(module, SirenLayer.SineLayer):
@@ -41,10 +41,10 @@ def calculate_variational_dropout_loss(model, loss_criterion, predicted_volume, 
         if isinstance(module, VariationalDropout):
             Dkl_sum = Dkl_sum + module.calculate_Dkl()
             Entropy_sum = Entropy_sum + module.calculate_Dropout_Entropy()
-    Dkl_sum = (lambda_dkl/predicted_volume.shape[0]) * Dkl_sum  # 0.1 (1/predicted_volume.shape[0]) *
+    Dkl_sum = (lambda_dkl/predicted_volume.shape[0]) * Dkl_sum  # 0.1 (1/predicted_volume.shape[0]) * (lambda_dkl/predicted_volume.shape[0])
     #Dkl_sum = lambda_dkl * Dkl_sum
-    Entropy_sum = lambda_weights * Entropy_sum  # 0.00001
-    weight_loss = lambda_entropy * calculte_weight_loss(model)  # 0.00001
+    Entropy_sum = lambda_entropy * Entropy_sum  # 0.00001
+    weight_loss = lambda_weights * (lambda_dkl/predicted_volume.shape[0]) * calculte_weight_loss(model)  # 0.00001 lambda_weights * (lambda_dkl/predicted_volume.shape[0])
 
     Log_Likelyhood, mse = calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volume, log_sigma)
 
@@ -75,9 +75,9 @@ class VariationalDropout(DropoutLayer):
         #if VariationalDropout.i == 1:
         #    self.pruning_threshold = 0.9
         #if VariationalDropout.i == 2:
-        #    self.pruning_threshold = 0.9
+        #    self.pruning_threshold = 0.85
         #if VariationalDropout.i == 3:
-        #    self.pruning_threshold = 0.9
+        #    self.pruning_threshold = 0.85
         #VariationalDropout.i = VariationalDropout.i +1
 
     @property
@@ -124,6 +124,11 @@ class VariationalDropout(DropoutLayer):
             return torch.ones(1).to('cuda'), torch.zeros(1, dtype=torch.int).to('cuda')
 
         return torch.exp(self.log_thetas)[dropout_rates < self.pruning_threshold], indices
+
+    def get_invalid_thetas(self):
+        dropout_rates = self.dropout_rates
+        indices = torch.where(dropout_rates >= self.pruning_threshold, 1, 0).nonzero().squeeze(1)
+        return indices
 
     def get_valid_fraction(self):
         dropped = torch.mean((self.dropout_rates < self.pruning_threshold).to(torch.float)).item()

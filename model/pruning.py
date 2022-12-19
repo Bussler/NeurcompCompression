@@ -250,3 +250,40 @@ def prune_variational_dropout_no_resnet(model):
                              omega_0=model.omega_0, dropout_technique='', use_resnet=model.use_resnet)
         new_model.load_state_dict(state_dict)
         return new_model
+
+
+def analyzeVariationalPruning(model):
+    last_linear_1 = None
+    last_linear_2 = None
+    startCaching = False
+
+    weights_pruned = []
+    weights_unpruned = []
+
+    with torch.no_grad():
+        for module in model.net_layers.modules():
+            if isinstance(module, ResidualSineBlock):
+                if not startCaching:
+                    startCaching = True
+
+            if isinstance(module, VariationalDropout):
+                indices_pruned = module.get_invalid_thetas()
+                B, indices_unpruned = module.get_valid_thetas()
+
+                w_ = torch.index_select(last_linear_2.weight, 1, indices_pruned)
+                weights_pruned.append(w_)
+
+                w_2 = torch.index_select(last_linear_2.weight, 1, indices_unpruned)
+                weights_unpruned.append(w_2)
+
+                last_linear_1 = None
+                last_linear_2 = None
+
+            if isinstance(module, torch.nn.Linear):
+                if startCaching:
+                    if last_linear_1 is None:
+                        last_linear_1 = module
+                    else:
+                        last_linear_2 = module
+
+    return weights_pruned, weights_unpruned
