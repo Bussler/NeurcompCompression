@@ -1,7 +1,7 @@
 expname = Test_
 data = datasets/test_vol.npy
-basedir = /experiments/diff_comp_rates/test_experiment_Variational/4C_Resnet_Tests/Resnet_GradualDKL/Instant_Init05_Sigma2_DKL1e5_Weight1e5_Entropy1e5/
-Tensorboard_log_dir = variationalTests/Resnet_GradualDKL/Instant_Init05_Sigma2_DKL1e5_Weight1e5_Entropy1e5/0
+basedir = /experiments/diff_comp_rates/test_experiment_Variational/No_Resnet_Test/Sigma8_8_Init1_125Passes_IncreaseDKLWeights_Weights5e-06_Thresh90_N-Weighting0.8/
+Tensorboard_log_dir = variationalTests/No_Resnet_Test/Sigma8_8_Init1_125Passes_IncreaseDKLWeights5e-06_Weights2.0_Thresh90_N-Weighting0.8/0
 
 d_in = 3
 d_out = 1
@@ -11,9 +11,11 @@ checkpoint_path = ''
 
 compression_ratio = 100
 
+dont_use_resnet
+
 grad_lambda = 3e-04
 lr = 0.0007
-max_pass = 100
+max_pass = 125
 pass_decay = 20
 lr_decay = 0.2
 smallify_decay = 0
@@ -22,11 +24,11 @@ batch_size = 1024
 sample_size = 16
 
 dropout_technique = variational
-pruning_threshold = 0.9
-variational_init_droprate = 0.5
+pruning_threshold = 0.90
+variational_init_droprate = 0.1
 
-variational_sigma = -2
-variational_dkl_scalinginit = 0
-variational_lambda_dkl = 1e-05
-variational_lambda_weight = 1e-05
+variational_sigma = -8.8
+variational_dkl_multiplier = 5e-06
+variational_lambda_dkl = 0.8
+variational_lambda_weight = 2.0
 variational_lambda_entropy = 1e-05

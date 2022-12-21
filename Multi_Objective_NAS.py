@@ -20,7 +20,7 @@ from ax.modelbridge.dispatch_utils import choose_generation_strategy
 from ax.service.scheduler import Scheduler, SchedulerOptions
 
 
-def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expname='mhd_p_', total_trials=48):
+def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expname='mhd_p_', directory_name='', total_trials=48):
 
     def trainer(
         log_path: str,
@@ -72,7 +72,10 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
         )
 
     # Make a temporary dir to log our results into
-    log_dir = tempfile.mkdtemp()
+    if directory_name:
+        log_dir = directory_name
+    else:
+        log_dir = tempfile.mkdtemp()
     print("LOG_DIR: ", log_dir)
 
     ax_runner = TorchXRunner(
@@ -185,14 +188,14 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
                 Objective(metric=psnr, minimize=False),
             ],
         ),
-        objective_thresholds=[
-            ObjectiveThreshold(metric=compression_ratio, bound=100.0, relative=False),
-            ObjectiveThreshold(metric=psnr, bound=45.0, relative=False),
-        ],
+        #objective_thresholds=[
+        #    ObjectiveThreshold(metric=compression_ratio, bound=100.0, relative=False),
+        #    ObjectiveThreshold(metric=psnr, bound=45.0, relative=False),
+        #],
     )
 
     experiment = Experiment(
-        name="torchx_mhd_p_Smallify",
+        name="torchx_mhd_p_100_Smallify",
         search_space=search_space,
         optimization_config=opt_config,
         runner=ax_runner,

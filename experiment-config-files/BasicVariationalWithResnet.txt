@@ -1,7 +1,7 @@
 expname = Test_
 data = datasets/test_vol.npy
 basedir = /experiments/diff_comp_rates/test_experiment_Variational/Resnet_WeightTests/Sigma8_8_Init1_125Passes_IncreaseDKLWeights_Weights5e-06_Thresh90_N-Weighting0.8/
-Tensorboard_log_dir = variationalTests/Resnet_WeightTests/Sigma8_8_Init5_125Passes_IncreaseDKLWeights5e-06_Weights2.0_Thresh90_N-Weighting0.8/0
+Tensorboard_log_dir = variationalTests/Resnet_WeightTests/Sigma8_8_Init1_125Passes_IncreaseDKLWeights5e-06_Weights2.0_Thresh90_N-Weighting0.8/0
 
 d_in = 3
 d_out = 1
@@ -23,7 +23,7 @@ sample_size = 16
 
 dropout_technique = variational
 pruning_threshold = 0.90
-variational_init_droprate = 0.5
+variational_init_droprate = 0.1
 
 variational_sigma = -8.8
 variational_dkl_multiplier = 5e-06
