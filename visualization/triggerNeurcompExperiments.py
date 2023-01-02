@@ -5,6 +5,42 @@ from NeurcompDequantization import dequantize
 from model.model_utils import write_dict
 import os
 import visualization.pltUtils as pu
+import numpy as np
+
+
+def neurcompRunsDiffComprRatesFromFrontier():
+    parser = config_parser()
+    args = vars(parser.parse_args())
+
+    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100/mhd_p_100_'
+    experimentNames = np.linspace(0, 49, 50, dtype=int)
+
+    InfoName = 'info.txt'
+    configName = 'config.txt'
+
+    PSNR = []
+    CompressionRatio = []
+
+    pu.generate_plot_lists(([PSNR, CompressionRatio],),
+                        (['psnr', 'compression_ratio'],),
+                        BASENAME, (InfoName,), experiment_names=experimentNames)
+
+    configs = pu.findParetoValues(CompressionRatio, PSNR)
+
+    BASEEXPNAME = args['expname']
+
+    #for compr in [210,225,235,244,296,388,463,546,596,770,931,1251]:#[50.0, 100.0, 200.0, 300.0, 400.0]:
+    for c in configs:
+
+        args['compression_ratio'] = c[0]
+        args['lr'] = c[1]
+        args['grad_lambda'] = c[2]
+        args['n_layers'] = c[3]
+
+        args['expname'] = BASEEXPNAME + str(int(c[0]))
+        args['checkpoint_path'] = ''
+        args['feature_list'] = None
+        training(args)
 
 
 def neurcompRunsDiffComprRates():
@@ -13,7 +49,8 @@ def neurcompRunsDiffComprRates():
 
     BASEEXPNAME = args['expname']
 
-    for compr in [50.0, 100.0, 200.0, 300.0, 400.0]:#[20.0, 50.0, 100.0, 200.0, 400.0]:
+    #for compr in [210,225,235,244,296,388,463,546,596,770,931,1251]:#[50.0, 100.0, 200.0, 300.0, 400.0]:
+    for compr in [105, 194, 283, 303, 311, 371, 468, 511, 603, 715, 808, 945, 1354]:
 
         args['compression_ratio'] = compr
         args['expname'] = BASEEXPNAME + str(int(compr))
@@ -29,9 +66,13 @@ def neurcompRunsVariational():
     BASEEXPNAME = args['expname']
     BASELOGDIR = args['Tensorboard_log_dir']
 
-    for run in [0,1,2]:
+    #for run in [1e-4, 5e-4, 1e-5, 5e-5, 1e-6, 5e-6, 1e-7]:
+    for run in [1.0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5]:
+    #for run in [1e-7,5e-7,1e-8,5e-8]:
+        #args['variational_dkl_multiplier'] = run
+        args['variational_lambda_weight'] = run
         args['expname'] = BASEEXPNAME + str(int(run))
-        args['Tensorboard_log_dir'] = BASELOGDIR + str(run)
+        args['Tensorboard_log_dir'] = BASELOGDIR + str(run) + '/0'
         args['checkpoint_path'] = ''
         args['feature_list'] = None
         training(args)
@@ -92,8 +133,9 @@ def Do_QuantizeDequantize():
 
 
 if __name__ == '__main__':
-    #neurcompRunsDiffComprRates()
-    neurcompRunsVariational()
+    neurcompRunsDiffComprRates()
+    #neurcompRunsDiffComprRatesFromFrontier()
+    #neurcompRunsVariational()
     #Do_QuantizeDequantize()
     #Do_QuantizeDequantize_shifted()
 

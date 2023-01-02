@@ -111,7 +111,7 @@ def generateMeanValues(originalData, numbersOfElements):
     return data_sum
 
 
-def plot_pareto_frontier(Xs, Ys, nameX, nameY, filepath, BaseX=None, BaseY=None, maxX=True, maxY=True):
+def plot_pareto_frontier(Xs, Ys, maxX=True, maxY=True):
     '''Pareto frontier selection process'''
     sorted_list = sorted([[Xs[i], Ys[i]] for i in range(len(Xs))], reverse=maxY)
     pareto_front = [sorted_list[0]]
@@ -123,15 +123,39 @@ def plot_pareto_frontier(Xs, Ys, nameX, nameY, filepath, BaseX=None, BaseY=None,
             if pair[1] <= pareto_front[-1][1]:
                 pareto_front.append(pair)
 
-    '''Plotting process'''
-    plt.scatter(Xs, Ys)
-    pf_X = [pair[0] for pair in pareto_front]
-    pf_Y = [pair[1] for pair in pareto_front]
-    plt.plot(pf_X, pf_Y, label='Pareto_Frontier', color='green')
-    if BaseX is not None and BaseY is not None:
-        plt.scatter(BaseX, BaseY, color='red', label='Baseline Unpruned')
-    plt.xlabel(nameX)
-    plt.ylabel(nameY)
-    plt.legend()
+    return pareto_front
 
-    plt.savefig(filepath)
+def findParetoValues(Xs, Ys, maxX=True, maxY=True):
+    sorted_list = sorted([[Xs[i], Ys[i]] for i in range(len(Xs))], reverse=maxY)
+    pareto_front = [sorted_list[0]]
+    for pair in sorted_list[1:]:
+        if maxY:
+            if pair[1] >= pareto_front[-1][1]:
+                pareto_front.append(pair)
+        else:
+            if pair[1] <= pareto_front[-1][1]:
+                pareto_front.append(pair)
+
+    pf_X = [pair[0] for pair in pareto_front]
+    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100/mhd_p_100_'
+    experimentNames = np.linspace(0, 49, 50, dtype=int)
+
+    infoName = 'info.txt'
+    configName = 'config.txt'
+
+    paretoConfigs = []
+
+    for c in pf_X:
+        for eN in experimentNames:
+            foldername = BASENAME + str(eN)
+            cName = foldername + '/'+infoName
+
+            info = dict_from_file(cName)
+            if info['compression_ratio'] == c:
+                config = dict_from_file(foldername+'/'+configName)
+                print(eN,': ', c, config['lr'], config['grad_lambda'], config['n_layers'])
+
+                pc = [c, config['lr'], config['grad_lambda'], config['n_layers']]
+                paretoConfigs.append(pc)
+
+    return paretoConfigs
