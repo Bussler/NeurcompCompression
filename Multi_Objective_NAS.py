@@ -29,7 +29,7 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
         lr: float,
         grad_lambda: float,
         n_layers: float,
-        #lr_decay: float,
+        lr_decay: float,
         trial_idx: int = -1,
     ) -> specs.AppDef:
 
@@ -62,8 +62,8 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
             str(grad_lambda),
             "--n_layers",
             str(n_layers),
-            #"--lr_decay",
-            #str(lr_decay),
+            "--lr_decay",
+            str(lr_decay),
 
             # other config options
             name="trainer",
@@ -127,6 +127,14 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
             lower=2,
             upper=8,
             parameter_type=ParameterType.INT,
+        ),
+
+        RangeParameter(
+            name="lr_decay",
+            lower=0.1,
+            upper=0.6,
+            parameter_type=ParameterType.FLOAT,
+            log_scale=True,
         ),
     ]
 

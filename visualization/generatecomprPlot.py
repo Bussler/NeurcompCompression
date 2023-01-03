@@ -918,17 +918,32 @@ def DifferentRuns():
 
 
 def generateParetoFrontier():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100_2/mhd_p_100_'
-    experimentNames = np.linspace(0, 47, 48, dtype=int)
+    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100/mhd_p_100_'
+    experimentNames = np.linspace(0, 49, 50, dtype=int)
+    #experimentNames = np.delete(experimentNames, 8, axis=0)
+    #experimentNames = np.delete(experimentNames, 8, axis=0)
 
-    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_diffCompRates4Layers/mhd_p_50'
-    experimentNamesUnpruned = [100]
+    BASENAMEFinetuning = 'experiments/hyperparam_search/mhd_p_NAS/100_WithFinetuning/mhd_p_100_'
+    experimentNamesFinetuning = np.linspace(0, 49, 50, dtype=int)
+
+    #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/300/mhd_p_'
+    #experimentNamesUnpruned = [325,358,371,598,647,1123,1388,1608,2504,2753,3340]
+
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100/mhd_p_'
+    experimentNamesUnpruned = [102, 144, 166, 211, 253, 268, 283, 293, 325, 363, 414, 442, 474, 512, 617, 638,
+                               797, 895]
+    #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100_ForVariational/mhd_p_'
+    #experimentNamesUnpruned = [105, 194, 283, 303, 311, 371, 468, 511, 603, 715, 808, 945, 1354]
+
 
     InfoName = 'info.txt'
     configName = 'config.txt'
 
     PSNR = []
     CompressionRatio = []
+
+    PSNRFinetuning = []
+    CompressionRatioFinetuning = []
 
     PSNRUnpruned = []
     CompressionRatioUnpruned = []
@@ -937,12 +952,61 @@ def generateParetoFrontier():
                            (['psnr', 'compression_ratio'],),
                            BASENAME, (InfoName,), experiment_names=experimentNames)
 
+    generate_plot_lists(([PSNRFinetuning, CompressionRatioFinetuning],),
+                        (['psnr', 'compression_ratio'],),
+                        BASENAMEFinetuning, (InfoName,), experiment_names=experimentNamesFinetuning)
+
     generate_plot_lists(([PSNRUnpruned, CompressionRatioUnpruned],),
                         (['psnr', 'compression_ratio'],),
                         BASENAMEUnpruned, (InfoName,), experiment_names=experimentNamesUnpruned)
 
-    filepath = 'plots/' + 'mhd_p_' + 'Compression100_ParetoFrontier' + '.png'
-    plot_pareto_frontier(CompressionRatio, PSNR, 'Compression_Ratio', 'PSNR', filepath, BaseX=CompressionRatioUnpruned, BaseY=PSNRUnpruned)
+    pareto_front = plot_pareto_frontier(CompressionRatio, PSNR)
+    pareto_frontFinetuning = plot_pareto_frontier(CompressionRatioFinetuning, PSNRFinetuning)
+
+    '''Plotting process'''
+    #plt.scatter(CompressionRatio, PSNR)
+    pf_X = [pair[0] for pair in pareto_front]
+    pf_Y = [pair[1] for pair in pareto_front]
+
+    pf_XFinetuning = [pair[0] for pair in pareto_frontFinetuning]
+    pf_YFinetuning = [pair[1] for pair in pareto_frontFinetuning]
+
+    new_pf_X = []
+    new_pf_Y = []
+    for i,k in zip(pf_X, pf_Y):
+        if i < 200:
+            new_pf_X.append(i)
+            new_pf_Y.append(k)
+
+    new_pf_XFinetuning = []
+    new_pf_YFinetuning = []
+    for i, k in zip(pf_XFinetuning, pf_YFinetuning):
+        if i < 200:
+            new_pf_XFinetuning.append(i)
+            new_pf_YFinetuning.append(k)
+
+    new_pf_XUnpruned = []
+    new_pf_YUnpruned = []
+    for i, k in zip(CompressionRatioUnpruned, PSNRUnpruned):
+        if i < 200:
+            new_pf_XUnpruned.append(i)
+            new_pf_YUnpruned.append(k)
+
+    plt.plot(new_pf_X, new_pf_Y, label='Pareto_Frontier Pruned', color='green')
+    plt.plot(new_pf_XFinetuning, new_pf_YFinetuning, label='Pareto_Frontier Pruned Finetuned', color='blue')
+    #plt.scatter(CompressionRatioUnpruned, PSNRUnpruned, color='red', label='Baseline Unpruned')
+    plt.plot(new_pf_XUnpruned, new_pf_YUnpruned, label='Baseline Unpruned', color='red')
+
+    plt.xlabel('Compression_Ratio')
+    plt.ylabel('PSNR')
+    plt.legend()
+
+    #print('Pareto-Compressionrates:')
+    #for p in pf_X:
+    #    print(p)
+
+    filepath = 'plots/' + 'mhd_p_' + 'Compression100_ParetoFrontier_PrunedVsUnpruned_WithFinetuning' + '.png'
+    plt.savefig(filepath)
 
 
 def CompressionVSRMSE():
@@ -1007,6 +1071,6 @@ if __name__ == '__main__':
     #SmallifyDifferentNWSizes()
     #ResnetVSNoResnet()
     #DifferentRuns()
-    #generateParetoFrontier()
-    CompressionVSRMSE()
+    generateParetoFrontier()
+    #CompressionVSRMSE()
 

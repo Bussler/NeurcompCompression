@@ -271,7 +271,8 @@ def training(args, verbose=True):
 
     if args['dropout_technique']:
         args_first = deepcopy(args)
-        args_first['max_pass'] *= (3.0/3.0)  # #M: obacht!
+        if args['dropout_technique'] == 'smallify':
+            args_first['max_pass'] *= (2.0 / 3.0)
 
         model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume,
                            dataset, data_loader, args_first, verbose)
@@ -299,15 +300,19 @@ def training(args, verbose=True):
                 model = prune_variational_dropout_no_resnet(model)
         model.to(device)
 
+        # M: finetuning after pruning
+        print('---Retraining after pruning---')
+        args_second = deepcopy(args)
         if args['dropout_technique'] == 'variational':
-            # M: finetuning after pruning
-            print('---Retraining after pruning---')
-            args_second = deepcopy(args)
-            args_second['max_pass'] *= (2.0/3.0)  #M: obacht! (2.0/3.0)
-            args_second['dropout_technique'] = ''
-            optimizer = torch.optim.Adam(model.parameters(), lr=args['lr']/100.0)
-            model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume, dataset,
-                               data_loader, args_second, verbose)
+            args_second['max_pass'] *= (2.0 / 3.0)
+        else:
+            args_second['max_pass'] *= (1.0 / 3.0)
+
+        args_second['dropout_technique'] = ''
+        optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'] / 100.0)
+        model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume, dataset,
+                           data_loader, args_second, verbose)
+
     else:
         model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume, dataset,
                            data_loader, args, verbose)
