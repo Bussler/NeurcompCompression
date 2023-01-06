@@ -918,20 +918,20 @@ def DifferentRuns():
 
 
 def generateParetoFrontier():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100/mhd_p_100_'
-    experimentNames = np.linspace(0, 49, 50, dtype=int)
+    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/200/mhd_p_200_'
+    experimentNames = np.linspace(0, 47, 48, dtype=int)
     #experimentNames = np.delete(experimentNames, 8, axis=0)
     #experimentNames = np.delete(experimentNames, 8, axis=0)
 
-    BASENAMEFinetuning = 'experiments/hyperparam_search/mhd_p_NAS/100_WithFinetuning/mhd_p_100_'
+    BASENAMEFinetuning = 'experiments/hyperparam_search/mhd_p_NAS/200_WithFinetuning/mhd_p_200_'
     experimentNamesFinetuning = np.linspace(0, 49, 50, dtype=int)
 
-    #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/300/mhd_p_'
-    #experimentNamesUnpruned = [325,358,371,598,647,1123,1388,1608,2504,2753,3340]
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/200/mhd_p_'
+    experimentNamesUnpruned = [210, 225, 235, 244, 296, 388, 463, 546, 596, 770, 931, 1251]
 
-    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100/mhd_p_'
-    experimentNamesUnpruned = [102, 144, 166, 211, 253, 268, 283, 293, 325, 363, 414, 442, 474, 512, 617, 638,
-                               797, 895]
+    #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/200/mhd_p_'
+    #experimentNamesUnpruned = [102, 144, 166, 211, 253, 268, 283, 293, 325, 363, 414, 442, 474, 512, 617, 638,
+    #                           797, 895]
     #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100_ForVariational/mhd_p_'
     #experimentNamesUnpruned = [105, 194, 283, 303, 311, 371, 468, 511, 603, 715, 808, 945, 1354]
 
@@ -974,27 +974,27 @@ def generateParetoFrontier():
     new_pf_X = []
     new_pf_Y = []
     for i,k in zip(pf_X, pf_Y):
-        if i < 200:
+        if i < 1300:
             new_pf_X.append(i)
             new_pf_Y.append(k)
 
     new_pf_XFinetuning = []
     new_pf_YFinetuning = []
     for i, k in zip(pf_XFinetuning, pf_YFinetuning):
-        if i < 200:
+        if i < 1300:
             new_pf_XFinetuning.append(i)
             new_pf_YFinetuning.append(k)
 
     new_pf_XUnpruned = []
     new_pf_YUnpruned = []
     for i, k in zip(CompressionRatioUnpruned, PSNRUnpruned):
-        if i < 200:
+        if i < 1300:
             new_pf_XUnpruned.append(i)
             new_pf_YUnpruned.append(k)
 
     plt.plot(new_pf_X, new_pf_Y, label='Pareto_Frontier Pruned', color='green')
     plt.plot(new_pf_XFinetuning, new_pf_YFinetuning, label='Pareto_Frontier Pruned Finetuned', color='blue')
-    #plt.scatter(CompressionRatioUnpruned, PSNRUnpruned, color='red', label='Baseline Unpruned')
+    #plt.scatter(CompressionRatioFinetuning, PSNRFinetuning, color='red', label='Baseline Unpruned')
     plt.plot(new_pf_XUnpruned, new_pf_YUnpruned, label='Baseline Unpruned', color='red')
 
     plt.xlabel('Compression_Ratio')
@@ -1005,7 +1005,7 @@ def generateParetoFrontier():
     #for p in pf_X:
     #    print(p)
 
-    filepath = 'plots/' + 'mhd_p_' + 'Compression100_ParetoFrontier_PrunedVsUnpruned_WithFinetuning' + '.png'
+    filepath = 'plots/' + 'mhd_p_' + 'Compression200_ParetoFrontier_PrunedVsUnpruned_WithFinetuning' + '.png'
     plt.savefig(filepath)
 
 
@@ -1053,6 +1053,246 @@ def CompressionVSRMSE():
     filepath = 'plots/' + 'mhd_p_' + 'Compression100_RatioVSRMSE' + '.png'
     plt.savefig(filepath)
 
+def HyperparamAnalysis():
+    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/200_WithFinetuning/mhd_p_200_'
+    experimentNames = np.linspace(0, 49, 50, dtype=int)
+
+    InfoName = 'info.txt'
+    configName = 'config.txt'
+
+    PSNR = []
+    CompressionRatio = []
+
+    generate_plot_lists(([PSNR, CompressionRatio],),
+                        (['psnr', 'compression_ratio'],),
+                        BASENAME, (InfoName,), experiment_names=experimentNames)
+
+    pareto_front = plot_pareto_frontier(CompressionRatio, PSNR)
+
+    pf_X = [pair[0] for pair in pareto_front]
+    pf_Y = [pair[1] for pair in pareto_front]
+
+    paretoCompr = []
+    paretoPsnr = []
+    paretoLBeta = []
+    paretoLWeight = []
+    paretoLR = []
+    paretoLGrad = []
+    paretoNLayer = []
+    paretoLRDecay = []
+
+    for ppair in pareto_front:
+        c = ppair[0]
+        p = ppair[1]
+        for eN in experimentNames:
+            foldername = BASENAME + str(eN)
+            cName = foldername + '/'+InfoName
+
+            info = dict_from_file(cName)
+            if info['compression_ratio'] == c:
+                config = dict_from_file(foldername+'/'+configName)
+
+                #pc = [c, config['lambda_betas'], config['lambda_weights'], config['lr'], config['grad_lambda'], config['n_layers'], config['lr_decay']]
+                paretoCompr.append(c)
+                paretoPsnr.append(p)
+                paretoLBeta.append(config['lambda_betas'])
+                paretoLWeight.append(config['lambda_weights'])
+                paretoLR.append(config['lr'])
+                paretoLGrad.append(config['grad_lambda'])
+                paretoNLayer.append(config['n_layers'])
+                paretoLRDecay.append(config['lr_decay'])
+
+    '''Plotting process'''
+    fig, ((ax1, ax2,ax3,ax4,ax5, ax6),(ax7,ax8,ax9, ax10,ax11,ax12)) = plt.subplots(2, 6, figsize=(15, 15), dpi= 100)
+
+    ax1.plot(paretoLR,paretoCompr, label='LR', color = 'blue')
+    ax1.title.set_text('LR')
+    ax1.set_xlabel('lr')
+    ax1.set_ylabel('Compression Rate')
+
+    ax7.plot(paretoLR,paretoPsnr, label='LR', color = 'blue')
+    ax7.title.set_text('LR')
+    ax7.set_xlabel('lr')
+    ax7.set_ylabel('PSNR')
+
+    ax2.plot(paretoLGrad,paretoCompr, label='Lambda Gradient', color = 'green')
+    ax2.title.set_text('Lambda Gradient')
+    ax2.set_xlabel('Lambda Gradient')
+    ax2.set_ylabel('Compression Rate')
+
+    ax8.plot(paretoLGrad,paretoPsnr, label='Lambda Gradient', color = 'green')
+    ax8.title.set_text('Lambda Gradient')
+    ax8.set_xlabel('Lambda Gradient')
+    ax8.set_ylabel('PSNR')
+
+    ax3.plot(paretoLBeta,paretoCompr, label='Lambda Beta', color = 'orange')
+    ax3.title.set_text('Lambda Beta')
+    ax3.set_xlabel('Lambda Beta')
+    ax3.set_ylabel('Compression Rate')
+
+    ax9.plot(paretoLBeta,paretoPsnr, label='Lambda Beta', color = 'orange')
+    ax9.title.set_text('Lambda Beta')
+    ax9.set_xlabel('Lambda Beta')
+    ax9.set_ylabel('PSNR')
+
+    ax4.plot(paretoLWeight,paretoCompr, label='Lambda Weight', color = 'red')
+    ax4.title.set_text('Lambda Weight')
+    ax4.set_xlabel('Lambda Weight')
+    ax4.set_ylabel('Compression Rate')
+
+    ax10.plot(paretoLWeight,paretoPsnr, label='Lambda Weight', color = 'red')
+    ax10.title.set_text('Lambda Weight')
+    ax10.set_xlabel('Lambda Weight')
+    ax10.set_ylabel('PSNR')
+
+    ax5.plot(paretoNLayer,paretoCompr, label='N Layer', color = 'violet')
+    ax5.title.set_text('N Layer')
+    ax5.set_xlabel('N Layer')
+    ax5.set_ylabel('Compression Rate')
+
+    ax11.plot(paretoNLayer,paretoPsnr, label='N Layer', color = 'violet')
+    ax11.title.set_text('N Layer')
+    ax11.set_xlabel('N Layer')
+    ax11.set_ylabel('PSNR')
+
+    ax6.plot(paretoLRDecay,paretoCompr, label='LR Decay', color = 'black')
+    ax6.title.set_text('LR Decay')
+    ax6.set_xlabel('LR Decay')
+    ax6.set_ylabel('Compression Rate')
+
+    ax12.plot(paretoLRDecay,paretoPsnr, label='LR Decay', color = 'black')
+    ax12.title.set_text('LR Decay')
+    ax12.set_xlabel('LR Decay')
+    ax12.set_ylabel('PSNR')
+
+    plt.legend()
+    filepath = 'plots/' + 'mhd_p_' + "200_Finetuning_" + 'HyperparamAnalyis' + '.png'
+    plt.savefig(filepath)
+
+def HyperparamAnalysis_Variational():
+    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100/mhd_p_100_'
+    experimentNames = np.linspace(0, 39, 40, dtype=int)
+    experimentNames = np.delete(experimentNames, 8, axis=0)
+    experimentNames = np.delete(experimentNames, 8, axis=0)
+
+    InfoName = 'info.txt'
+    configName = 'config.txt'
+
+    PSNR = []
+    CompressionRatio = []
+
+    generate_plot_lists(([PSNR, CompressionRatio],),
+                        (['psnr', 'compression_ratio'],),
+                        BASENAME, (InfoName,), experiment_names=experimentNames)
+
+    pareto_front = plot_pareto_frontier(CompressionRatio, PSNR)
+
+    pf_X = [pair[0] for pair in pareto_front]
+    pf_Y = [pair[1] for pair in pareto_front]
+
+    new_pf_X = []
+    new_pf_Y = []
+    for i,k in zip(pf_X, pf_Y):
+        if i < 2000:
+            new_pf_X.append(i)
+            new_pf_Y.append(k)
+
+    paretoCompr = []
+    paretoPsnr = []
+    paretoPruning_threshold = []
+    paretoVariational_init_droprate = []
+    paretoVariational_sigma = []
+    paretoVariational_dkl_multiplier = []
+    paretoVariational_lambda_dkl = []
+    paretoVariational_lambda_weight = []
+
+    for c, p in zip(new_pf_X, new_pf_Y):
+        for eN in experimentNames:
+            foldername = BASENAME + str(eN)
+            cName = foldername + '/'+InfoName
+
+            info = dict_from_file(cName)
+            if info['compression_ratio'] == c:
+                config = dict_from_file(foldername+'/'+configName)
+
+                #pc = [c, config['lambda_betas'], config['lambda_weights'], config['lr'], config['grad_lambda'], config['n_layers'], config['lr_decay']]
+                paretoCompr.append(c)
+                paretoPsnr.append(p)
+                paretoPruning_threshold.append(config['pruning_threshold'])
+                paretoVariational_init_droprate.append(config['variational_init_droprate'])
+                paretoVariational_sigma.append(config['variational_sigma'])
+                paretoVariational_dkl_multiplier.append(config['variational_dkl_multiplier'])
+                paretoVariational_lambda_dkl.append(config['variational_lambda_dkl'])
+                paretoVariational_lambda_weight.append(config['variational_lambda_weight'])
+
+    '''Plotting process'''
+    fig, ((ax1, ax2,ax3,ax4,ax5, ax6),(ax7,ax8,ax9, ax10,ax11,ax12)) = plt.subplots(2, 6, figsize=(15, 15), dpi= 100)
+
+    ax1.plot(paretoVariational_sigma,paretoCompr, label='Variational_sigma', color = 'blue')
+    ax1.title.set_text('Variational_sigma')
+    ax1.set_xlabel('Variational_sigma')
+    ax1.set_ylabel('Compression Rate')
+
+    ax7.plot(paretoVariational_sigma,paretoPsnr, label='Variational_sigma', color = 'blue')
+    ax7.title.set_text('Variational_sigma')
+    ax7.set_xlabel('Variational_sigma')
+    ax7.set_ylabel('PSNR')
+
+    ax2.plot(paretoVariational_dkl_multiplier,paretoCompr, label='Variational_dkl_multiplier', color = 'green')
+    ax2.title.set_text('Variational_dkl_multiplier')
+    ax2.set_xlabel('Variational_dkl_multiplier')
+    ax2.set_ylabel('Compression Rate')
+
+    ax8.plot(paretoVariational_dkl_multiplier,paretoPsnr, label='Variational_dkl_multiplier', color = 'green')
+    ax8.title.set_text('Variational_dkl_multiplier')
+    ax8.set_xlabel('Variational_dkl_multiplier')
+    ax8.set_ylabel('PSNR')
+
+    ax3.plot(paretoPruning_threshold,paretoCompr, label='Pruning_threshold', color = 'orange')
+    ax3.title.set_text('Pruning_threshold')
+    ax3.set_xlabel('Pruning_threshold')
+    ax3.set_ylabel('Compression Rate')
+
+    ax9.plot(paretoPruning_threshold,paretoPsnr, label='Pruning_threshold', color = 'orange')
+    ax9.title.set_text('Pruning_threshold')
+    ax9.set_xlabel('Pruning_threshold')
+    ax9.set_ylabel('PSNR')
+
+    ax4.plot(paretoVariational_init_droprate,paretoCompr, label='Variational_init_droprate', color = 'red')
+    ax4.title.set_text('Variational_init_droprate')
+    ax4.set_xlabel('Variational_init_droprate')
+    ax4.set_ylabel('Compression Rate')
+
+    ax10.plot(paretoVariational_init_droprate,paretoPsnr, label='Variational_init_droprate', color = 'red')
+    ax10.title.set_text('Variational_init_droprate')
+    ax10.set_xlabel('Variational_init_droprate')
+    ax10.set_ylabel('PSNR')
+
+    ax5.plot(paretoVariational_lambda_dkl,paretoCompr, label='Variational_lambda_dkl', color = 'violet')
+    ax5.title.set_text('Variational_lambda_dkl')
+    ax5.set_xlabel('Variational_lambda_dkl')
+    ax5.set_ylabel('Compression Rate')
+
+    ax11.plot(paretoVariational_lambda_dkl,paretoPsnr, label='Variational_lambda_dkl', color = 'violet')
+    ax11.title.set_text('Variational_lambda_dkl')
+    ax11.set_xlabel('Variational_lambda_dkl')
+    ax11.set_ylabel('PSNR')
+
+    ax6.plot(paretoVariational_lambda_weight,paretoCompr, label='Variational_lambda_weight', color = 'black')
+    ax6.title.set_text('Variational_lambda_weight')
+    ax6.set_xlabel('Variational_lambda_weight')
+    ax6.set_ylabel('Compression Rate')
+
+    ax12.plot(paretoVariational_lambda_weight,paretoPsnr, label='Variational_lambda_weight', color = 'black')
+    ax12.title.set_text('Variational_lambda_weight')
+    ax12.set_xlabel('Variational_lambda_weight')
+    ax12.set_ylabel('PSNR')
+
+    #plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.6f'))
+    #plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.6f'))
+    plt.legend()
+    filepath = 'plots/' + 'mhd_p_' + "Variational_100_" + 'HyperparamAnalyis' + '.png'
+    plt.savefig(filepath)
 
 if __name__ == '__main__':
     #rmseTTHRESHExperiment()
@@ -1071,6 +1311,8 @@ if __name__ == '__main__':
     #SmallifyDifferentNWSizes()
     #ResnetVSNoResnet()
     #DifferentRuns()
-    generateParetoFrontier()
+    #generateParetoFrontier()
     #CompressionVSRMSE()
+    HyperparamAnalysis()
+    #HyperparamAnalysis_Variational()
 
