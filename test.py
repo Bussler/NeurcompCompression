@@ -14,31 +14,10 @@ from itertools import product
 
 
 def emaTest2():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100_2/mhd_p_100_'
-    experimentNames = np.linspace(0, 47, 48, dtype=int)
-
-    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_diffCompRates4Layers/mhd_p_50'
-    experimentNamesUnpruned = [100]
-
-    InfoName = 'info.txt'
-    configName = 'config.txt'
-
-    PSNR = []
-    CompressionRatio = []
-
-    PSNRUnpruned = []
-    CompressionRatioUnpruned = []
-
-    pu.generate_plot_lists(([PSNR, CompressionRatio],),
-                           (['psnr', 'compression_ratio'],),
-                           BASENAME, (InfoName,), experiment_names=experimentNames)
-
-    pu.generate_plot_lists(([PSNRUnpruned, CompressionRatioUnpruned],),
-                        (['psnr', 'compression_ratio'],),
-                        BASENAMEUnpruned, (InfoName,), experiment_names=experimentNamesUnpruned)
-
-    filepath = 'plots/' + 'mhd_p_' + 'Compression100_ParetoFrontier' + '.png'
-    pu.plot_pareto_frontier(CompressionRatio, PSNR, 'Compression_Ratio', 'PSNR', filepath, BaseX=CompressionRatioUnpruned, BaseY=PSNRUnpruned)
+    experimentNames = np.linspace(0, 39, 40, dtype=int)
+    experimentNames = np.delete(experimentNames, 8, axis=0)
+    experimentNames = np.delete(experimentNames, 8, axis=0)
+    pass
 
 
 
@@ -110,10 +89,61 @@ def Hyperparam_Best_Runs():
 
     pass
 
+def calcParetoStuff():
+    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100/mhd_p_100_'
+    experimentNames = np.linspace(0, 39, 40, dtype=int)
+    experimentNames = np.delete(experimentNames, 8, axis=0)
+    experimentNames = np.delete(experimentNames, 8, axis=0)
 
+    InfoName = 'info.txt'
+    configName = 'config.txt'
+
+    PSNR = []
+    CompressionRatio = []
+
+    pu.generate_plot_lists(([PSNR, CompressionRatio],),
+                        (['psnr', 'compression_ratio'],),
+                        BASENAME, (InfoName,), experiment_names=experimentNames)
+
+    d = pu.findParetoValues(CompressionRatio, PSNR, BASENAME, experimentNames)
+    pass
+
+def analyse_NW_Weights():
+    from torch.nn import Linear
+
+    Configpath = 'experiments/diff_comp_rates/mhd_p_Baselines/100/mhd_p_211/config.txt'
+    #Configpath = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100/mhd_p_100_39/config.txt'
+    args = pu.dict_from_file(Configpath)
+    volume = get_tensor(args['data'])
+    dataset = IndexDataset(volume, args['sample_size'])
+
+    model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'],
+                           args['d_in'], args['d_out'], args['omega_0'], args['checkpoint_path'],
+                           dropout_technique=args['dropout_technique']+'_quant',
+                           featureList=args['feature_list'],)
+
+    layers = []
+    for layer in model.net_layers.modules():
+        if isinstance(layer, Linear):
+            layers.append(layer.weight.data)
+
+    fig, ax = plt.subplots(nrows=len(layers), ncols=1, figsize=(8, 8))
+    fig.tight_layout()
+
+    for i in range(len(layers)):
+        ax[i].hist(layers[i], bins=30, label = str(i))
+        ax[i].title.set_text('Layer '+str(i))
+
+    filepath = 'plots/' + 'mhd_p_' + 'Weight_Historgramm' + "Baseline_211" + '.png'
+    plt.savefig(filepath)
+
+    pass
 
 if __name__ == '__main__':
-    emaTest2()
+    #emaTest2()
     #calculate_variance_of_data()
     #psnr_test()
     #Hyperparam_Best_Runs()
+
+    #calcParetoStuff()
+    analyse_NW_Weights()
