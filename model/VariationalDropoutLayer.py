@@ -131,11 +131,11 @@ class VariationalDropout(DropoutLayer):
         return indices
 
     def get_valid_fraction(self):
-        dropped = torch.mean((self.dropout_rates < self.pruning_threshold).to(torch.float)).item()
+        not_dropped = torch.mean((self.dropout_rates < self.pruning_threshold).to(torch.float)).item()
         bin1 = torch.mean((self.dropout_rates < 0.1).to(torch.float)).item()
         bin3 = torch.mean((self.dropout_rates > 0.9).to(torch.float)).item()
         bin2 = 1.0-bin1-bin3
-        return dropped, self.dropout_rates
+        return not_dropped, self.dropout_rates
 
     @classmethod
     def create_instance(cls, c, init_dropout=0.5, threshold=0.9):

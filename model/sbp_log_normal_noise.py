@@ -44,7 +44,7 @@ def calculate_log_normal_dropout_loss(model, loss_criterion, predicted_volume, g
     #Log_Likelyhood = loss_criterion(predicted_volume, ground_truth_volume)
     Log_Likelyhood, mse = calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volume, log_sigma)
 
-    complete_loss = -(Log_Likelyhood - Dkl_sum)# -(Log_Likelyhood - Dkl_sum - weight_loss)# - Entropy_sum)
+    complete_loss = -(Log_Likelyhood - Dkl_sum - weight_loss)# -(Log_Likelyhood - Dkl_sum - weight_loss)# - Entropy_sum)
 
     return complete_loss, Dkl_sum, Log_Likelyhood, mse, weight_loss
 
@@ -144,7 +144,7 @@ class LogNormalDropout(DropoutLayer):
     def __init__(self, number_thetas, init_dropout=0.5, threshold=0.9):
         super(LogNormalDropout, self).__init__(init_dropout, threshold)
         self.c = number_thetas
-        self.pruning_threshold = 1.0
+        self.pruning_threshold = 4.0
 
         self.mu = torch.nn.Parameter(torch.zeros(number_thetas), requires_grad=True)
         self.log_sigma = torch.nn.Parameter(torch.empty(number_thetas).fill_(-5.0), requires_grad=True)
@@ -188,8 +188,8 @@ class LogNormalDropout(DropoutLayer):
         mu = torch.clip(self.mu, -20.0, 5.0)
         sigma = torch.exp(self.log_sigma)
         snr = snr_truncated_log_normal(mu, sigma, self.min_log, self.max_log)
-        dropped = torch.mean((snr < self.pruning_threshold).to(torch.float)).item()
-        return dropped, snr
+        not_dropped = torch.mean((snr > self.pruning_threshold).to(torch.float)).item()
+        return not_dropped, snr
 
     @classmethod
     def create_instance(cls, c, init_dropout=0.5, threshold=0.9):
