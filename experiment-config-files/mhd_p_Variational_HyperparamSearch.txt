@@ -1,0 +1,31 @@
+expname = mhd_p_100_
+data = datasets/mhd1024.h5
+basedir = /experiments/hyperparam_search/mhd_p_Variational_NAS/100_2/
+
+d_in = 3
+d_out = 1
+
+n_layers = 4
+checkpoint_path = ''
+
+compression_ratio = 100
+
+grad_lambda = 0.0007
+lr = 0.00017
+max_pass = 125
+pass_decay = 20
+lr_decay = 0.2
+smallify_decay = 0
+
+batch_size = 2048
+sample_size = 16
+
+dropout_technique = variational
+pruning_threshold = 0.90
+variational_init_droprate = 0.1
+
+variational_sigma = -8.8
+variational_dkl_multiplier = 5e-06
+variational_lambda_dkl = 0.8
+variational_lambda_weight = 2.0
+variational_lambda_entropy = 1e-05

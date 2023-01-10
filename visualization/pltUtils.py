@@ -125,7 +125,7 @@ def plot_pareto_frontier(Xs, Ys, maxX=True, maxY=True):
 
     return pareto_front
 
-def findParetoValues(Xs, Ys, maxX=True, maxY=True):
+def findParetoValues(Xs, Ys, BASENAME, experimentNames, maxX=True, maxY=True):
     sorted_list = sorted([[Xs[i], Ys[i]] for i in range(len(Xs))], reverse=maxY)
     pareto_front = [sorted_list[0]]
     for pair in sorted_list[1:]:
@@ -137,8 +137,6 @@ def findParetoValues(Xs, Ys, maxX=True, maxY=True):
                 pareto_front.append(pair)
 
     pf_X = [pair[0] for pair in pareto_front]
-    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100/mhd_p_100_'
-    experimentNames = np.linspace(0, 49, 50, dtype=int)
 
     infoName = 'info.txt'
     configName = 'config.txt'

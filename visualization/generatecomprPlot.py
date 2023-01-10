@@ -1227,63 +1227,64 @@ def HyperparamAnalysis_Variational():
 
     '''Plotting process'''
     fig, ((ax1, ax2,ax3,ax4,ax5, ax6),(ax7,ax8,ax9, ax10,ax11,ax12)) = plt.subplots(2, 6, figsize=(15, 15), dpi= 100)
+    #fig.tight_layout()
 
-    ax1.plot(paretoVariational_sigma,paretoCompr, label='Variational_sigma', color = 'blue')
+    ax1.plot(paretoVariational_sigma,paretoCompr, color = 'blue')
     ax1.title.set_text('Variational_sigma')
     ax1.set_xlabel('Variational_sigma')
     ax1.set_ylabel('Compression Rate')
 
-    ax7.plot(paretoVariational_sigma,paretoPsnr, label='Variational_sigma', color = 'blue')
+    ax7.plot(paretoVariational_sigma,paretoPsnr, color = 'blue')
     ax7.title.set_text('Variational_sigma')
     ax7.set_xlabel('Variational_sigma')
     ax7.set_ylabel('PSNR')
 
-    ax2.plot(paretoVariational_dkl_multiplier,paretoCompr, label='Variational_dkl_multiplier', color = 'green')
+    ax2.plot(paretoVariational_dkl_multiplier,paretoCompr, color = 'green')
     ax2.title.set_text('Variational_dkl_multiplier')
-    ax2.set_xlabel('Variational_dkl_multiplier')
+    ax2.set_xlabel('dkl_mult')
     ax2.set_ylabel('Compression Rate')
 
-    ax8.plot(paretoVariational_dkl_multiplier,paretoPsnr, label='Variational_dkl_multiplier', color = 'green')
+    ax8.plot(paretoVariational_dkl_multiplier,paretoPsnr, color = 'green')
     ax8.title.set_text('Variational_dkl_multiplier')
-    ax8.set_xlabel('Variational_dkl_multiplier')
+    ax8.set_xlabel('dkl_mult')
     ax8.set_ylabel('PSNR')
 
-    ax3.plot(paretoPruning_threshold,paretoCompr, label='Pruning_threshold', color = 'orange')
+    ax3.plot(paretoPruning_threshold,paretoCompr, color = 'orange')
     ax3.title.set_text('Pruning_threshold')
     ax3.set_xlabel('Pruning_threshold')
     ax3.set_ylabel('Compression Rate')
 
-    ax9.plot(paretoPruning_threshold,paretoPsnr, label='Pruning_threshold', color = 'orange')
+    ax9.plot(paretoPruning_threshold,paretoPsnr, color = 'orange')
     ax9.title.set_text('Pruning_threshold')
     ax9.set_xlabel('Pruning_threshold')
     ax9.set_ylabel('PSNR')
 
-    ax4.plot(paretoVariational_init_droprate,paretoCompr, label='Variational_init_droprate', color = 'red')
+    ax4.plot(paretoVariational_init_droprate,paretoCompr, color = 'red')
     ax4.title.set_text('Variational_init_droprate')
     ax4.set_xlabel('Variational_init_droprate')
     ax4.set_ylabel('Compression Rate')
 
-    ax10.plot(paretoVariational_init_droprate,paretoPsnr, label='Variational_init_droprate', color = 'red')
+    ax10.plot(paretoVariational_init_droprate,paretoPsnr, color = 'red')
     ax10.title.set_text('Variational_init_droprate')
     ax10.set_xlabel('Variational_init_droprate')
     ax10.set_ylabel('PSNR')
 
-    ax5.plot(paretoVariational_lambda_dkl,paretoCompr, label='Variational_lambda_dkl', color = 'violet')
+    ax5.plot(paretoVariational_lambda_dkl,paretoCompr, color = 'violet')
     ax5.title.set_text('Variational_lambda_dkl')
     ax5.set_xlabel('Variational_lambda_dkl')
     ax5.set_ylabel('Compression Rate')
 
-    ax11.plot(paretoVariational_lambda_dkl,paretoPsnr, label='Variational_lambda_dkl', color = 'violet')
+    ax11.plot(paretoVariational_lambda_dkl,paretoPsnr, color = 'violet')
     ax11.title.set_text('Variational_lambda_dkl')
     ax11.set_xlabel('Variational_lambda_dkl')
     ax11.set_ylabel('PSNR')
 
-    ax6.plot(paretoVariational_lambda_weight,paretoCompr, label='Variational_lambda_weight', color = 'black')
+    ax6.plot(paretoVariational_lambda_weight,paretoCompr, color = 'black')
     ax6.title.set_text('Variational_lambda_weight')
     ax6.set_xlabel('Variational_lambda_weight')
     ax6.set_ylabel('Compression Rate')
 
-    ax12.plot(paretoVariational_lambda_weight,paretoPsnr, label='Variational_lambda_weight', color = 'black')
+    ax12.plot(paretoVariational_lambda_weight,paretoPsnr, color = 'black')
     ax12.title.set_text('Variational_lambda_weight')
     ax12.set_xlabel('Variational_lambda_weight')
     ax12.set_ylabel('PSNR')
@@ -1293,6 +1294,41 @@ def HyperparamAnalysis_Variational():
     plt.legend()
     filepath = 'plots/' + 'mhd_p_' + "Variational_100_" + 'HyperparamAnalyis' + '.png'
     plt.savefig(filepath)
+
+
+def Variational_WithQuantization():
+    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100/mhd_p_100_'
+    experimentNames = [38, 35, 39, 30, 24, 29, 27, 28, 21, 1, 25, 20, 37, 18, 23, 15]
+
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100_ForVariational/mhd_p_'
+    experimentNamesUnpruned = [105, 194, 283, 303, 311, 371, 468, 511, 603, 715, 808, 945, 1354]
+
+    InfoName = 'Dequant_Info.txt'
+
+    PSNR = []
+    CompressionRatio = []
+
+    PSNRUnpruned = []
+    CompressionRatioUnpruned = []
+
+    generate_plot_lists(([PSNR, CompressionRatio],),
+                        (['psnr', 'Quant_Compression_Ratio'],),
+                        BASENAME, (InfoName,), experiment_names=experimentNames)
+
+    generate_plot_lists(([PSNRUnpruned, CompressionRatioUnpruned],),
+                        (['psnr', 'Quant_Compression_Ratio'],),
+                        BASENAMEUnpruned, (InfoName,), experiment_names=experimentNamesUnpruned)
+
+    plt.plot(CompressionRatio, PSNR, label='Pareto_Frontier Pruned Quantized', color='green')
+    plt.plot(CompressionRatioUnpruned, PSNRUnpruned, label='Baseline Unpruned Quantized', color='blue')
+
+    plt.xlabel('Compression_Ratio')
+    plt.ylabel('PSNR')
+    plt.legend()
+
+    filepath = 'plots/' + 'mhd_p_' + 'Variational_' + 'Quantized_ParetoFrontier_PrunedVsUnpruned' + '.png'
+    plt.savefig(filepath)
+
 
 if __name__ == '__main__':
     #rmseTTHRESHExperiment()
@@ -1313,6 +1349,7 @@ if __name__ == '__main__':
     #DifferentRuns()
     #generateParetoFrontier()
     #CompressionVSRMSE()
-    HyperparamAnalysis()
+    #HyperparamAnalysis()
     #HyperparamAnalysis_Variational()
+    Variational_WithQuantization()
 

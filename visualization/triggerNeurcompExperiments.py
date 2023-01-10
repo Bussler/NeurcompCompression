@@ -106,15 +106,15 @@ def Do_QuantizeDequantize_shifted():
 
 
 def Do_QuantizeDequantize():
-    BASENAME = 'experiments/diff_comp_rates/test_experiment_BroaderNW/2C/test_experiment_'
+    #BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100/mhd_p_100_'
+    BASENAME = 'experiments/diff_comp_rates/mhd_p_Baselines/100_ForVariational/mhd_p_'
     CONFIGNAME = 'config.txt'
     QUANTNAME = 'modelQuant'
 
     results = {}
 
-    experimentNames = [50,100,150,200,300]
-    experimentNames2 = ['50_0', '50_1', '50_2', '100_0', '100_1', '100_2', '200_0', '200_1', '200_2', '300_0', '300_1',
-                        '300_2', '400_0', '400_1', '400_2']
+    experimentNames = [38, 35, 39, 30, 24, 29, 27, 28, 21, 1, 25, 20, 37, 18, 23, 15]
+    experimentNames2 = [105, 194, 283, 303, 311, 371, 468, 511, 603, 715, 808, 945, 1354]
     #for i in range(0,54):
     #    experimentNames.append(i)
 
@@ -123,7 +123,7 @@ def Do_QuantizeDequantize():
         config_name = BASENAME + str(compr) + '/' + CONFIGNAME
         args = pu.dict_from_file(config_name)
 
-        for b in [8]: #[3, 5, 7, 9, 10]
+        for b in [7]: #[3, 5, 7, 9, 10]
             info = quantize_dequantize(args, b, BASENAME, str(compr), QUANTNAME)
             key = 'Compr_'+str(compr)+'_Bit_'+str(b)
             results[key] = info
@@ -133,9 +133,9 @@ def Do_QuantizeDequantize():
 
 
 if __name__ == '__main__':
-    neurcompRunsDiffComprRates()
+    #neurcompRunsDiffComprRates()
     #neurcompRunsDiffComprRatesFromFrontier()
     #neurcompRunsVariational()
-    #Do_QuantizeDequantize()
+    Do_QuantizeDequantize()
     #Do_QuantizeDequantize_shifted()
 
