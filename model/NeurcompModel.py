@@ -4,6 +4,7 @@ import numpy as np
 from model.SirenLayer import SineLayer, ResidualSineBlock
 from model.SmallifyDropoutLayer import SmallifyDropout, SmallifyResidualSiren
 from model.VariationalDropoutLayer import VariationalDropout
+from model.sbp_log_normal_noise import LogNormalDropout
 
 
 # M: Neurcomp according to "Compressive Neural Representations of Volumetric Scalar Fields"
@@ -31,6 +32,8 @@ class Neurcomp(nn.Module):
                 dropout_layer = SmallifyDropout(self.layer_sizes[1], sign_variance_momentum, pruning_threshold)
             if 'variational' in dropout_technique:
                 dropout_layer = VariationalDropout(self.layer_sizes[1], variational_init_droprate, pruning_threshold)
+            if 'sbp_log_normal' in dropout_technique:
+                dropout_layer = LogNormalDropout(self.layer_sizes[1], variational_init_droprate, pruning_threshold)
 
         for ndx in range(self.n_layers):
             layer_in = self.layer_sizes[ndx]

@@ -19,6 +19,15 @@ def calculte_weight_loss(model):
     return loss_Weights
 
 
+def calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volume, log_sigma):
+    x_mu_loss = loss_criterion(predicted_volume, ground_truth_volume)
+    sigma = math.exp(log_sigma)
+    a = 1 / (2 * (sigma ** 2))
+    b = - (math.log(2 * math.pi) + (2 * log_sigma)) / 2
+
+    return a * (-x_mu_loss) + b, x_mu_loss
+
+
 def calculate_log_normal_dropout_loss(model, loss_criterion, predicted_volume, ground_truth_volume, log_sigma,
                                     lambda_dkl, lambda_weights, lambda_entropy):
     Dkl_sum = 0.0
@@ -26,17 +35,18 @@ def calculate_log_normal_dropout_loss(model, loss_criterion, predicted_volume, g
     for module in model.net_layers.modules():
         if isinstance(module, LogNormalDropout):
             Dkl_sum = Dkl_sum + module.calculate_Dkl()
-            Entropy_sum = Entropy_sum + module.calculate_Dropout_Entropy()
+            #Entropy_sum = Entropy_sum + module.calculate_Dropout_Entropy()
     # M: lambda_dkl: sizeofelements
     Dkl_sum = (lambda_dkl/predicted_volume.shape[0]) * Dkl_sum  # 0.1 (1/predicted_volume.shape[0]) * (lambda_dkl/predicted_volume.shape[0])
-    Entropy_sum = lambda_entropy * Entropy_sum  # 0.00001
+    #Entropy_sum = lambda_entropy * Entropy_sum  # 0.00001
     weight_loss = lambda_weights * (lambda_dkl/predicted_volume.shape[0]) * calculte_weight_loss(model)  # 0.00001 lambda_weights * (lambda_dkl/predicted_volume.shape[0])
 
-    Log_Likelyhood = loss_criterion(predicted_volume, ground_truth_volume)
+    #Log_Likelyhood = loss_criterion(predicted_volume, ground_truth_volume)
+    Log_Likelyhood, mse = calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volume, log_sigma)
 
-    complete_loss = -(Log_Likelyhood - Dkl_sum - weight_loss)# - Entropy_sum)
+    complete_loss = -(Log_Likelyhood - Dkl_sum)# -(Log_Likelyhood - Dkl_sum - weight_loss)# - Entropy_sum)
 
-    return complete_loss, Dkl_sum, Log_Likelyhood, weight_loss
+    return complete_loss, Dkl_sum, Log_Likelyhood, mse, weight_loss
 
 
 def sample_truncated_normal(mu, sigma, a, b):
@@ -158,7 +168,7 @@ class LogNormalDropout(DropoutLayer):
         z = phi(beta) - phi(alpha)
 
         def pdf(x):
-            return torch.exp(-x * x / 2.0) / torch.sqrt(2.0 * np.pi)
+            return torch.exp(-x * x / 2.0) / math.sqrt(2.0 * np.pi)
 
         kl = -self.log_sigma - torch.log(z) - (alpha * pdf(alpha) - beta * pdf(beta)) / (2.0 * z)
         kl = kl + math.log(self.max_log - self.min_log) - math.log(2.0 * np.pi * np.e) / 2.0
@@ -173,6 +183,13 @@ class LogNormalDropout(DropoutLayer):
         #mask = tf.cast(tf.greater(snr, self.pruning_threshold * torch.ones_like(snr)), torch.float32)  #M: return where snr>threshold
         mask = torch.where(snr > self.pruning_threshold, 1.0, 0.0)
         return mask
+
+    def get_valid_fraction(self):
+        mu = torch.clip(self.mu, -20.0, 5.0)
+        sigma = torch.exp(self.log_sigma)
+        snr = snr_truncated_log_normal(mu, sigma, self.min_log, self.max_log)
+        dropped = torch.mean((snr < self.pruning_threshold).to(torch.float)).item()
+        return dropped, snr
 
     @classmethod
     def create_instance(cls, c, init_dropout=0.5, threshold=0.9):

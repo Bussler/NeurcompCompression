@@ -17,6 +17,7 @@ from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, 
 from model.pruning import prune_dropout_threshold, prune_smallify_use_resnet, prune_smallify_no_Resnet,\
     prune_variational_dropout_no_resnet, prune_variational_dropout_use_resnet, analyzeVariationalPruning
 from model.VariationalDropoutLayer import calculate_variational_dropout_loss, inference_variational_model, VariationalDropout
+from model.sbp_log_normal_noise import calculate_log_normal_dropout_loss, LogNormalDropout
 import training.learning_rate_decay as lrdecay
 from torch.utils.tensorboard import SummaryWriter
 
@@ -183,6 +184,15 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     if variational_dkl_lambda < variational_dkl_lambda * (1.0 + 1e-03):
                         variational_dkl_lambda = variational_dkl_lambda * (1.0 + args['variational_dkl_multiplier'])
 
+                if args['dropout_technique'] == 'sbp_log_normal':
+                    complete_loss, dkl, ll, mse, loss_Weights = calculate_log_normal_dropout_loss(model, loss_criterion,
+                                                                                             predicted_volume,
+                                                                                             ground_truth_volume,
+                                                                                             log_sigma=args['variational_sigma'],
+                                                                                             lambda_dkl=variational_dkl_lambda * args['variational_lambda_dkl'],
+                                                                                             lambda_weights=args['variational_lambda_weight'],
+                                                                                             lambda_entropy=args['variational_lambda_entropy'])
+
             complete_loss.backward()
             optimizer.step()
 
@@ -193,7 +203,8 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
 
             # M: Print training statistics:
             if idx % 100 == 0 and verbose:
-                if args['dropout_technique'] and args['dropout_technique'] == 'variational':
+                # M: TODO: Refactoring needed! All special cases with dropouts and special debuggings...
+                if args['dropout_technique'] and (args['dropout_technique'] == 'variational' or args['dropout_technique'] == 'sbp_log_normal'):
                     print(
                         'Pass [{:.4f} / {:.1f}]: volume mse: {:.4f}, LL: {:.4f}, DKL: {:.4f}, Weights: {:.4f}, complete loss: {:.4f} '
                         .format(volume_passes, args['max_pass'], mse.item(), ll, dkl, loss_Weights, complete_loss.item()))
@@ -205,6 +216,10 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                             d, dropr = module.get_valid_fraction()
                             valid_fraction.append(d)
                             droprates.append(dropr)
+                        if isinstance(module, LogNormalDropout):
+                            d, snr = module.get_valid_fraction()
+                            valid_fraction.append(d)
+                            droprates.append(snr)
                     writer.add_histogram("droprates_layer1", droprates[0], step_iter)
                     writer.add_histogram("droprates_layer2", droprates[1], step_iter)
                     writer.add_histogram("droprates_layer3", droprates[2], step_iter)
