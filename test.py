@@ -90,10 +90,10 @@ def Hyperparam_Best_Runs():
     pass
 
 def calcParetoStuff():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100/mhd_p_100_'
-    experimentNames = np.linspace(0, 39, 40, dtype=int)
-    experimentNames = np.delete(experimentNames, 8, axis=0)
-    experimentNames = np.delete(experimentNames, 8, axis=0)
+    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/200_NoResnet/mhd_p_200_'
+    experimentNames = np.linspace(0, 49, 50, dtype=int)
+    experimentNames = np.delete(experimentNames, 10, axis=0)
+    #experimentNames = np.delete(experimentNames, 8, axis=0)
 
     InfoName = 'info.txt'
     configName = 'config.txt'
@@ -145,5 +145,5 @@ if __name__ == '__main__':
     #psnr_test()
     #Hyperparam_Best_Runs()
 
-    #calcParetoStuff()
-    analyse_NW_Weights()
+    calcParetoStuff()
+    #analyse_NW_Weights()

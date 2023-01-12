@@ -49,8 +49,8 @@ def neurcompRunsDiffComprRates():
 
     BASEEXPNAME = args['expname']
 
-    #for compr in [210,225,235,244,296,388,463,546,596,770,931,1251]:#[50.0, 100.0, 200.0, 300.0, 400.0]:
-    for compr in [105, 194, 283, 303, 311, 371, 468, 511, 603, 715, 808, 945, 1354]:
+    #for compr in [122, 135, 157, 198, 225, 292, 386, 534, 602, 781, 984, 1087]:#[50.0, 100.0, 200.0, 300.0, 400.0]:
+    for compr in [221, 227, 246, 299, 327, 393, 503, 628]:
 
         args['compression_ratio'] = compr
         args['expname'] = BASEEXPNAME + str(int(compr))
@@ -133,9 +133,9 @@ def Do_QuantizeDequantize():
 
 
 if __name__ == '__main__':
-    #neurcompRunsDiffComprRates()
+    neurcompRunsDiffComprRates()
     #neurcompRunsDiffComprRatesFromFrontier()
     #neurcompRunsVariational()
-    Do_QuantizeDequantize()
+    #Do_QuantizeDequantize()
     #Do_QuantizeDequantize_shifted()
 

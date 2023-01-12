@@ -918,20 +918,22 @@ def DifferentRuns():
 
 
 def generateParetoFrontier():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/200/mhd_p_200_'
-    experimentNames = np.linspace(0, 47, 48, dtype=int)
-    #experimentNames = np.delete(experimentNames, 8, axis=0)
-    #experimentNames = np.delete(experimentNames, 8, axis=0)
+    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100_NoResnet/mhd_p_100_'
+    experimentNames = np.linspace(0, 49, 50, dtype=int)
+    #experimentNames = np.delete(experimentNames, 10, axis=0)
+    experimentNames = np.delete(experimentNames, 1, axis=0)
 
-    BASENAMEFinetuning = 'experiments/hyperparam_search/mhd_p_NAS/200_WithFinetuning/mhd_p_200_'
-    experimentNamesFinetuning = np.linspace(0, 49, 50, dtype=int)
+    BASENAMEFinetuning = 'experiments/hyperparam_search/mhd_p_NAS/200/mhd_p_200_'
+    experimentNamesFinetuning = np.linspace(0, 47, 48, dtype=int)
 
-    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/200/mhd_p_'
-    experimentNamesUnpruned = [210, 225, 235, 244, 296, 388, 463, 546, 596, 770, 931, 1251]
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100_NoResnet/mhd_p_'
+    #experimentNamesUnpruned = [221, 227, 246, 299, 327, 393, 503, 628]
+    experimentNamesUnpruned = [122, 135, 157, 198, 225, 292, 386, 534, 602, 781, 984, 1087]
 
     #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/200/mhd_p_'
     #experimentNamesUnpruned = [102, 144, 166, 211, 253, 268, 283, 293, 325, 363, 414, 442, 474, 512, 617, 638,
     #                           797, 895]
+    #experimentNamesUnpruned = [210, 225, 235, 244, 296, 388, 463, 546, 596, 770, 931, 1251]
     #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100_ForVariational/mhd_p_'
     #experimentNamesUnpruned = [105, 194, 283, 303, 311, 371, 468, 511, 603, 715, 808, 945, 1354]
 
@@ -971,30 +973,39 @@ def generateParetoFrontier():
     pf_XFinetuning = [pair[0] for pair in pareto_frontFinetuning]
     pf_YFinetuning = [pair[1] for pair in pareto_frontFinetuning]
 
+    limit = 800
+
+    newCompr = []
+    newPSNR = []
+    for i, k in zip(CompressionRatio, PSNR):
+        if i < limit:
+            newCompr.append(i)
+            newPSNR.append(k)
+
     new_pf_X = []
     new_pf_Y = []
     for i,k in zip(pf_X, pf_Y):
-        if i < 1300:
+        if i < limit:
             new_pf_X.append(i)
             new_pf_Y.append(k)
 
     new_pf_XFinetuning = []
     new_pf_YFinetuning = []
     for i, k in zip(pf_XFinetuning, pf_YFinetuning):
-        if i < 1300:
+        if i < limit:
             new_pf_XFinetuning.append(i)
             new_pf_YFinetuning.append(k)
 
     new_pf_XUnpruned = []
     new_pf_YUnpruned = []
     for i, k in zip(CompressionRatioUnpruned, PSNRUnpruned):
-        if i < 1300:
+        if i < limit:
             new_pf_XUnpruned.append(i)
             new_pf_YUnpruned.append(k)
 
-    plt.plot(new_pf_X, new_pf_Y, label='Pareto_Frontier Pruned', color='green')
-    plt.plot(new_pf_XFinetuning, new_pf_YFinetuning, label='Pareto_Frontier Pruned Finetuned', color='blue')
-    #plt.scatter(CompressionRatioFinetuning, PSNRFinetuning, color='red', label='Baseline Unpruned')
+    plt.plot(new_pf_X, new_pf_Y, label='Pareto_Frontier Pruned No Resnet', color='green')
+    #plt.plot(new_pf_XFinetuning, new_pf_YFinetuning, label='Pareto_Frontier Pruned With Resnet', color='blue')
+    plt.scatter(newCompr, newPSNR, color='green', alpha =0.2)
     plt.plot(new_pf_XUnpruned, new_pf_YUnpruned, label='Baseline Unpruned', color='red')
 
     plt.xlabel('Compression_Ratio')
@@ -1005,7 +1016,7 @@ def generateParetoFrontier():
     #for p in pf_X:
     #    print(p)
 
-    filepath = 'plots/' + 'mhd_p_' + 'Compression200_ParetoFrontier_PrunedVsUnpruned_WithFinetuning' + '.png'
+    filepath = 'plots/' + 'mhd_p_' + 'Compression100_ParetoFrontier_PrunedVsUnpruned_NoResnet' + '.png'
     plt.savefig(filepath)
 
 
@@ -1347,9 +1358,9 @@ if __name__ == '__main__':
     #SmallifyDifferentNWSizes()
     #ResnetVSNoResnet()
     #DifferentRuns()
-    #generateParetoFrontier()
+    generateParetoFrontier()
     #CompressionVSRMSE()
     #HyperparamAnalysis()
     #HyperparamAnalysis_Variational()
-    Variational_WithQuantization()
+    #Variational_WithQuantization()
 
