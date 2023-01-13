@@ -1,6 +1,6 @@
-expname = mhd_p_100_
+expname = mhd_p_200_
 data = datasets/mhd1024.h5
-basedir = /experiments/hyperparam_search/mhd_p_NAS/100/
+basedir = /experiments/hyperparam_search/mhd_p_NAS/200_NoResnet/
 
 d_in = 3
 d_out = 1
@@ -8,7 +8,9 @@ d_out = 1
 n_layers = 4
 checkpoint_path = ''
 
-compression_ratio = 100
+compression_ratio = 200
+
+dont_use_resnet
 
 grad_lambda = 0.0007
 lr = 0.00017

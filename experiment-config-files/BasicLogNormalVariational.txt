@@ -13,7 +13,7 @@ compression_ratio = 100
 
 grad_lambda = 3e-04
 lr = 0.0007
-max_pass = 30
+max_pass = 80
 pass_decay = 20
 lr_decay = 0.2
 smallify_decay = 0
@@ -25,7 +25,7 @@ dropout_technique = sbp_log_normal
 pruning_threshold = 0.90
 variational_init_droprate = 0.1
 
-variational_sigma = -8.8
+variational_sigma = -8.5
 variational_dkl_multiplier = 5e-06
 variational_lambda_dkl = 0.8
 variational_lambda_weight = 2.0

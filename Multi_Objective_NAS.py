@@ -95,22 +95,22 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
         # in turn makes the Pareto frontier look pretty weird.
         RangeParameter(
             name="lambda_betas",
-            lower=5e-08,
-            upper=5e-04,
+            lower=1e-06,
+            upper=9e-05,
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
         ),
         RangeParameter(
             name="lambda_weights",
-            lower=5e-08,
-            upper=5e-04,
+            lower=5e-07,
+            upper=5e-03,
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
         ),
 
         RangeParameter(
             name="lr",
-            lower=1e-08,
+            lower=8e-05,
             upper=1e-03,
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
@@ -118,14 +118,14 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
         RangeParameter(
             name="grad_lambda",
             lower=1e-09,
-            upper=1e-04,
+            upper=1e-05,
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
         ),
         RangeParameter(
             name="n_layers",
             lower=2,
-            upper=8,
+            upper=6,
             parameter_type=ParameterType.INT,
         ),
 
@@ -189,10 +189,10 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
                 Objective(metric=psnr, minimize=False),
             ],
         ),
-        #objective_thresholds=[
-        #    ObjectiveThreshold(metric=compression_ratio, bound=100.0, relative=False),
-        #    ObjectiveThreshold(metric=psnr, bound=33.0, relative=False),
-        #],
+        objective_thresholds=[
+            ObjectiveThreshold(metric=compression_ratio, bound=100.0, relative=False),
+            ObjectiveThreshold(metric=psnr, bound=30.0, relative=False),
+        ],
     )
 
     experiment = Experiment(
@@ -230,6 +230,7 @@ def create_variational_experiment_scheduler(config, scriptname="NeurcompTraining
         variational_dkl_multiplier: float,
         variational_lambda_dkl: float,
         variational_lambda_weight: float,
+        batch_size: int,
         trial_idx: int = -1,
     ) -> specs.AppDef:
 
@@ -263,6 +264,8 @@ def create_variational_experiment_scheduler(config, scriptname="NeurcompTraining
             str(variational_lambda_dkl),
             "--variational_lambda_weight",
             str(variational_lambda_weight),
+            "--batch_size",
+            str(batch_size),
 
             # other config options
             name="trainer",
@@ -295,8 +298,8 @@ def create_variational_experiment_scheduler(config, scriptname="NeurcompTraining
 
         RangeParameter(
             name="pruning_threshold",
-            lower=0.6,
-            upper=0.95,
+            lower=0.7,
+            upper=0.99,
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
         ),
@@ -309,13 +312,13 @@ def create_variational_experiment_scheduler(config, scriptname="NeurcompTraining
         ),
         RangeParameter(
             name="variational_sigma",
-            lower=-9.5,
-            upper=-8.0,
+            lower=-10.0,
+            upper=-8.5,
             parameter_type=ParameterType.FLOAT,
         ),
         RangeParameter(
             name="variational_dkl_multiplier",
-            lower=5e-08,
+            lower=5e-07,
             upper=5e-03,
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
@@ -323,15 +326,22 @@ def create_variational_experiment_scheduler(config, scriptname="NeurcompTraining
         RangeParameter(
             name="variational_lambda_dkl",
             lower=0.5,
-            upper=0.9,
+            upper=1.0,
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
         ),
         RangeParameter(
             name="variational_lambda_weight",
-            lower=0.5,
-            upper=4.0,
+            lower=0.1,
+            upper=1.0,
             parameter_type=ParameterType.FLOAT,
+            log_scale=True,
+        ),
+        RangeParameter(
+            name="batch_size",
+            lower=512,
+            upper=4096,
+            parameter_type=ParameterType.INT,
             log_scale=True,
         ),
     ]
@@ -387,10 +397,10 @@ def create_variational_experiment_scheduler(config, scriptname="NeurcompTraining
                 Objective(metric=psnr, minimize=False),
             ],
         ),
-        #objective_thresholds=[
-        #    ObjectiveThreshold(metric=compression_ratio, bound=100.0, relative=False),
-        #    ObjectiveThreshold(metric=psnr, bound=33.0, relative=False),
-        #],
+        objective_thresholds=[
+            ObjectiveThreshold(metric=compression_ratio, bound=100.0, relative=False),
+            ObjectiveThreshold(metric=psnr, bound=33.0, relative=False),
+        ],
     )
 
     experiment = Experiment(
