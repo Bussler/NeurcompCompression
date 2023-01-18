@@ -45,6 +45,7 @@ def config_parser():
 
     parser.add_argument('--compression_ratio', type=float, default=50,
                         help='the data is compressed by #voxels / compression_ratio')
+    parser.add_argument('--features_per_layer', type=int, default=0, help='Size of each layer. If 0, calculated internally from compression_ratio')
 
     parser.add_argument('--batch_size', type=int, default=1024, help='batch size')
     parser.add_argument('--sample_size', type=int, default=16, help='how many indices to generate per batch item')

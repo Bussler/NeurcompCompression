@@ -37,8 +37,11 @@ def compute_num_neurons(num_layer, target_size, input_ch=3, output_ch=1):
 
 
 def setup_neurcomp(compression_ratio, dataset_size, n_layers, d_in, d_out, omega_0, checkpoint_path,
-                   dropout_technique='', sign_variance_momentum=0.02, featureList=None, use_resnet=True,
-                   pruning_threshold=0.9, variational_init_droprate=0.5):
+                   dropout_technique='', sign_variance_momentum=0.02, features_per_layer=0, featureList=None,
+                   use_resnet=True, pruning_threshold=0.9, variational_init_droprate=0.5):
+
+    if features_per_layer > 0:
+        featureList = np.full(n_layers, features_per_layer)
 
     if featureList is not None and len(featureList) > 0:
         feature_list = featureList

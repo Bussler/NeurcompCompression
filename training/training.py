@@ -266,8 +266,8 @@ def training(args, verbose=True):
     # M: Setup model
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
                            args['d_out'], args['omega_0'], args['checkpoint_path'], args['dropout_technique'],
-                           args['pruning_momentum'], use_resnet=args['use_resnet'],
-                           pruning_threshold= args['pruning_threshold'],
+                           args['pruning_momentum'], features_per_layer=args['features_per_layer'],
+                           use_resnet=args['use_resnet'], pruning_threshold=args['pruning_threshold'],
                            variational_init_droprate=args['variational_init_droprate'])
     model.to(device)
     model.train()
