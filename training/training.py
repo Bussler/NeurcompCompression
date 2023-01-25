@@ -181,7 +181,7 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                                                                          lambda_entropy=args['variational_lambda_entropy'])
 
                     # M: Gradual scaling of variational dkl
-                    if variational_dkl_lambda < variational_dkl_lambda * (1.0 + 1e-03):
+                    if variational_dkl_lambda < dataset.n_voxels * 25.0: #(1.0 + 1e-02):
                         variational_dkl_lambda = variational_dkl_lambda * (1.0 + args['variational_dkl_multiplier'])
 
                 if args['dropout_technique'] == 'sbp_log_normal':
@@ -209,21 +209,21 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                         'Pass [{:.4f} / {:.1f}]: volume mse: {:.4f}, LL: {:.4f}, DKL: {:.4f}, Weights: {:.4f}, complete loss: {:.4f} '
                         .format(volume_passes, args['max_pass'], mse.item(), ll, dkl, loss_Weights, complete_loss.item()))
 
-                    valid_fraction = []
-                    droprates = []
-                    for module in model.net_layers.modules():
-                        if isinstance(module, VariationalDropout):
-                            d, dropr = module.get_valid_fraction()
-                            valid_fraction.append(d)
-                            droprates.append(dropr)
-                        if isinstance(module, LogNormalDropout):
-                            d, snr = module.get_valid_fraction()
-                            valid_fraction.append(d)
-                            droprates.append(snr)
-                    writer.add_histogram("droprates_layer1", droprates[0], step_iter)
-                    writer.add_histogram("droprates_layer2", droprates[1], step_iter)
-                    writer.add_histogram("droprates_layer3", droprates[2], step_iter)
-                    print('Valid Fraction: ', valid_fraction)
+                    #valid_fraction = []
+                    #droprates = []
+                    #for module in model.net_layers.modules():
+                    #    if isinstance(module, VariationalDropout):
+                    #        d, dropr = module.get_valid_fraction()
+                    #        valid_fraction.append(d)
+                    #        droprates.append(dropr)
+                    #    if isinstance(module, LogNormalDropout):
+                    #        d, snr = module.get_valid_fraction()
+                    #        valid_fraction.append(d)
+                    #        droprates.append(snr)
+                    #writer.add_histogram("droprates_layer1", droprates[0], step_iter)
+                    #writer.add_histogram("droprates_layer2", droprates[1], step_iter)
+                    #writer.add_histogram("droprates_layer3", droprates[2], step_iter)
+                    #print('Valid Fraction: ', valid_fraction)
                 else:
                     if args['grad_lambda'] > 0:
                         print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, grad loss: {:.4f}, mse: {:.6f}'.format(
@@ -263,9 +263,9 @@ def training(args, verbose=True):
                              num_workers=args['num_workers'])  # M: create dataloader from dataset to use in training
     volume = volume.to(device)
 
-    # M: Setup model
+    # M: Setup model, deleted: args['checkpoint_path']
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
-                           args['d_out'], args['omega_0'], args['checkpoint_path'], args['dropout_technique'],
+                           args['d_out'], args['omega_0'], '', args['dropout_technique'],
                            args['pruning_momentum'], features_per_layer=args['features_per_layer'],
                            use_resnet=args['use_resnet'], pruning_threshold=args['pruning_threshold'],
                            variational_init_droprate=args['variational_init_droprate'])
@@ -281,6 +281,7 @@ def training(args, verbose=True):
     global writer
     if args['Tensorboard_log_dir']:
         writer = SummaryWriter(args['Tensorboard_log_dir'])
+        #write_dict(args, 'config.txt', args['Tensorboard_log_dir'])
     else:
         writer = SummaryWriter('runs/'+args['expname'])
 
