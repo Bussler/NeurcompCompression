@@ -918,19 +918,20 @@ def DifferentRuns():
 
 
 def generateParetoFrontier():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100_NoResnet/mhd_p_100_'
-    experimentNames = np.linspace(0, 49, 50, dtype=int)
-    #experimentNames = np.delete(experimentNames, 10, axis=0)
-    experimentNames = np.delete(experimentNames, 1, axis=0)
+    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/OptimizeCompression_WithFeaturesPerLayer/mhd_p_'
+    experimentNames = np.linspace(0, 99, 100, dtype=int)
+    #experimentNames = np.delete(experimentNames, 5, axis=0)
+    #experimentNames = np.delete(experimentNames, 5, axis=0)
 
-    BASENAMEFinetuning = 'experiments/hyperparam_search/mhd_p_NAS/200/mhd_p_200_'
-    experimentNamesFinetuning = np.linspace(0, 47, 48, dtype=int)
+    BASENAMEOther = 'experiments/hyperparam_search/mhd_p_NAS/200/mhd_p_200_'
+    experimentNamesOther = np.linspace(0, 47, 48, dtype=int)
 
-    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100_NoResnet/mhd_p_'
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_Baselines/OptimizeCompression_WithFeaturesPerLayer/mhd_p_'
+    experimentNamesUnpruned = np.linspace(0, 59, 60, dtype=int)
     #experimentNamesUnpruned = [221, 227, 246, 299, 327, 393, 503, 628]
-    experimentNamesUnpruned = [122, 135, 157, 198, 225, 292, 386, 534, 602, 781, 984, 1087]
+    #experimentNamesUnpruned = [122, 135, 157, 198, 225, 292, 386, 534, 602, 781, 984, 1087]
 
-    #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/200/mhd_p_'
+    #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100/mhd_p_'
     #experimentNamesUnpruned = [102, 144, 166, 211, 253, 268, 283, 293, 325, 363, 414, 442, 474, 512, 617, 638,
     #                           797, 895]
     #experimentNamesUnpruned = [210, 225, 235, 244, 296, 388, 463, 546, 596, 770, 931, 1251]
@@ -956,7 +957,7 @@ def generateParetoFrontier():
 
     generate_plot_lists(([PSNRFinetuning, CompressionRatioFinetuning],),
                         (['psnr', 'compression_ratio'],),
-                        BASENAMEFinetuning, (InfoName,), experiment_names=experimentNamesFinetuning)
+                        BASENAMEOther, (InfoName,), experiment_names=experimentNamesOther)
 
     generate_plot_lists(([PSNRUnpruned, CompressionRatioUnpruned],),
                         (['psnr', 'compression_ratio'],),
@@ -964,6 +965,7 @@ def generateParetoFrontier():
 
     pareto_front = plot_pareto_frontier(CompressionRatio, PSNR)
     pareto_frontFinetuning = plot_pareto_frontier(CompressionRatioFinetuning, PSNRFinetuning)
+    pareto_frontUnpruned = plot_pareto_frontier(CompressionRatioUnpruned, PSNRUnpruned)
 
     '''Plotting process'''
     #plt.scatter(CompressionRatio, PSNR)
@@ -973,12 +975,15 @@ def generateParetoFrontier():
     pf_XFinetuning = [pair[0] for pair in pareto_frontFinetuning]
     pf_YFinetuning = [pair[1] for pair in pareto_frontFinetuning]
 
+    pf_XUnpruned = [pair[0] for pair in pareto_frontUnpruned]
+    pf_YUnpruned = [pair[1] for pair in pareto_frontUnpruned]
+
     limit = 800
 
     newCompr = []
     newPSNR = []
     for i, k in zip(CompressionRatio, PSNR):
-        if i < limit:
+        if True:# i < limit:
             newCompr.append(i)
             newPSNR.append(k)
 
@@ -998,15 +1003,15 @@ def generateParetoFrontier():
 
     new_pf_XUnpruned = []
     new_pf_YUnpruned = []
-    for i, k in zip(CompressionRatioUnpruned, PSNRUnpruned):
+    for i, k in zip(pf_XUnpruned, pf_YUnpruned):
         if i < limit:
             new_pf_XUnpruned.append(i)
             new_pf_YUnpruned.append(k)
 
-    plt.plot(new_pf_X, new_pf_Y, label='Pareto_Frontier Pruned No Resnet', color='green')
-    #plt.plot(new_pf_XFinetuning, new_pf_YFinetuning, label='Pareto_Frontier Pruned With Resnet', color='blue')
+    #plt.plot(new_pf_X, new_pf_Y, label='Pareto_Frontier Pruned', color='green')
+    #plt.plot(new_pf_XFinetuning, new_pf_YFinetuning, label='Pareto_Frontier Pruned With 200 Start', color='blue')
     plt.scatter(newCompr, newPSNR, color='green', alpha =0.2)
-    plt.plot(new_pf_XUnpruned, new_pf_YUnpruned, label='Baseline Unpruned', color='red')
+    #plt.plot(new_pf_XUnpruned, new_pf_YUnpruned, label='Baseline Unpruned', color='red')
 
     plt.xlabel('Compression_Ratio')
     plt.ylabel('PSNR')
@@ -1016,7 +1021,7 @@ def generateParetoFrontier():
     #for p in pf_X:
     #    print(p)
 
-    filepath = 'plots/' + 'mhd_p_' + 'Compression100_ParetoFrontier_PrunedVsUnpruned_NoResnet' + '.png'
+    filepath = 'plots/' + 'mhd_p_' + 'Variational_NumFeaturePerLayerLearned_ParetoFrontier_PrunedVsUnpruned' + '.png'
     plt.savefig(filepath)
 
 
