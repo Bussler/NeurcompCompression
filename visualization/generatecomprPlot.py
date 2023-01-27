@@ -918,13 +918,16 @@ def DifferentRuns():
 
 
 def generateParetoFrontier():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/OptimizeCompression_WithFeaturesPerLayer/mhd_p_'
-    experimentNames = np.linspace(0, 99, 100, dtype=int)
+    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/OptimizeCompression_BetterSearchspaceVariational_dkl/mhd_p_'
+    experimentNames = np.linspace(0, 59, 60, dtype=int)
     #experimentNames = np.delete(experimentNames, 5, axis=0)
     #experimentNames = np.delete(experimentNames, 5, axis=0)
 
-    BASENAMEOther = 'experiments/hyperparam_search/mhd_p_NAS/200/mhd_p_200_'
-    experimentNamesOther = np.linspace(0, 47, 48, dtype=int)
+    BASENAMEOther = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100_2/mhd_p_100_'
+    experimentNamesOther = np.linspace(0, 49, 50, dtype=int)
+    experimentNamesOther = np.delete(experimentNamesOther, 13, axis=0)
+    experimentNamesOther = np.delete(experimentNamesOther, 15, axis=0)
+    experimentNamesOther = np.delete(experimentNamesOther, 15, axis=0)
 
     BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_Baselines/OptimizeCompression_WithFeaturesPerLayer/mhd_p_'
     experimentNamesUnpruned = np.linspace(0, 59, 60, dtype=int)
@@ -983,7 +986,7 @@ def generateParetoFrontier():
     newCompr = []
     newPSNR = []
     for i, k in zip(CompressionRatio, PSNR):
-        if True:# i < limit:
+        if i < limit:
             newCompr.append(i)
             newPSNR.append(k)
 
@@ -1008,10 +1011,10 @@ def generateParetoFrontier():
             new_pf_XUnpruned.append(i)
             new_pf_YUnpruned.append(k)
 
-    #plt.plot(new_pf_X, new_pf_Y, label='Pareto_Frontier Pruned', color='green')
-    #plt.plot(new_pf_XFinetuning, new_pf_YFinetuning, label='Pareto_Frontier Pruned With 200 Start', color='blue')
+    plt.plot(new_pf_X, new_pf_Y, label='Pareto_Frontier Pruned', color='green')
+    plt.plot(new_pf_XFinetuning, new_pf_YFinetuning, label='Pareto_Frontier Pruned With 100 Start', color='blue')
     plt.scatter(newCompr, newPSNR, color='green', alpha =0.2)
-    #plt.plot(new_pf_XUnpruned, new_pf_YUnpruned, label='Baseline Unpruned', color='red')
+    plt.plot(new_pf_XUnpruned, new_pf_YUnpruned, label='Baseline Unpruned', color='red')
 
     plt.xlabel('Compression_Ratio')
     plt.ylabel('PSNR')
@@ -1021,7 +1024,7 @@ def generateParetoFrontier():
     #for p in pf_X:
     #    print(p)
 
-    filepath = 'plots/' + 'mhd_p_' + 'Variational_NumFeaturePerLayerLearned_ParetoFrontier_PrunedVsUnpruned' + '.png'
+    filepath = 'plots/' + 'mhd_p_' + 'Variational_NumFeaturePerLayerLearned_ParetoFrontier_PrunedVsUnprunedVSSetLayersize' + '.png'
     plt.savefig(filepath)
 
 
