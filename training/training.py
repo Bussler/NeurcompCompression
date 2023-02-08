@@ -20,6 +20,7 @@ from model.VariationalDropoutLayer import calculate_variational_dropout_loss, in
 from model.sbp_log_normal_noise import calculate_log_normal_dropout_loss, LogNormalDropout
 import training.learning_rate_decay as lrdecay
 from torch.utils.tensorboard import SummaryWriter
+from model.variational_variance_model import Variance_Model
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -117,7 +118,16 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
     step_iter = 0
     lr_decay_stop = False
 
-    variational_dkl_lambda = dataset.n_voxels
+    variational_dkl_lambda = args['variational_lambda_dkl']  # dataset.n_voxels
+
+    if args['dropout_technique'] and args['dropout_technique'] == 'variational':
+        variance_model = Variance_Model()
+        variance_model.to(device)
+        variance_model.train()
+        # M: Setup loss, optimizer
+        #optimizer_variance = torch.optim.Adam(variance_model.parameters(), lr=args['lr'])
+        #lrStrategy_variance = lrdecay.LearningRateDecayStrategy.create_instance(args, optimizer_variance)
+        optimizer.add_param_group({'params': variance_model.parameters()})
 
     while int(volume_passes) + 1 < args['max_pass'] and not lr_decay_stop:  # M: epochs
 
@@ -135,6 +145,7 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
 
             # M: NW prediction
             optimizer.zero_grad()
+
             predicted_volume = model(norm_positions)
             predicted_volume = predicted_volume.squeeze(-1)  # M: Tensor of size [batch_size x dataset.sample_size, 1]
 
@@ -172,16 +183,23 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     complete_loss = complete_loss + (loss_Betas * args['lambda_betas']) \
                                     + (loss_Weights * args['lambda_weights'])
                 if args['dropout_technique'] == 'variational':
-                    complete_loss, dkl, ll, mse, loss_Weights = calculate_variational_dropout_loss(model, loss_criterion,
+
+                    variational_variance = variance_model(norm_positions)
+                    variational_variance = variational_variance.squeeze(-1)
+
+                    complete_loss, dkl, ll, mse, loss_Weights = calculate_variational_dropout_loss(model, #loss_criterion,
+                                                                         dataset.n_voxels,
                                                                          predicted_volume, ground_truth_volume,
-                                                                         log_sigma=args['variational_sigma'],
+                                                                         #log_sigma=args['variational_sigma'],
+                                                                         log_sigma=variational_variance,
                                                                          #lambda_dkl=args['variational_lambda_dkl'],
-                                                                         lambda_dkl=variational_dkl_lambda * args['variational_lambda_dkl'],
+                                                                         #lambda_dkl=variational_dkl_lambda * args['variational_lambda_dkl'],
+                                                                         lambda_dkl=variational_dkl_lambda,
                                                                          lambda_weights=args['variational_lambda_weight'],
                                                                          lambda_entropy=args['variational_lambda_entropy'])
 
                     # M: Gradual scaling of variational dkl
-                    if variational_dkl_lambda < dataset.n_voxels * 25.0: #(1.0 + 1e-02):
+                    if variational_dkl_lambda < 50.0: #dataset.n_voxels * 25.0:
                         variational_dkl_lambda = variational_dkl_lambda * (1.0 + args['variational_dkl_multiplier'])
 
                 if args['dropout_technique'] == 'sbp_log_normal':
@@ -209,21 +227,21 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                         'Pass [{:.4f} / {:.1f}]: volume mse: {:.4f}, LL: {:.4f}, DKL: {:.4f}, Weights: {:.4f}, complete loss: {:.4f} '
                         .format(volume_passes, args['max_pass'], mse.item(), ll, dkl, loss_Weights, complete_loss.item()))
 
-                    #valid_fraction = []
-                    #droprates = []
-                    #for module in model.net_layers.modules():
-                    #    if isinstance(module, VariationalDropout):
-                    #        d, dropr = module.get_valid_fraction()
-                    #        valid_fraction.append(d)
-                    #        droprates.append(dropr)
-                    #    if isinstance(module, LogNormalDropout):
-                    #        d, snr = module.get_valid_fraction()
-                    #        valid_fraction.append(d)
-                    #        droprates.append(snr)
-                    #writer.add_histogram("droprates_layer1", droprates[0], step_iter)
-                    #writer.add_histogram("droprates_layer2", droprates[1], step_iter)
-                    #writer.add_histogram("droprates_layer3", droprates[2], step_iter)
-                    #print('Valid Fraction: ', valid_fraction)
+                    valid_fraction = []
+                    droprates = []
+                    for module in model.net_layers.modules():
+                        if isinstance(module, VariationalDropout):
+                            d, dropr = module.get_valid_fraction()
+                            valid_fraction.append(d)
+                            droprates.append(dropr)
+                        if isinstance(module, LogNormalDropout):
+                            d, snr = module.get_valid_fraction()
+                            valid_fraction.append(d)
+                            droprates.append(snr)
+                    writer.add_histogram("droprates_layer1", droprates[0], step_iter)
+                    writer.add_histogram("droprates_layer2", droprates[1], step_iter)
+                    writer.add_histogram("droprates_layer3", droprates[2], step_iter)
+                    print('Valid Fraction: ', valid_fraction)
                 else:
                     if args['grad_lambda'] > 0:
                         print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, grad loss: {:.4f}, mse: {:.6f}'.format(
@@ -287,8 +305,8 @@ def training(args, verbose=True):
 
     if args['dropout_technique']:
         args_first = deepcopy(args)
-        if args['dropout_technique'] == 'smallify':
-            args_first['max_pass'] *= (2.0 / 3.0)
+        #if args['dropout_technique'] == 'smallify':
+        args_first['max_pass'] *= (2.0 / 3.0)
 
         model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume,
                            dataset, data_loader, args_first, verbose)
@@ -320,7 +338,7 @@ def training(args, verbose=True):
         print('---Retraining after pruning---')
         args_second = deepcopy(args)
         if args['dropout_technique'] == 'variational':
-            args_second['max_pass'] *= (2.0 / 3.0)
+            args_second['max_pass'] *= (1.0 / 3.0)
         else:
             args_second['max_pass'] *= (1.0 / 3.0)
 

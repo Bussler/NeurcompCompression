@@ -21,6 +21,15 @@ def calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volu
     return a * (-x_mu_loss) + b, x_mu_loss
 
 
+def calculate_Log_Likelihood_variance(predicted_volume, ground_truth_volume, variance):
+    x_mu_loss = (ground_truth_volume-predicted_volume) ** 2
+    sigma = torch.exp(variance)
+    a = 1 / (2 * (sigma ** 2))
+    b = - (math.log(2 * np.pi) + (2 * variance)) / 2
+
+    return a * (-x_mu_loss) + b, x_mu_loss
+
+
 def calculte_weight_loss(model):
     loss_Weights = 0.0
 
@@ -41,14 +50,20 @@ def calculate_variational_dropout_loss(model, loss_criterion, predicted_volume, 
         if isinstance(module, VariationalDropout):
             Dkl_sum = Dkl_sum + module.calculate_Dkl()
             Entropy_sum = Entropy_sum + module.calculate_Dropout_Entropy()
-    Dkl_sum = (lambda_dkl/predicted_volume.shape[0]) * Dkl_sum  # 0.1 (1/predicted_volume.shape[0]) * (lambda_dkl/predicted_volume.shape[0])
-    #Dkl_sum = lambda_dkl * Dkl_sum
-    Entropy_sum = lambda_entropy * Entropy_sum  # 0.00001
-    weight_loss = lambda_weights * (lambda_dkl/predicted_volume.shape[0]) * calculte_weight_loss(model)  # 0.00001 lambda_weights * (lambda_dkl/predicted_volume.shape[0])
+    #Dkl_sum = (lambda_dkl/predicted_volume.shape[0]) * Dkl_sum  # 0.1 (1/predicted_volume.shape[0]) * (lambda_dkl/predicted_volume.shape[0])
+    Dkl_sum = lambda_dkl * (loss_criterion/predicted_volume.shape[0]) * Dkl_sum  # M: TODO scaling!
+    Entropy_sum = lambda_entropy * (loss_criterion/predicted_volume.shape[0]) * Entropy_sum  # 0.00001
+    #weight_loss = lambda_weights * (lambda_dkl/predicted_volume.shape[0]) * calculte_weight_loss(model)  # 0.00001 lambda_weights * (lambda_dkl/predicted_volume.shape[0])
+    weight_loss = lambda_weights * (loss_criterion/predicted_volume.shape[0]) * calculte_weight_loss(model)
 
-    Log_Likelyhood, mse = calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volume, log_sigma)
+    #Log_Likelyhood, mse = calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volume, log_sigma)
 
-    complete_loss = -(Log_Likelyhood - Dkl_sum - weight_loss)# - Entropy_sum)
+    # M: iter over all values
+    Log_Likelyhood, mse = calculate_Log_Likelihood_variance(predicted_volume, ground_truth_volume, log_sigma)
+    Log_Likelyhood = Log_Likelyhood.sum() * (loss_criterion/predicted_volume.shape[0])
+    mse = mse.sum() * (1/predicted_volume.shape[0])
+
+    complete_loss = -(Log_Likelyhood - Dkl_sum - weight_loss - Entropy_sum)# - Entropy_sum)
 
     return complete_loss, Dkl_sum, Log_Likelyhood, mse, weight_loss
 
@@ -72,13 +87,13 @@ class VariationalDropout(DropoutLayer):
         self.log_var = torch.nn.Parameter(torch.empty(number_thetas).fill_(log_alphas), requires_grad=True)
 
         self.pruning_threshold = threshold
-        #if VariationalDropout.i == 1:
-        #    self.pruning_threshold = 0.9
-        #if VariationalDropout.i == 2:
-        #    self.pruning_threshold = 0.85
-        #if VariationalDropout.i == 3:
-        #    self.pruning_threshold = 0.85
-        #VariationalDropout.i = VariationalDropout.i +1
+        if VariationalDropout.i == 1:
+            self.pruning_threshold = 0.9
+        if VariationalDropout.i == 2:
+            self.pruning_threshold = 0.5
+        if VariationalDropout.i == 3:
+            self.pruning_threshold = 0.80
+        VariationalDropout.i = VariationalDropout.i +1
 
     @property
     def alphas(self):
