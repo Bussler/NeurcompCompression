@@ -3,7 +3,9 @@ from cProfile import label
 from mlflow import log_metric, log_param, log_artifacts
 from mlflow.tracking import MlflowClient
 import matplotlib.pyplot as plt
+import tikzplotlib
 from matplotlib.ticker import FormatStrFormatter
+
 from pltUtils import generate_array_MLFlow, dict_from_file, append_lists_from_dicts, generate_plot_lists,\
     normalize_array_0_1, normalize_array, generate_orderedValues, generateMeanValues, plot_pareto_frontier
 import numpy as np
@@ -224,22 +226,22 @@ def rmseTTHRESHExperiment():
     tthreshRMSEmhd_p = [0.003135982353123946, 0.006271169994000251, 0.009925990818509228, 0.016716544001841114, 0.019070782289479934, 0.028947138499412675, 0.035873616272853986, 0.03725399491978439]
     tthreshCompRatemhd_p = [36.145, 79.6552, 141.825, 297.357, 341.542, 681.394, 1096.76, 1143.66]
 
-    param = 'rmse'#'psnr', 'rmse'
+    param = 'psnr'#, 'rmse'
     datset='mhd_p'
 
     mlClient = MlflowClient()
     expList = mlClient.search_experiments()
 
-    allRunsData = []
-    realCompRates = []
-    for id in comprIdsEjecta:
-        runs = mlClient.search_runs(experiment_ids=id)
-        bestrun = None
-        for entry in runs:
-            if bestrun is None or entry.data.params[param] < bestrun.data.params[param]:
-                bestrun = entry
-        allRunsData.append(float(bestrun.data.params[param]))
-        realCompRates.append(float(bestrun.data.params['compression_ratio']))
+    #allRunsData = []
+    #realCompRates = []
+    #for id in comprIdsEjecta:
+    #    runs = mlClient.search_runs(experiment_ids=id)
+    #    bestrun = None
+    #    for entry in runs:
+    #        if bestrun is None or entry.data.params[param] < bestrun.data.params[param]:
+    #            bestrun = entry
+    #    allRunsData.append(float(bestrun.data.params[param]))
+    #    realCompRates.append(float(bestrun.data.params['compression_ratio']))
 
     #plt.plot(realCompRates, allRunsData, label='Neurcomp no Quant')
     #plt.plot(tthreshCompRateEjeta, tthreshRMSEEjecta, label='TTHRESH')
@@ -255,12 +257,55 @@ def rmseTTHRESHExperiment():
     #plt.plot(NeurcompQuantCompRatemhd_7, NeurcompQuantPSNRmhd_p7, label='Neurcomp Quant 7 bits')
     #plt.plot(NeurcompQuantCompRatemhd_noGrad9, NeurcompQuantPSNRmhd_p_noGrad9, label='Neurcomp Quant 9 bits, no Grad')
 
-    plt.plot(tthreshCompRatemhd_p, tthreshRMSEmhd_p, label='TTHRESH')
-    plt.plot(NeurcompQuantCompRatemhd_9, NeurcompQuantRMSEmhd_9, label='Neurcomp Quant 9 bits')
-    plt.plot(NeurcompQuantCompRatemhd_7, NeurcompQuantRMSEmhd_7, label='Neurcomp Quant 7 bits')
-    plt.plot(NeurcompQuantCompRatemhd_noGrad9, NeurcompQuantRMSEmhd_noGrad9, label='Neurcomp Quant 9 bits, no Grad')
+    BASENAME_Neurcomp = 'experiments/diff_comp_rates/mhd_Baselines/OptimizeCompression_WithFeaturesPerLayer/mhd_p_'
+    experimentNames_Neurcomp = [23, 12, 15,4, 27, 8, 9, 5, 10, 1, 11]
 
-    plt.axhline(y=0.1753335443571432, color='y', linestyle='--')
+    BASENAME_fV = '../Latent_Feature_Grid_Compression/experiments/NAS/mhd_p_baseline/mhd_p_'
+    experimentNames_fV = np.linspace(0, 49, 50, dtype=int)
+
+    InfoName_Quant = 'Dequant_Info.txt'
+    InfoName = 'info.txt'
+
+    PSNR_Neurcomp_Quant = []
+    CompressionRatio_Neurcomp_Quant = []
+
+    PSNR_Neurcomp = []
+    CompressionRatio_Neurcomp = []
+
+    PSNR_fV = []
+    CompressionRatio_fV = []
+
+    generate_plot_lists(([PSNR_Neurcomp_Quant, CompressionRatio_Neurcomp_Quant],),
+                           (['psnr', 'Quant_Compression_Ratio'],),
+                           BASENAME_Neurcomp, (InfoName_Quant,), experiment_names=experimentNames_Neurcomp)
+
+    generate_plot_lists(([PSNR_Neurcomp, CompressionRatio_Neurcomp],),
+                        (['psnr', 'compression_ratio'],),
+                        BASENAME_Neurcomp, (InfoName,), experiment_names=experimentNames_Neurcomp)
+
+    generate_plot_lists(([PSNR_fV, CompressionRatio_fV],),
+                        (['psnr', 'compression_ratio'],),
+                        BASENAME_fV, (InfoName,), experiment_names=experimentNames_fV)
+
+    pareto_front_fV = plot_pareto_frontier(CompressionRatio_fV, PSNR_fV)
+    pf_X_fV = [pair[0] for pair in pareto_front_fV]
+    pf_Y_fV = [pair[1] for pair in pareto_front_fV]
+
+    limit = 600
+
+    new_pf_X_fV = []
+    new_pf_Y_fV = []
+    for i, k in zip(pf_X_fV, pf_Y_fV):
+        if i < limit:
+            new_pf_X_fV.append(i)
+            new_pf_Y_fV.append(k)
+
+    plt.plot(tthreshCompRatemhd_p, tthreshPSNRmhd_p, label='TTHRESH')
+    plt.plot(new_pf_X_fV, new_pf_Y_fV, label='fv-SRN')
+    plt.plot(CompressionRatio_Neurcomp_Quant, PSNR_Neurcomp_Quant, label='Neurcomp Quant 8 bits')
+    #plt.plot(CompressionRatio_Neurcomp, PSNR_Neurcomp, label='Neurcomp no Quant')
+
+    #plt.axhline(y=0.1753335443571432, color='y', linestyle='--')
 
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
@@ -268,8 +313,9 @@ def rmseTTHRESHExperiment():
     plt.ylabel(param)
     plt.legend()
     
-    filepath = 'plots/'+datset+'_TTHRESH_'+param+'.png'
-    plt.savefig(filepath)
+    filepath = 'plots/LatexFigures/Baselines/'+datset+'_TTHRESH'
+    plt.savefig(filepath + '.png')
+    tikzplotlib.save(filepath + '.pgf')
 
 
 def paramExperiment():
@@ -918,25 +964,25 @@ def DifferentRuns():
 
 
 def generateParetoFrontier():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/OptimizeCompression_BetterSearchspaceVariational_dkl/mhd_p_'
+    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/Features_PerLayer_dynamic_variance_NoEntropy_NoResnet/mhd_p_'
     experimentNames = np.linspace(0, 59, 60, dtype=int)
     #experimentNames = np.delete(experimentNames, 5, axis=0)
     #experimentNames = np.delete(experimentNames, 5, axis=0)
 
-    BASENAMEOther = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100_2/mhd_p_100_'
-    experimentNamesOther = np.linspace(0, 49, 50, dtype=int)
-    experimentNamesOther = np.delete(experimentNamesOther, 13, axis=0)
-    experimentNamesOther = np.delete(experimentNamesOther, 15, axis=0)
-    experimentNamesOther = np.delete(experimentNamesOther, 15, axis=0)
+    #BASENAMEOther = 'experiments/hyperparam_search/mhd_p_Variational_NAS/OptimizeCompression_BetterSearchspaceVariational_dkl/mhd_p_'
+    BASENAMEOther = 'experiments/hyperparam_search/mhd_p_Variational_NAS/Features_PerLayer_dynamic_variance/mhd_p_'
+    experimentNamesOther = np.linspace(0, 62, 63, dtype=int)
+    #experimentNamesOther = np.delete(experimentNamesOther, 13, axis=0)
+    #experimentNamesOther = np.delete(experimentNamesOther, 15, axis=0)
+    #experimentNamesOther = np.delete(experimentNamesOther, 15, axis=0)
 
-    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_Baselines/OptimizeCompression_WithFeaturesPerLayer/mhd_p_'
-    experimentNamesUnpruned = np.linspace(0, 59, 60, dtype=int)
+    #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_Baselines/OptimizeCompression_WithFeaturesPerLayer/mhd_p_'
+    #experimentNamesUnpruned = np.linspace(0, 59, 60, dtype=int)
     #experimentNamesUnpruned = [221, 227, 246, 299, 327, 393, 503, 628]
     #experimentNamesUnpruned = [122, 135, 157, 198, 225, 292, 386, 534, 602, 781, 984, 1087]
 
-    #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100/mhd_p_'
-    #experimentNamesUnpruned = [102, 144, 166, 211, 253, 268, 283, 293, 325, 363, 414, 442, 474, 512, 617, 638,
-    #                           797, 895]
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100_NoResnet/mhd_p_'
+    experimentNamesUnpruned = [122,135,157,198,225,292,386,534,602,781,984]
     #experimentNamesUnpruned = [210, 225, 235, 244, 296, 388, 463, 546, 596, 770, 931, 1251]
     #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100_ForVariational/mhd_p_'
     #experimentNamesUnpruned = [105, 194, 283, 303, 311, 371, 468, 511, 603, 715, 808, 945, 1354]
@@ -981,7 +1027,7 @@ def generateParetoFrontier():
     pf_XUnpruned = [pair[0] for pair in pareto_frontUnpruned]
     pf_YUnpruned = [pair[1] for pair in pareto_frontUnpruned]
 
-    limit = 800
+    limit = 1000
 
     newCompr = []
     newPSNR = []
@@ -1011,10 +1057,10 @@ def generateParetoFrontier():
             new_pf_XUnpruned.append(i)
             new_pf_YUnpruned.append(k)
 
-    plt.plot(new_pf_X, new_pf_Y, label='Pareto_Frontier Pruned', color='green')
-    plt.plot(new_pf_XFinetuning, new_pf_YFinetuning, label='Pareto_Frontier Pruned With 100 Start', color='blue')
+    plt.plot(new_pf_X, new_pf_Y, label='Pareto_Frontier Pruned No Resnet', color='green')
+    plt.plot(new_pf_XFinetuning, new_pf_YFinetuning, label='Pareto_Frontier Pruned With Resnet', color='blue')
     plt.scatter(newCompr, newPSNR, color='green', alpha =0.2)
-    plt.plot(new_pf_XUnpruned, new_pf_YUnpruned, label='Baseline Unpruned', color='red')
+    plt.plot(new_pf_XUnpruned, new_pf_YUnpruned, label='Baseline Unpruned No Resnet', color='red')
 
     plt.xlabel('Compression_Ratio')
     plt.ylabel('PSNR')
@@ -1024,7 +1070,7 @@ def generateParetoFrontier():
     #for p in pf_X:
     #    print(p)
 
-    filepath = 'plots/' + 'mhd_p_' + 'Variational_NumFeaturePerLayerLearned_ParetoFrontier_PrunedVsUnprunedVSSetLayersize' + '.png'
+    filepath = 'plots/' + 'mhd_p_' + 'Variational_dynamic_variance_NoResnet_Pruned_VS_Unpruned_VS_Resnet' + '.png'
     plt.savefig(filepath)
 
 
@@ -1189,10 +1235,8 @@ def HyperparamAnalysis():
     plt.savefig(filepath)
 
 def HyperparamAnalysis_Variational():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100/mhd_p_100_'
-    experimentNames = np.linspace(0, 39, 40, dtype=int)
-    experimentNames = np.delete(experimentNames, 8, axis=0)
-    experimentNames = np.delete(experimentNames, 8, axis=0)
+    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/Features_PerLayer_dynamic_variance/mhd_p_'
+    experimentNames = np.linspace(0, 62, 63, dtype=int)
 
     InfoName = 'info.txt'
     configName = 'config.txt'
@@ -1212,7 +1256,7 @@ def HyperparamAnalysis_Variational():
     new_pf_X = []
     new_pf_Y = []
     for i,k in zip(pf_X, pf_Y):
-        if i < 2000:
+        if i < 1200:
             new_pf_X.append(i)
             new_pf_Y.append(k)
 
@@ -1311,7 +1355,7 @@ def HyperparamAnalysis_Variational():
     #plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.6f'))
     #plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.6f'))
     plt.legend()
-    filepath = 'plots/' + 'mhd_p_' + "Variational_100_" + 'HyperparamAnalyis' + '.png'
+    filepath = 'plots/' + 'mhd_p_' + "Variational_dynamic_variance_" + 'HyperparamAnalyis' + '.png'
     plt.savefig(filepath)
 
 
@@ -1350,7 +1394,8 @@ def Variational_WithQuantization():
 
 
 if __name__ == '__main__':
-    #rmseTTHRESHExperiment()
+    rmseTTHRESHExperiment()
+
     #paramExperiment()
     #QuantBitsExperiment()
     #QuantVsOrigExperiment()
@@ -1366,7 +1411,9 @@ if __name__ == '__main__':
     #SmallifyDifferentNWSizes()
     #ResnetVSNoResnet()
     #DifferentRuns()
-    generateParetoFrontier()
+
+    #generateParetoFrontier()
+
     #CompressionVSRMSE()
     #HyperparamAnalysis()
     #HyperparamAnalysis_Variational()
