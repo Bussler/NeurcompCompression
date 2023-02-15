@@ -1,0 +1,79 @@
+% This file was created with tikzplotlib v0.10.1.
+\begin{tikzpicture}
+
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{lightgray204}{RGB}{204,204,204}
+
+\begin{axis}[
+legend cell align={left},
+legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204},
+tick align=outside,
+tick pos=left,
+x grid style={darkgray176},
+xlabel={quant\_bits},
+xmin=4.8, xmax=9.2,
+xtick style={color=black},
+y grid style={darkgray176},
+ylabel={channels\_per\_layer},
+ymin=102.85, ymax=216.15,
+ytick style={color=black}
+]
+\addplot [
+  mark=*,
+  only marks,
+  scatter,
+  scatter/@post marker code/.code={%
+  \endscope
+},
+  scatter/@pre marker code/.append style={/tikz/mark size=\perpointmarksize},
+  scatter/@pre marker code/.code={%
+  \expanded{%
+  \noexpand\definecolor{thispointdrawcolor}{RGB}{\drawcolor}%
+  \noexpand\definecolor{thispointfillcolor}{RGB}{\fillcolor}%
+  }%
+  \scope[draw=thispointdrawcolor, fill=thispointfillcolor]%
+},
+  visualization depends on={\thisrow{sizedata} \as\perpointmarksize},
+  visualization depends on={value \thisrow{draw} \as \drawcolor},
+  visualization depends on={value \thisrow{fill} \as \fillcolor}
+]
+table{%
+x  y  draw  fill  sizedata
+9 153 8,51.1058823529412,111.611764705882 8,51.1058823529412,111.611764705882 11.283791670955125
+8 165 8,48,107 8,48,107 12.6156626101008
+7 178 8,74.9176470588235,146.96862745098 8,74.9176470588235,146.96862745098 9.772050238058398
+6 193 64.3176470588235,144.317647058824,197.133333333333 64.3176470588235,144.317647058824,197.133333333333 7.978845608028654
+5 211 207.6,225.4,242.2 207.6,225.4,242.2 5.641895835477563
+};
+\addlegendentry{Compression 126}
+\addplot [
+  mark=*,
+  only marks,
+  scatter,
+  scatter/@post marker code/.code={%
+  \endscope
+},
+  scatter/@pre marker code/.append style={/tikz/mark size=\perpointmarksize},
+  scatter/@pre marker code/.code={%
+  \expanded{%
+  \noexpand\definecolor{thispointdrawcolor}{RGB}{\drawcolor}%
+  \noexpand\definecolor{thispointfillcolor}{RGB}{\fillcolor}%
+  }%
+  \scope[draw=thispointdrawcolor, fill=thispointfillcolor]%
+},
+  visualization depends on={\thisrow{sizedata} \as\perpointmarksize},
+  visualization depends on={value \thisrow{draw} \as \drawcolor},
+  visualization depends on={value \thisrow{fill} \as \fillcolor}
+]
+table{%
+x  y  draw  fill  sizedata
+9 108 0,92.4392156862745,37.1333333333333 0,92.4392156862745,37.1333333333333 9.772050238058398
+8 119 0,68,27 0,68,27 12.6156626101008
+7 129 0,92.4392156862745,37.1333333333333 0,92.4392156862745,37.1333333333333 11.283791670955125
+6 140 62.5294117647059,168.364705882353,91.0235294117647 62.5294117647059,168.364705882353,91.0235294117647 7.978845608028654
+5 154 211,237.8,204.8 211,237.8,204.8 5.641895835477563
+};
+\addlegendentry{Compression 196}
+\end{axis}
+
+\end{tikzpicture}

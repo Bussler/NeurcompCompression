@@ -291,7 +291,7 @@ def rmseTTHRESHExperiment():
     pf_X_fV = [pair[0] for pair in pareto_front_fV]
     pf_Y_fV = [pair[1] for pair in pareto_front_fV]
 
-    limit = 600
+    limit = 700
 
     new_pf_X_fV = []
     new_pf_Y_fV = []
@@ -300,10 +300,31 @@ def rmseTTHRESHExperiment():
             new_pf_X_fV.append(i)
             new_pf_Y_fV.append(k)
 
-    plt.plot(tthreshCompRatemhd_p, tthreshPSNRmhd_p, label='TTHRESH')
+    new_tthreshCompRatemhd_p = []
+    new_tthreshPSNRmhd_p = []
+    for i, k in zip(tthreshCompRatemhd_p, tthreshPSNRmhd_p):
+        if i < limit:
+            new_tthreshCompRatemhd_p.append(i)
+            new_tthreshPSNRmhd_p.append(k)
+
+    new_CompressionRatio_Neurcomp_Quant = []
+    new_PSNR_Neurcomp_Quant = []
+    for i, k in zip(CompressionRatio_Neurcomp_Quant, PSNR_Neurcomp_Quant):
+        if i < limit:
+            new_CompressionRatio_Neurcomp_Quant.append(i)
+            new_PSNR_Neurcomp_Quant.append(k)
+
+    new_CompressionRatio_Neurcomp = []
+    new_PSNR_Neurcomp = []
+    for i, k in zip(CompressionRatio_Neurcomp, PSNR_Neurcomp):
+        if i < limit:
+            new_CompressionRatio_Neurcomp.append(i)
+            new_PSNR_Neurcomp.append(k)
+
+    plt.plot(new_tthreshCompRatemhd_p, new_tthreshPSNRmhd_p, label='TTHRESH')
     plt.plot(new_pf_X_fV, new_pf_Y_fV, label='fv-SRN')
-    plt.plot(CompressionRatio_Neurcomp_Quant, PSNR_Neurcomp_Quant, label='Neurcomp Quant 8 bits')
-    #plt.plot(CompressionRatio_Neurcomp, PSNR_Neurcomp, label='Neurcomp no Quant')
+    plt.plot(new_CompressionRatio_Neurcomp_Quant, new_PSNR_Neurcomp_Quant, label='Neurcomp Quant 8 bits')
+    plt.plot(new_CompressionRatio_Neurcomp, new_PSNR_Neurcomp, label='Neurcomp no Quant')
 
     #plt.axhline(y=0.1753335443571432, color='y', linestyle='--')
 
@@ -399,14 +420,14 @@ def NumberOfChannelsVSCompression():
 
 
 def QuantbitsVSCompressionratio():
-    BASENAME50 =  'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio50/test_experiment'#'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio50/mhd_p_50'
-    BASENAME100 =  'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio100/test_experiment'#'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio100/test_experiment'
+    BASENAME50 = 'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio50/mhd_p_50'# 'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio50/test_experiment'#'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio50/mhd_p_50'
+    BASENAME100 = 'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio100/test_experiment'#'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio100/test_experiment'#'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio100/test_experiment'
     BASENAME200 = 'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio200/test_experiment'
     CONFIGNAME = 'info.txt'
     QUANTNAMECONFIG = 'Dequant_Info.txt'
 
-    experimentNames50= [50,38,31,26,21,17,12,8,4]#[50,43,36,31,26]
-    experimentNames100 = [100,65,51,42,34,27,20,14,7]#[100, 82,70,59,49]
+    experimentNames50= [50,43,36,31,26]#[50,38,31,26,21,17,12,8,4]#[50,43,36,31,26]
+    experimentNames100 = [100, 82,70,59,49]#[100,65,51,42,34,27,20,14,7]#[100, 82,70,59,49]
     experimentNames200 = [200,106,75,59,48,38,29,20,11]
 
     used_bits50 = []
@@ -458,22 +479,22 @@ def QuantbitsVSCompressionratio():
     c_map3 = plt.get_cmap('Reds')
 
 
-
-    plt.scatter(used_bits50, size50, s = [x for x in generate_orderedValues(PSNR50, 200)],
-                c=[c_map1(val) for val in normalize_array(PSNR50, np.min(PSNR50), np.max(PSNR50), 0.3, 1)], label='Compression 126')
-    plt.scatter(used_bits100, size100,s = [x for x in generate_orderedValues(PSNR100, 200)],
-                c=[c_map2(val) for val in normalize_array(PSNR100, np.min(PSNR100), np.max(PSNR100), 0.3, 1)], label='Compression 196')
-    plt.scatter(used_bits200, size200, s = [x for x in generate_orderedValues(PSNR200, 200)],
-                c=[c_map3(val) for val in normalize_array(PSNR200, np.min(PSNR200), np.max(PSNR200), 0.3, 1)], label='Compression 272')
+    plt.scatter(used_bits50, size50, s = [x for x in generate_orderedValues(PSNR50, 500)],
+                c=[c_map1(val) for val in normalize_array(PSNR50, np.min(PSNR50), np.max(PSNR50), 0.2, 1)], label='Compression 126')
+    plt.scatter(used_bits100, size100,s = [x for x in generate_orderedValues(PSNR100, 500)],
+                c=[c_map2(val) for val in normalize_array(PSNR100, np.min(PSNR100), np.max(PSNR100), 0.2, 1)], label='Compression 196')
+    #plt.scatter(used_bits200, size200, s = [x for x in generate_orderedValues(PSNR200, 200)],
+    #            c=[c_map3(val) for val in normalize_array(PSNR200, np.min(PSNR200), np.max(PSNR200), 0.1, 1)], label='Compression 272')
 
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-    plt.xlabel('#quant_bits')
-    plt.ylabel('#channels')
+    plt.xlabel('quant_bits')
+    plt.ylabel('channels_per_layer')
     plt.legend()
 
-    filepath = 'plots/' + 'test_volume' + '_QuantbitsVSCompressionratio' + '.png'
-    plt.savefig(filepath)
+    filepath = 'plots/LatexFigures/Baselines/'+'mhd_p_volume'+'Neurcomp_QuantbitsVSCompressionratio'
+    plt.savefig(filepath + '.png')
+    tikzplotlib.save(filepath + '.pgf')
 
 
 def CompressionGainVSPSNR():
@@ -1394,14 +1415,16 @@ def Variational_WithQuantization():
 
 
 if __name__ == '__main__':
-    rmseTTHRESHExperiment()
+    #rmseTTHRESHExperiment()
 
     #paramExperiment()
     #QuantBitsExperiment()
     #QuantVsOrigExperiment()
     #OrigVSSelfImplmentation()
     #NumberOfChannelsVSCompression()
-    #QuantbitsVSCompressionratio()
+
+    QuantbitsVSCompressionratio()
+
     #CompressionGainVSPSNR()
     #PrunedVSUnpruned()
     #influenceSmallifyParameter()
