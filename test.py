@@ -11,6 +11,7 @@ from model.model_utils import compute_num_neurons
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from itertools import product
+import tikzplotlib
 
 
 def emaTest2():
@@ -90,9 +91,10 @@ def Hyperparam_Best_Runs():
     pass
 
 def calcParetoStuff():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/200_NoResnet/mhd_p_200_'
-    experimentNames = np.linspace(0, 49, 50, dtype=int)
-    experimentNames = np.delete(experimentNames, 10, axis=0)
+    BASENAME = 'experiments/diff_comp_rates/mhd_Baselines/OptimizeCompression_WithFeaturesPerLayer/mhd_p_'
+    experimentNames = np.linspace(0, 59, 60, dtype=int)
+    #experimentNames = np.delete(experimentNames, 5, axis=0)
+    #experimentNames = np.delete(experimentNames, 5, axis=0)
     #experimentNames = np.delete(experimentNames, 8, axis=0)
 
     InfoName = 'info.txt'
@@ -110,8 +112,10 @@ def calcParetoStuff():
 
 def analyse_NW_Weights():
     from torch.nn import Linear
+    from model.VariationalDropoutLayer import VariationalDropout
 
-    Configpath = 'experiments/diff_comp_rates/mhd_p_Baselines/100/mhd_p_211/config.txt'
+    Configpath = 'experiments/Test_DiffDropratesPerLayer/Unpruned_Net_TestSet_WithEntropy/config.txt'
+    #Configpath = 'experiments/diff_comp_rates/mhd_p_Baselines/100/mhd_p_211/config.txt'
     #Configpath = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100/mhd_p_100_39/config.txt'
     args = pu.dict_from_file(Configpath)
     volume = get_tensor(args['data'])
@@ -119,25 +123,155 @@ def analyse_NW_Weights():
 
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'],
                            args['d_in'], args['d_out'], args['omega_0'], args['checkpoint_path'],
-                           dropout_technique=args['dropout_technique']+'_quant',
+                           dropout_technique=args['dropout_technique'],
                            featureList=args['feature_list'],)
 
     layers = []
     for layer in model.net_layers.modules():
-        if isinstance(layer, Linear):
-            layers.append(layer.weight.data)
+        #if isinstance(layer, Linear):
+        #    layers.append(layer.weight.data)
+        if isinstance(layer, VariationalDropout):
+            layers.append(layer.dropout_rates.detach().data.reshape(-1).numpy())
 
     fig, ax = plt.subplots(nrows=len(layers), ncols=1, figsize=(8, 8))
     fig.tight_layout()
 
     for i in range(len(layers)):
-        ax[i].hist(layers[i], bins=30, label = str(i))
+        ax[i].hist(layers[i], bins=120, label=str(i))  # range=(-0.5, 0.5)
         ax[i].title.set_text('Layer '+str(i))
 
-    filepath = 'plots/' + 'mhd_p_' + 'Weight_Historgramm' + "Baseline_211" + '.png'
-    plt.savefig(filepath)
+    filepath = 'plots/LatexFigures/Var_Droprate_Analysis/' + 'mhd_p_' + 'Unpruned_Net_TestSet_WithEntropy' + 'Weight_Historgramm'
+    plt.savefig(filepath + '.png')
+    tikzplotlib.save(filepath + '.pgf')
 
     pass
+
+
+def test_different_dropout_rates():
+    from model.VariationalDropoutLayer import VariationalDropout
+    from model.pruning import prune_variational_dropout_use_resnet
+    from model.model_utils import write_dict, write_list
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    ConfigPath = 'experiments/Test_DiffDropratesPerLayer/Unpruned_Net_TestSet_WithEntropy/config.txt'
+
+    args = pu.dict_from_file(ConfigPath)
+
+    volume = get_tensor(args['data'])
+    dataset = IndexDataset(volume, args['sample_size'])
+
+    pruning_threshold_list = []
+    numruns = 1000
+    results = []
+
+    for i in range(numruns):
+
+        n1 = random.uniform(0.5, 0.9)
+        n2 = random.uniform(0.4, 0.99)
+        n3 = random.uniform(0.2, 0.99)
+
+        pruning_threshold_list = [n1, n2, n3]
+
+        VariationalDropout.i = 0
+        VariationalDropout.set_feature_list(pruning_threshold_list)
+
+        model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'],
+                               args['d_in'], args['d_out'], args['omega_0'], args['checkpoint_path'],
+                               dropout_technique=args['dropout_technique'],
+                               featureList=args['feature_list'],)
+        model.to(device)
+
+        model = prune_variational_dropout_use_resnet(model)
+        model.to(device)
+
+        psnr, l1_diff, mse, rmse = tiled_net_out(dataset, model, True, gt_vol=volume.cpu(), evaluate=True,
+                                                 write_vols=False)
+        num_net_params = 0
+        for layer in model.parameters():
+            num_net_params += layer.numel()
+        compression_ratio = dataset.n_voxels / num_net_params
+        compr_rmse = compression_ratio / rmse
+
+        info = {}
+        info['pruning_threshold_list'] = pruning_threshold_list
+        info['psnr'] = psnr
+        info['compression_ratio'] = compression_ratio
+        info['compr_rmse'] = compr_rmse
+
+        results.append(info)
+
+    write_list(results, "experiments/Test_DiffDropratesPerLayer/Unpruned_Net_TestSet_WithEntropy/Results.txt")
+
+
+def create_parallel_coordinates():
+    import plotly.graph_objects as go
+    import plotly.express as px
+    import ast
+
+    filename = 'experiments/Test_DiffDropratesPerLayer/Unpruned_Net_TestSet_WithEntropy/Results.txt'
+    file = open(filename, 'r')
+    Lines = file.readlines()
+
+    # create data
+    data = []
+    d1 = []
+    d2 = []
+    d3 = []
+    psnr = []
+    compr = []
+    x= np.linspace(0, 999, 1000, dtype=int)
+    for line in Lines:
+        d = ast.literal_eval(line)
+        data.append(d)
+        d1.append(d['pruning_threshold_list'][0])
+        d2.append(d['pruning_threshold_list'][1])
+        d3.append(d['pruning_threshold_list'][2])
+        psnr.append(d['psnr'])
+        compr.append(d['compression_ratio'])
+
+    df = {'id': x,
+          'Threshold Layer 1': d1,
+          'Threshold Layer 2': d2,
+          'Threshold Layer 3': d3,
+          'PSNR': psnr,
+          'Compression Ratio': compr}
+
+    #fig = px.parallel_coordinates(df, color="id",
+    #                              color_continuous_scale=px.colors.diverging.Tealrose,
+    #                              color_continuous_midpoint=1)
+
+    fig = go.Figure(data=
+    go.Parcoords(
+        line=dict(color=df['id'],
+                  colorscale=[[0, 'purple'], [0.5, 'lightseagreen'], [1, 'gold']]),
+        dimensions=list([
+            dict(#range=[0.55, 0.95],
+                 label='Threshold Layer 1', values=df['Threshold Layer 1']),
+            dict(#range=[0.5, 0.9],
+                 label='Threshold Layer 2', values=df['Threshold Layer 2']),
+            dict(#range=[0.8, 1.0],
+                 label='Threshold Layer 3', values=df['Threshold Layer 3']),
+            dict(#range=[23.8, 24.0],
+                 #constraintrange=[39.08, 40.0],
+                 label='PSNR', values=df['PSNR']),
+            dict(#range=[100.0, 162.0],
+                 constraintrange=[120.0, 300.0],
+                 label='Compression Ratio', values=df['Compression Ratio'])
+        ])
+    )
+    )
+
+    fig.update_layout(
+        plot_bgcolor='white',
+        paper_bgcolor='white'
+    )
+
+    #filename = 'plots/test'
+    filename = 'plots/LatexFigures/Var_Droprate_Analysis/ParallelCoordPlots/testvol_Unpruned_WithEntropy_Parallel_Coordinates_ConstrainCompr'
+    fig.write_image(filename+'.png')
+    tikzplotlib.save(filename + '.pgf')
+
 
 if __name__ == '__main__':
     #emaTest2()
@@ -145,5 +279,9 @@ if __name__ == '__main__':
     #psnr_test()
     #Hyperparam_Best_Runs()
 
-    calcParetoStuff()
+    #calcParetoStuff()
     #analyse_NW_Weights()
+    #test_different_dropout_rates()
+    create_parallel_coordinates()
+
+    #testingstuff()
