@@ -91,7 +91,7 @@ def Hyperparam_Best_Runs():
     pass
 
 def calcParetoStuff():
-    BASENAME = 'experiments/diff_comp_rates/mhd_Baselines/OptimizeCompression_WithFeaturesPerLayer/mhd_p_'
+    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/200_controlrun/mhd_p_'
     experimentNames = np.linspace(0, 59, 60, dtype=int)
     #experimentNames = np.delete(experimentNames, 5, axis=0)
     #experimentNames = np.delete(experimentNames, 5, axis=0)
@@ -154,12 +154,22 @@ def test_different_dropout_rates():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    ConfigPath = 'experiments/Test_DiffDropratesPerLayer/Unpruned_Net_TestSet_WithEntropy/config.txt'
+    ConfigPath = 'experiments/Test_DiffDropratesPerLayer/Unpruned_Net_ControlRun/config.txt'
 
     args = pu.dict_from_file(ConfigPath)
 
     volume = get_tensor(args['data'])
     dataset = IndexDataset(volume, args['sample_size'])
+    volume = volume.to(device)
+
+    model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'],
+                           args['d_in'], args['d_out'], args['omega_0'], args['checkpoint_path'],
+                           dropout_technique=args['dropout_technique'],
+                           featureList=args['feature_list'], )
+    model.to(device)
+
+    model = prune_variational_dropout_use_resnet(model)
+    model.to(device)
 
     pruning_threshold_list = []
     numruns = 1000
@@ -237,40 +247,12 @@ def create_parallel_coordinates():
           'PSNR': psnr,
           'Compression Ratio': compr}
 
+    filename = 'plots/LatexFigures/Var_Droprate_Analysis/ParallelCoordPlots/testvol_Unpruned_WithEntropy_Parallel_Coordinates_ConstrainCompr'
+    pu.generate_Parallel_Coordinate_Plot(df, filename, None, None)
+
     #fig = px.parallel_coordinates(df, color="id",
     #                              color_continuous_scale=px.colors.diverging.Tealrose,
     #                              color_continuous_midpoint=1)
-
-    fig = go.Figure(data=
-    go.Parcoords(
-        line=dict(color=df['id'],
-                  colorscale=[[0, 'purple'], [0.5, 'lightseagreen'], [1, 'gold']]),
-        dimensions=list([
-            dict(#range=[0.55, 0.95],
-                 label='Threshold Layer 1', values=df['Threshold Layer 1']),
-            dict(#range=[0.5, 0.9],
-                 label='Threshold Layer 2', values=df['Threshold Layer 2']),
-            dict(#range=[0.8, 1.0],
-                 label='Threshold Layer 3', values=df['Threshold Layer 3']),
-            dict(#range=[23.8, 24.0],
-                 #constraintrange=[39.08, 40.0],
-                 label='PSNR', values=df['PSNR']),
-            dict(#range=[100.0, 162.0],
-                 constraintrange=[120.0, 300.0],
-                 label='Compression Ratio', values=df['Compression Ratio'])
-        ])
-    )
-    )
-
-    fig.update_layout(
-        plot_bgcolor='white',
-        paper_bgcolor='white'
-    )
-
-    #filename = 'plots/test'
-    filename = 'plots/LatexFigures/Var_Droprate_Analysis/ParallelCoordPlots/testvol_Unpruned_WithEntropy_Parallel_Coordinates_ConstrainCompr'
-    fig.write_image(filename+'.png')
-    tikzplotlib.save(filename + '.pgf')
 
 
 if __name__ == '__main__':
