@@ -154,7 +154,7 @@ def test_different_dropout_rates():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    ConfigPath = 'experiments/Test_DiffDropratesPerLayer/Unpruned_Net_ControlRun/config.txt'
+    ConfigPath = 'experiments/Test_DiffDropratesPerLayer/Unpruned_Net/config.txt'
 
     args = pu.dict_from_file(ConfigPath)
 
@@ -172,14 +172,14 @@ def test_different_dropout_rates():
     model.to(device)
 
     pruning_threshold_list = []
-    numruns = 1000
+    numruns = 5000
     results = []
 
     for i in range(numruns):
 
-        n1 = random.uniform(0.5, 0.9)
-        n2 = random.uniform(0.4, 0.99)
-        n3 = random.uniform(0.2, 0.99)
+        n1 = random.uniform(0.0, 0.95)
+        n2 = random.uniform(0.0, 0.95)
+        n3 = random.uniform(0.0, 0.95)
 
         pruning_threshold_list = [n1, n2, n3]
 
@@ -211,7 +211,7 @@ def test_different_dropout_rates():
 
         results.append(info)
 
-    write_list(results, "experiments/Test_DiffDropratesPerLayer/Unpruned_Net_TestSet_WithEntropy/Results.txt")
+    write_list(results, "experiments/Test_DiffDropratesPerLayer/Unpruned_Net/Results_uniform.txt")
 
 
 def create_parallel_coordinates():
@@ -219,7 +219,7 @@ def create_parallel_coordinates():
     import plotly.express as px
     import ast
 
-    filename = 'experiments/Test_DiffDropratesPerLayer/Unpruned_Net_TestSet_WithEntropy/Results.txt'
+    filename = 'experiments/Test_DiffDropratesPerLayer/Unpruned_Net/Results_uniform.txt'
     file = open(filename, 'r')
     Lines = file.readlines()
 
@@ -230,25 +230,31 @@ def create_parallel_coordinates():
     d3 = []
     psnr = []
     compr = []
-    x= np.linspace(0, 999, 1000, dtype=int)
+    psnr_compr = []
+    x= np.linspace(0, 4999, 5000, dtype=int)
     for line in Lines:
         d = ast.literal_eval(line)
+        if d['compression_ratio'] > 150:
+            continue
         data.append(d)
         d1.append(d['pruning_threshold_list'][0])
         d2.append(d['pruning_threshold_list'][1])
         d3.append(d['pruning_threshold_list'][2])
         psnr.append(d['psnr'])
         compr.append(d['compression_ratio'])
+        psnr_compr.append(d['psnr'] * d['compression_ratio'])
+    x = np.linspace(0, len(data)-1, len(data))
 
     df = {'id': x,
           'Threshold Layer 1': d1,
           'Threshold Layer 2': d2,
           'Threshold Layer 3': d3,
           'PSNR': psnr,
-          'Compression Ratio': compr}
+          'Compression Ratio': compr,
+          'Compression VS PSNR': psnr_compr}
 
-    filename = 'plots/LatexFigures/Var_Droprate_Analysis/ParallelCoordPlots/testvol_Unpruned_WithEntropy_Parallel_Coordinates_ConstrainCompr'
-    pu.generate_Parallel_Coordinate_Plot(df, filename, None, None)
+    filename = 'plots/LatexFigures/Var_Droprate_Analysis/ParallelCoordPlots/mhdp_Unpruned_Original_Parallel_Coordinates_Constraints_PSNR_Compr'
+    pu.generate_Parallel_Coordinate_Plot(df, filename, None, None, [3400, 3600])
 
     #fig = px.parallel_coordinates(df, color="id",
     #                              color_continuous_scale=px.colors.diverging.Tealrose,

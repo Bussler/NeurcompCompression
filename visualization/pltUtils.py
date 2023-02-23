@@ -153,13 +153,14 @@ def findParetoValues(Xs, Ys, BASENAME, experimentNames, maxX=True, maxY=True):
                 config = dict_from_file(foldername+'/'+configName)
                 print(eN,': ', c)#, config['lr'], config['grad_lambda'], config['n_layers'])
 
-                pc = [c, config['lr'], config['grad_lambda'], config['n_layers']]
-                paretoConfigs.append(pc)
+                #pc = [c, config['lr'], config['grad_lambda'], config['n_layers']]
+                paretoConfigs.append(config)
 
     return paretoConfigs
 
 
-def generate_Parallel_Coordinate_Plot(df, filename, constraint_PSNR : []=None, constraint_Compression : []=None):
+def generate_Parallel_Coordinate_Plot(df, filename, constraint_PSNR : []=None, constraint_Compression : []=None,
+                                      constraint_Compr_PSNR :[]=None):
     import plotly.graph_objects as go
     import tikzplotlib
 
@@ -174,7 +175,9 @@ def generate_Parallel_Coordinate_Plot(df, filename, constraint_PSNR : []=None, c
             dict(constraintrange=constraint_PSNR,
                  label='PSNR', values=df['PSNR']),
             dict(constraintrange=constraint_Compression,
-                 label='Compression Ratio', values=df['Compression Ratio'])
+                 label='Compression Ratio', values=df['Compression Ratio']),
+            dict(constraintrange=constraint_Compr_PSNR,
+                 label='Compression * PSNR', values=df['Compression VS PSNR'])
         ])
     )
     )
