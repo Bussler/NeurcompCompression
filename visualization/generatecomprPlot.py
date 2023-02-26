@@ -420,14 +420,14 @@ def NumberOfChannelsVSCompression():
 
 
 def QuantbitsVSCompressionratio():
-    BASENAME50 = 'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio50/mhd_p_50'# 'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio50/test_experiment'#'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio50/mhd_p_50'
-    BASENAME100 = 'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio100/test_experiment'#'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio100/test_experiment'#'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio100/test_experiment'
+    BASENAME50 = 'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio50/test_experiment'#'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio50/mhd_p_50'# 'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio50/test_experiment'#'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio50/mhd_p_50'
+    BASENAME100 = 'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio100/test_experiment'#'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio100/test_experiment'#'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio100/test_experiment'#'experiments/diff_comp_rates/mhd_p_QuantbitsVSCompressionratio/Ratio100/test_experiment'
     BASENAME200 = 'experiments/diff_comp_rates/test_experiment_QuantbitsVSCompressionratio/Ratio200/test_experiment'
     CONFIGNAME = 'info.txt'
     QUANTNAMECONFIG = 'Dequant_Info.txt'
 
-    experimentNames50= [50,43,36,31,26]#[50,38,31,26,21,17,12,8,4]#[50,43,36,31,26]
-    experimentNames100 = [100, 82,70,59,49]#[100,65,51,42,34,27,20,14,7]#[100, 82,70,59,49]
+    experimentNames50= [50,38,31,26,21,17,12,8,4]#[50,43,36,31,26]
+    experimentNames100 = [100,65,51,42,34,27,20,14,7]#[100, 82,70,59,49]
     experimentNames200 = [200,106,75,59,48,38,29,20,11]
 
     used_bits50 = []
@@ -478,11 +478,31 @@ def QuantbitsVSCompressionratio():
     c_map2 = plt.get_cmap('Greens')
     c_map3 = plt.get_cmap('Reds')
 
+    lower_limit = 4
 
-    plt.scatter(used_bits50, size50, s = [x for x in generate_orderedValues(PSNR50, 500)],
-                c=[c_map1(val) for val in normalize_array(PSNR50, np.min(PSNR50), np.max(PSNR50), 0.2, 1)], label='Compression 126')
-    plt.scatter(used_bits100, size100,s = [x for x in generate_orderedValues(PSNR100, 500)],
-                c=[c_map2(val) for val in normalize_array(PSNR100, np.min(PSNR100), np.max(PSNR100), 0.2, 1)], label='Compression 196')
+    used_bits50_new = []
+    size50_new = []
+    PSNR50_new = []
+    for i, k, z in zip(used_bits50, size50, PSNR50):
+        if i > lower_limit:
+            used_bits50_new.append(i)
+            size50_new.append(k)
+            PSNR50_new.append(z)
+
+    used_bits100_new = []
+    size100_new = []
+    PSNR100_new = []
+    for i, k, z in zip(used_bits100, size100, PSNR100):
+        if i > lower_limit:
+            used_bits100_new.append(i)
+            size100_new.append(k)
+            PSNR100_new.append(z)
+
+
+    plt.scatter(used_bits50_new, size50_new, s = [x for x in generate_orderedValues(PSNR50_new, 600)],
+                c=[c_map1(val) for val in normalize_array(PSNR50_new, np.min(PSNR50_new), np.max(PSNR50_new), 0.2, 1)], label='Compression 126')
+    plt.scatter(used_bits100_new, size100_new,s = [x for x in generate_orderedValues(PSNR100_new, 600)],
+                c=[c_map2(val) for val in normalize_array(PSNR100_new, np.min(PSNR100_new), np.max(PSNR100_new), 0.2, 1)], label='Compression 196')
     #plt.scatter(used_bits200, size200, s = [x for x in generate_orderedValues(PSNR200, 200)],
     #            c=[c_map3(val) for val in normalize_array(PSNR200, np.min(PSNR200), np.max(PSNR200), 0.1, 1)], label='Compression 272')
 
@@ -492,7 +512,7 @@ def QuantbitsVSCompressionratio():
     plt.ylabel('channels_per_layer')
     plt.legend()
 
-    filepath = 'plots/LatexFigures/Baselines/'+'mhd_p_volume'+'Neurcomp_QuantbitsVSCompressionratio'
+    filepath = 'plots/LatexFigures/Baselines/'+'test_volume'+'Neurcomp_QuantbitsVSCompressionratio'
     plt.savefig(filepath + '.png')
     tikzplotlib.save(filepath + '.pgf')
 
@@ -985,25 +1005,37 @@ def DifferentRuns():
 
 
 def generateParetoFrontier():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/Features_PerLayer_dynamic_variance_NoEntropy_NoResnet/mhd_p_'
-    experimentNames = np.linspace(0, 59, 60, dtype=int)
-    #experimentNames = np.delete(experimentNames, 5, axis=0)
-    #experimentNames = np.delete(experimentNames, 5, axis=0)
+    #BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/Features_PerLayer_dynamic_variance_NoParetoEntropy/mhd_p_'#'experiments/hyperparam_search/mhd_p_Variational_NAS/Features_PerLayer_dynamic_variance/mhd_p_'
+    BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100_Dynamic_WithEntropy/mhd_p_'
+    experimentNames = np.linspace(0, 49, 50, dtype=int)
+    #experimentNames = [2, 8, 17, 18, 19, 21, 22, 23, 26, 27, 30, 32, 34, 36, 37, 41, 42, 44, 45, 46, 49, 50, 54,
+    #                        57,59, 60, 61, 63, 65, 66, 67, 68, 69]
+    #experimentNames = np.delete(experimentNames, 8, axis=0)
+    #experimentNames = np.delete(experimentNames, 8, axis=0)
+    #experimentNames = np.delete(experimentNames, 9, axis=0)
 
-    #BASENAMEOther = 'experiments/hyperparam_search/mhd_p_Variational_NAS/OptimizeCompression_BetterSearchspaceVariational_dkl/mhd_p_'
-    BASENAMEOther = 'experiments/hyperparam_search/mhd_p_Variational_NAS/Features_PerLayer_dynamic_variance/mhd_p_'
-    experimentNamesOther = np.linspace(0, 62, 63, dtype=int)
-    #experimentNamesOther = np.delete(experimentNamesOther, 13, axis=0)
-    #experimentNamesOther = np.delete(experimentNamesOther, 15, axis=0)
+    #BASENAMEOther = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100/mhd_p_100_'#'experiments/hyperparam_search/mhd_p_Variational_NAS/Features_PerLayer_dynamic_variance_NoEntropy/mhd_p_'
+    #experimentNamesOther = np.linspace(0, 39, 40, dtype=int)
+    #experimentNamesOther = np.delete(experimentNamesOther, 8, axis=0)
+    #experimentNamesOther = np.delete(experimentNamesOther, 8, axis=0)
+    #BASENAMEOther = 'experiments/hyperparam_search/mhd_p_Variational_NAS/Features_PerLayer_dynamic_variance_ParetoEntropy/mhd_p_'
+    #experimentNamesOther = [2, 8, 17, 18, 19, 21, 22, 23, 26, 27, 30, 32, 34, 36, 37, 41, 42, 44, 45, 46, 49, 50, 54, 57,
+    #                        59, 60, 61, 63, 65, 66, 67, 68, 69]
+    #experimentNamesOther = np.linspace(0, 59, 60, dtype=int)
+    #BASENAMEOther = 'experiments/hyperparam_search/mhd_p_Variational_NAS/Features_PerLayer_dynamic_variance/mhd_p_'
+    BASENAMEOther = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100/mhd_p_100_'
+    experimentNamesOther = np.linspace(0, 39, 40, dtype=int)
+    experimentNamesOther = np.delete(experimentNamesOther, 8, axis=0)
+    experimentNamesOther = np.delete(experimentNamesOther, 8, axis=0)
     #experimentNamesOther = np.delete(experimentNamesOther, 15, axis=0)
 
-    #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_Baselines/OptimizeCompression_WithFeaturesPerLayer/mhd_p_'
-    #experimentNamesUnpruned = np.linspace(0, 59, 60, dtype=int)
-    #experimentNamesUnpruned = [221, 227, 246, 299, 327, 393, 503, 628]
+    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_Baselines/OptimizeCompression_WithFeaturesPerLayer/mhd_p_'
+    experimentNamesUnpruned = np.linspace(0, 59, 60, dtype=int)
+    #perimentNamesUnpruned = [221, 227, 246, 299, 327, 393, 503, 628]
     #experimentNamesUnpruned = [122, 135, 157, 198, 225, 292, 386, 534, 602, 781, 984, 1087]
 
-    BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100_NoResnet/mhd_p_'
-    experimentNamesUnpruned = [122,135,157,198,225,292,386,534,602,781,984]
+    #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100_NoResnet/mhd_p_'
+    #experimentNamesUnpruned = [122,135,157,198,225,292,386,534,602,781,984]
     #experimentNamesUnpruned = [210, 225, 235, 244, 296, 388, 463, 546, 596, 770, 931, 1251]
     #BASENAMEUnpruned = 'experiments/diff_comp_rates/mhd_p_Baselines/100_ForVariational/mhd_p_'
     #experimentNamesUnpruned = [105, 194, 283, 303, 311, 371, 468, 511, 603, 715, 808, 945, 1354]
@@ -1048,41 +1080,44 @@ def generateParetoFrontier():
     pf_XUnpruned = [pair[0] for pair in pareto_frontUnpruned]
     pf_YUnpruned = [pair[1] for pair in pareto_frontUnpruned]
 
-    limit = 1000
+    upper_limit = 800
+    lower_limit = 80
 
     newCompr = []
     newPSNR = []
     for i, k in zip(CompressionRatio, PSNR):
-        if i < limit:
+        if i < upper_limit and i > lower_limit:
             newCompr.append(i)
             newPSNR.append(k)
 
     new_pf_X = []
     new_pf_Y = []
     for i,k in zip(pf_X, pf_Y):
-        if i < limit:
+        if i < upper_limit and i > lower_limit:
             new_pf_X.append(i)
             new_pf_Y.append(k)
 
     new_pf_XFinetuning = []
     new_pf_YFinetuning = []
     for i, k in zip(pf_XFinetuning, pf_YFinetuning):
-        if i < limit:
+        if i < upper_limit and i > lower_limit:
             new_pf_XFinetuning.append(i)
             new_pf_YFinetuning.append(k)
 
     new_pf_XUnpruned = []
     new_pf_YUnpruned = []
     for i, k in zip(pf_XUnpruned, pf_YUnpruned):
-        if i < limit:
+        if i < upper_limit and i > lower_limit:
             new_pf_XUnpruned.append(i)
             new_pf_YUnpruned.append(k)
 
-    plt.plot(new_pf_X, new_pf_Y, label='Pareto_Frontier Pruned No Resnet', color='green')
-    plt.plot(new_pf_XFinetuning, new_pf_YFinetuning, label='Pareto_Frontier Pruned With Resnet', color='blue')
-    plt.scatter(newCompr, newPSNR, color='green', alpha =0.2)
-    plt.plot(new_pf_XUnpruned, new_pf_YUnpruned, label='Baseline Unpruned No Resnet', color='red')
+    plt.plot(new_pf_X, new_pf_Y, label='Pruned Dynamic')#, color='green')
+    plt.plot(new_pf_XFinetuning, new_pf_YFinetuning, label='Pruned Static')#, color='blue')
+    #plt.scatter(newCompr, newPSNR, alpha=0.2)
+    plt.plot(new_pf_XUnpruned, new_pf_YUnpruned, label='Baseline Unpruned', color='crimson')
 
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     plt.xlabel('Compression_Ratio')
     plt.ylabel('PSNR')
     plt.legend()
@@ -1091,8 +1126,10 @@ def generateParetoFrontier():
     #for p in pf_X:
     #    print(p)
 
-    filepath = 'plots/' + 'mhd_p_' + 'Variational_dynamic_variance_NoResnet_Pruned_VS_Unpruned_VS_Resnet' + '.png'
-    plt.savefig(filepath)
+    #filepath = 'plots/LatexFigures/Neurcomp/SetArchitecture/' + 'mhd_p_Smallify'
+    filepath = 'plots/LatexFigures/Neurcomp/SetArchitecture/' + 'mhd_p_Variational_Static_VS_Dynamic_100'
+    plt.savefig(filepath + '.png')
+    tikzplotlib.save(filepath + '.pgf')
 
 
 def CompressionVSRMSE():
@@ -1140,7 +1177,13 @@ def CompressionVSRMSE():
     plt.savefig(filepath)
 
 def HyperparamAnalysis():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/200_WithFinetuning/mhd_p_200_'
+    #BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/OptimizeCompression_WithFeaturesPerLayer/mhd_p_'
+    #BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/200_controlrun/mhd_p_'
+    #experimentNames = np.linspace(0, 47, 48, dtype=int)
+    #experimentNames = np.delete(experimentNames, 5, axis=0)
+    #experimentNames = np.delete(experimentNames, 5, axis=0)
+
+    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/100_WithFinetuning/mhd_p_100_'
     experimentNames = np.linspace(0, 49, 50, dtype=int)
 
     InfoName = 'info.txt'
@@ -1162,10 +1205,11 @@ def HyperparamAnalysis():
     paretoPsnr = []
     paretoLBeta = []
     paretoLWeight = []
-    paretoLR = []
-    paretoLGrad = []
-    paretoNLayer = []
-    paretoLRDecay = []
+    paretoMomentum = []
+    paretoThreshold = []
+
+    paretoDKLMult = []
+    paretoSigma = []
 
     for ppair in pareto_front:
         c = ppair[0]
@@ -1175,7 +1219,7 @@ def HyperparamAnalysis():
             cName = foldername + '/'+InfoName
 
             info = dict_from_file(cName)
-            if info['compression_ratio'] == c:
+            if info['compression_ratio'] == c and c < 1200:
                 config = dict_from_file(foldername+'/'+configName)
 
                 #pc = [c, config['lambda_betas'], config['lambda_weights'], config['lr'], config['grad_lambda'], config['n_layers'], config['lr_decay']]
@@ -1183,79 +1227,70 @@ def HyperparamAnalysis():
                 paretoPsnr.append(p)
                 paretoLBeta.append(config['lambda_betas'])
                 paretoLWeight.append(config['lambda_weights'])
-                paretoLR.append(config['lr'])
-                paretoLGrad.append(config['grad_lambda'])
-                paretoNLayer.append(config['n_layers'])
-                paretoLRDecay.append(config['lr_decay'])
+                paretoMomentum.append(config['pruning_momentum'])
+                paretoThreshold.append(config['pruning_threshold'])
+
+                #paretoDKLMult.append(config['weight_dkl_multiplier'])
+                #paretoSigma.append(config['variational_sigma'])
 
     '''Plotting process'''
-    fig, ((ax1, ax2,ax3,ax4,ax5, ax6),(ax7,ax8,ax9, ax10,ax11,ax12)) = plt.subplots(2, 6, figsize=(15, 15), dpi= 100)
+    fig, ((ax3,ax4,ax5, ax6),(ax9, ax10,ax11,ax12)) = plt.subplots(2, 4, figsize=(13, 13), dpi= 200) # ax1, ax2, ax7,ax8,
 
-    ax1.plot(paretoLR,paretoCompr, label='LR', color = 'blue')
-    ax1.title.set_text('LR')
-    ax1.set_xlabel('lr')
-    ax1.set_ylabel('Compression Rate')
-
-    ax7.plot(paretoLR,paretoPsnr, label='LR', color = 'blue')
-    ax7.title.set_text('LR')
-    ax7.set_xlabel('lr')
-    ax7.set_ylabel('PSNR')
-
-    ax2.plot(paretoLGrad,paretoCompr, label='Lambda Gradient', color = 'green')
-    ax2.title.set_text('Lambda Gradient')
-    ax2.set_xlabel('Lambda Gradient')
-    ax2.set_ylabel('Compression Rate')
-
-    ax8.plot(paretoLGrad,paretoPsnr, label='Lambda Gradient', color = 'green')
-    ax8.title.set_text('Lambda Gradient')
-    ax8.set_xlabel('Lambda Gradient')
-    ax8.set_ylabel('PSNR')
-
-    ax3.plot(paretoLBeta,paretoCompr, label='Lambda Beta', color = 'orange')
+    ax3.plot(paretoLBeta,paretoCompr, color = 'orange')
     ax3.title.set_text('Lambda Beta')
     ax3.set_xlabel('Lambda Beta')
     ax3.set_ylabel('Compression Rate')
 
-    ax9.plot(paretoLBeta,paretoPsnr, label='Lambda Beta', color = 'orange')
+    ax9.plot(paretoLBeta,paretoPsnr, color = 'orange')
     ax9.title.set_text('Lambda Beta')
     ax9.set_xlabel('Lambda Beta')
     ax9.set_ylabel('PSNR')
 
-    ax4.plot(paretoLWeight,paretoCompr, label='Lambda Weight', color = 'red')
+    ax4.plot(paretoLWeight,paretoCompr, color = 'red')
     ax4.title.set_text('Lambda Weight')
     ax4.set_xlabel('Lambda Weight')
     ax4.set_ylabel('Compression Rate')
 
-    ax10.plot(paretoLWeight,paretoPsnr, label='Lambda Weight', color = 'red')
+    ax10.plot(paretoLWeight,paretoPsnr, color = 'red')
     ax10.title.set_text('Lambda Weight')
     ax10.set_xlabel('Lambda Weight')
     ax10.set_ylabel('PSNR')
 
-    ax5.plot(paretoNLayer,paretoCompr, label='N Layer', color = 'violet')
-    ax5.title.set_text('N Layer')
-    ax5.set_xlabel('N Layer')
+    ax5.plot(paretoMomentum,paretoCompr, color = 'violet')
+    ax5.title.set_text('Momentum')
+    ax5.set_xlabel('Momentum')
     ax5.set_ylabel('Compression Rate')
 
-    ax11.plot(paretoNLayer,paretoPsnr, label='N Layer', color = 'violet')
-    ax11.title.set_text('N Layer')
-    ax11.set_xlabel('N Layer')
+    ax11.plot(paretoMomentum,paretoPsnr, color = 'violet')
+    ax11.title.set_text('Momentum')
+    ax11.set_xlabel('Momentum')
     ax11.set_ylabel('PSNR')
 
-    ax6.plot(paretoLRDecay,paretoCompr, label='LR Decay', color = 'black')
-    ax6.title.set_text('LR Decay')
-    ax6.set_xlabel('LR Decay')
+    ax6.plot(paretoThreshold,paretoCompr, color = 'black')
+    ax6.title.set_text('Pruning Threshold')
+    ax6.set_xlabel('Pruning Threshold')
     ax6.set_ylabel('Compression Rate')
 
-    ax12.plot(paretoLRDecay,paretoPsnr, label='LR Decay', color = 'black')
-    ax12.title.set_text('LR Decay')
-    ax12.set_xlabel('LR Decay')
+    ax12.plot(paretoThreshold,paretoPsnr, color = 'black')
+    ax12.title.set_text('Pruning Threshold')
+    ax12.set_xlabel('Pruning Threshold')
     ax12.set_ylabel('PSNR')
 
     plt.legend()
-    filepath = 'plots/' + 'mhd_p_' + "200_Finetuning_" + 'HyperparamAnalyis' + '.png'
-    plt.savefig(filepath)
+
+    filepath = 'plots/LatexFigures/Hyperparam_Analysis/Set_Arch/' + 'mhd_p_' + "Smallify_100_SetArch_" + 'HyperparamAnalyis'
+    plt.savefig(filepath + '.png')
+    tikzplotlib.save(filepath + '.pgf')
 
 def HyperparamAnalysis_Variational():
+    #BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100/mhd_p_100_'
+    #experimentNames = np.linspace(0, 39, 40, dtype=int)
+    #experimentNames = np.delete(experimentNames, 8, axis=0)
+    #experimentNames = np.delete(experimentNames, 8, axis=0)
+
+    #BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100_Dynamic_WithEntropy/mhd_p_'
+    #experimentNames = np.linspace(0, 49, 50, dtype=int)
+
     BASENAME = 'experiments/hyperparam_search/mhd_p_Variational_NAS/Features_PerLayer_dynamic_variance/mhd_p_'
     experimentNames = np.linspace(0, 62, 63, dtype=int)
 
@@ -1277,7 +1312,7 @@ def HyperparamAnalysis_Variational():
     new_pf_X = []
     new_pf_Y = []
     for i,k in zip(pf_X, pf_Y):
-        if i < 1200:
+        if i < 1000:
             new_pf_X.append(i)
             new_pf_Y.append(k)
 
@@ -1309,19 +1344,20 @@ def HyperparamAnalysis_Variational():
                 paretoVariational_lambda_dkl.append(config['variational_lambda_dkl'])
                 paretoVariational_lambda_weight.append(config['variational_lambda_weight'])
 
+
     '''Plotting process'''
-    fig, ((ax1, ax2,ax3,ax4,ax5, ax6),(ax7,ax8,ax9, ax10,ax11,ax12)) = plt.subplots(2, 6, figsize=(15, 15), dpi= 100)
+    fig, (( ax2,ax3, ax4, ax5),( ax8,ax9, ax10, ax11)) = plt.subplots(2, 4, figsize=(13, 13), dpi= 200) # ax1,ax7,ax5, ax6 ,ax11,ax12
     #fig.tight_layout()
 
-    ax1.plot(paretoVariational_sigma,paretoCompr, color = 'blue')
-    ax1.title.set_text('Variational_sigma')
-    ax1.set_xlabel('Variational_sigma')
-    ax1.set_ylabel('Compression Rate')
+    #ax1.plot(paretoVariational_sigma,paretoCompr, color = 'blue')
+    #ax1.title.set_text('Variational_sigma')
+    #ax1.set_xlabel('Variational_sigma')
+    #ax1.set_ylabel('Compression Rate')
 
-    ax7.plot(paretoVariational_sigma,paretoPsnr, color = 'blue')
-    ax7.title.set_text('Variational_sigma')
-    ax7.set_xlabel('Variational_sigma')
-    ax7.set_ylabel('PSNR')
+    #ax7.plot(paretoVariational_sigma,paretoPsnr, color = 'blue')
+    #ax7.title.set_text('Variational_sigma')
+    #ax7.set_xlabel('Variational_sigma')
+    #ax7.set_ylabel('PSNR')
 
     ax2.plot(paretoVariational_dkl_multiplier,paretoCompr, color = 'green')
     ax2.title.set_text('Variational_dkl_multiplier')
@@ -1363,21 +1399,23 @@ def HyperparamAnalysis_Variational():
     ax11.set_xlabel('Variational_lambda_dkl')
     ax11.set_ylabel('PSNR')
 
-    ax6.plot(paretoVariational_lambda_weight,paretoCompr, color = 'black')
-    ax6.title.set_text('Variational_lambda_weight')
-    ax6.set_xlabel('Variational_lambda_weight')
-    ax6.set_ylabel('Compression Rate')
+    #ax6.plot(paretoVariational_lambda_weight,paretoCompr, color = 'black')
+    #ax6.title.set_text('Variational_lambda_weight')
+    #ax6.set_xlabel('Variational_lambda_weight')
+    #ax6.set_ylabel('Compression Rate')
 
-    ax12.plot(paretoVariational_lambda_weight,paretoPsnr, color = 'black')
-    ax12.title.set_text('Variational_lambda_weight')
-    ax12.set_xlabel('Variational_lambda_weight')
-    ax12.set_ylabel('PSNR')
+    #ax12.plot(paretoVariational_lambda_weight,paretoPsnr, color = 'black')
+    #ax12.title.set_text('Variational_lambda_weight')
+    #ax12.set_xlabel('Variational_lambda_weight')
+    #ax12.set_ylabel('PSNR')
 
     #plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.6f'))
     #plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.6f'))
     plt.legend()
-    filepath = 'plots/' + 'mhd_p_' + "Variational_dynamic_variance_" + 'HyperparamAnalyis' + '.png'
-    plt.savefig(filepath)
+    filepath = 'plots/LatexFigures/Hyperparam_Analysis/Search_Arch/' + 'mhd_p_' + "Variational_dynamic_variance_WithEntropy_" + 'HyperparamAnalyis'
+    plt.savefig(filepath + '.png')
+    plt.savefig(filepath + '.pdf')
+    tikzplotlib.save(filepath + '.pgf')
 
 
 def Variational_WithQuantization():
@@ -1414,6 +1452,80 @@ def Variational_WithQuantization():
     plt.savefig(filepath)
 
 
+def curve_quality_control_plot():
+    BASENAME = 'experiments/QualityControlCurve/Smallify/mhd_p_'
+
+    comprnames = [100, 200, 300, 400, 500, 600, 700, 800]
+    expnames = [0, 1, 2, 3]
+
+    InfoName = 'info.txt'
+    configName = 'config.txt'
+
+    metric_1_name = 'lambda_betas'
+    metric_2_name = 'lambda_weights'
+    comparison_1_name = 'compression_ratio'
+
+    def Smallify_simple_exponential_betas(x):
+        return -377.65708 * np.power(x, -2.12217)
+
+    def Smallify_simple_exponential_weights(x):
+        return -71.92844 * np.power(x, -0.94127)
+
+    metric_1 = []
+    metric_2 = []
+    comparison_1 = []
+
+    max_metric_1 = []
+    min_metric_1 = []
+    comparison_1_values = []
+
+    for c in comprnames:
+        comparison_1_values.append(c)
+        min_val = 1000.0
+        max_val = 0.0
+
+        for e in expnames:
+            config = dict_from_file(BASENAME + str(c) + '_' + str(e) + '/' + configName)
+            info = dict_from_file(BASENAME + str(c) + '_' + str(e) + '/' + InfoName)
+
+            metric_1.append(config[metric_1_name])
+            metric_2.append(config[metric_2_name])
+            comparison_1.append(info[comparison_1_name])
+
+            if config[metric_1_name] > max_val:
+                max_val = config[metric_1_name]
+            if config[metric_1_name] < min_val:
+                min_val = config[metric_1_name]
+
+        max_metric_1.append(max_val)
+        min_metric_1.append(min_val)
+
+    #print(max_metric_1)
+    #print(min_metric_1)
+
+    #ax = plt.gca()
+    #ax.set(xscale = 'log', yscale = 'log')
+
+    plt.scatter(comparison_1, metric_1, alpha=0.5, label='Ground Truth Runs', color = 'steelblue')  # M: Experiments
+    #x_line_scatter = np.linspace(min(comparison_1), max(comparison_1), len(metric_1), dtype=float)
+    #plt.fill_between(comparison_1_values,min_metric_1, max_metric_1, alpha=0.5, color = 'steelblue') -> Unterscheiden sich doch nur in x!
+
+    x_line = np.linspace(100, 800, 20, dtype=float)
+    y_line_metric1 = np.exp(Smallify_simple_exponential_betas(np.log(x_line)))
+    y_line_metric2 = np.exp(Smallify_simple_exponential_weights(np.log(x_line)))
+
+    plt.plot(x_line, y_line_metric1, label='Fitted Curve', color = 'forestgreen')
+
+    plt.xlabel(comparison_1_name)
+    plt.ylabel(metric_1_name)
+    plt.legend()
+
+    filepath = 'plots/LatexFigures/Hyperparam_Analysis/QualityControl/' + 'mhd_p_Smallify_Betas'
+    plt.savefig(filepath + '.png')
+    plt.savefig(filepath + '.pdf')
+    tikzplotlib.save(filepath + '.pgf')
+
+
 if __name__ == '__main__':
     #rmseTTHRESHExperiment()
 
@@ -1423,7 +1535,7 @@ if __name__ == '__main__':
     #OrigVSSelfImplmentation()
     #NumberOfChannelsVSCompression()
 
-    QuantbitsVSCompressionratio()
+    #QuantbitsVSCompressionratio()
 
     #CompressionGainVSPSNR()
     #PrunedVSUnpruned()
@@ -1436,6 +1548,11 @@ if __name__ == '__main__':
     #DifferentRuns()
 
     #generateParetoFrontier()
+
+    #HyperparamAnalysis()
+    #HyperparamAnalysis_Variational()
+
+    curve_quality_control_plot()
 
     #CompressionVSRMSE()
     #HyperparamAnalysis()
