@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from itertools import product
 import tikzplotlib
+from training.training import training
 
 
 def emaTest2():
@@ -91,11 +92,12 @@ def Hyperparam_Best_Runs():
     pass
 
 def calcParetoStuff():
-    BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/200_controlrun/mhd_p_'
+    #BASENAME = 'experiments/hyperparam_search/mhd_p_NAS/200_controlrun/mhd_p_'
+    #experimentNames = np.linspace(0, 59, 60, dtype=int)
+    BASENAME = 'experiments/NAS_TestVol/baseline/testvol_'
     experimentNames = np.linspace(0, 59, 60, dtype=int)
     #experimentNames = np.delete(experimentNames, 5, axis=0)
     #experimentNames = np.delete(experimentNames, 5, axis=0)
-    #experimentNames = np.delete(experimentNames, 8, axis=0)
 
     InfoName = 'info.txt'
     configName = 'config.txt'
@@ -113,10 +115,16 @@ def calcParetoStuff():
 def analyse_NW_Weights():
     from torch.nn import Linear
     from model.VariationalDropoutLayer import VariationalDropout
+    from model.SmallifyDropoutLayer import SmallifyDropout
 
-    Configpath = 'experiments/Test_DiffDropratesPerLayer/Unpruned_Net_TestSet_WithEntropy/config.txt'
+    #Configpath = 'experiments/Test_DiffDropratesPerLayer/Unpruned_Net_TestSet_WithEntropy/config.txt'
     #Configpath = 'experiments/diff_comp_rates/mhd_p_Baselines/100/mhd_p_211/config.txt'
     #Configpath = 'experiments/hyperparam_search/mhd_p_Variational_NAS/100/mhd_p_100_39/config.txt'
+
+    #Configpath = 'experiments/Test_DiffDropratesPerLayer/Unpruned_Net_ControlRun/config.txt'
+    Configpath = 'experiments/Test_DiffDropratesPerLayer/100_Var_dynamic/mhd_p_1/config.txt'
+    #Configpath = 'experiments/Test_DiffDropratesPerLayer/100_Smallify/mhd_p_2/config.txt'
+
     args = pu.dict_from_file(Configpath)
     volume = get_tensor(args['data'])
     dataset = IndexDataset(volume, args['sample_size'])
@@ -132,16 +140,27 @@ def analyse_NW_Weights():
         #    layers.append(layer.weight.data)
         if isinstance(layer, VariationalDropout):
             layers.append(layer.dropout_rates.detach().data.reshape(-1).numpy())
+        if isinstance(layer, SmallifyDropout):
+            layers.append(layer.betas.detach().data.reshape(-1).numpy())
 
-    fig, ax = plt.subplots(nrows=len(layers), ncols=1, figsize=(8, 8))
+    fig, ax = plt.subplots(nrows=len(layers), ncols=1, figsize=(7, 7))
     fig.tight_layout()
 
     for i in range(len(layers)):
         ax[i].hist(layers[i], bins=120, label=str(i))  # range=(-0.5, 0.5)
         ax[i].title.set_text('Layer '+str(i))
 
-    filepath = 'plots/LatexFigures/Var_Droprate_Analysis/' + 'mhd_p_' + 'Unpruned_Net_TestSet_WithEntropy' + 'Weight_Historgramm'
+
+    st = fig.suptitle("Neurcomp", fontsize=14)
+    fig.tight_layout()
+    # shift subplots down:
+    st.set_y(0.95)
+    fig.subplots_adjust(top=0.85)
+    #plt.title("Neurcomp")
+
+    filepath = 'plots/LatexFigures/Var_Droprate_Analysis/ForPaper/' + 'Neurcomp_mhd_p_' + 'Var_Static_' + 'Weight_Historgramm'
     plt.savefig(filepath + '.png')
+    plt.savefig(filepath + '.pdf')
     tikzplotlib.save(filepath + '.pgf')
 
     pass
@@ -261,6 +280,48 @@ def create_parallel_coordinates():
     #                              color_continuous_midpoint=1)
 
 
+def neurcompRunsDiffComprRates():
+    configName = 'experiment-config-files/QualityControl_Variational_Dynamic.txt'
+    config = pu.dict_from_file(configName)
+
+    BASEEXPNAME = '/experiments/QualityControlCurve/Variational_Dynamic/'
+
+    def simple_exponential_dklMult(x):  # M: Smallify
+        return -210.77532 * np.power(x, -2.05940)
+
+    def simple_exponential_psigma(x):
+        return 0.00003 * np.power(x, 1.53477) -9.58821
+
+    def simple_exponential_threshold(x):
+        return -0.00014 * np.power(x, 4.27956)
+
+    for compr in [100, 200, 300, 400, 500, 600, 700, 800]:
+
+        dkl_mult = simple_exponential_dklMult(np.log(compr))
+
+        psigma = simple_exponential_psigma(compr)
+        thresh = simple_exponential_threshold(np.log(compr))
+
+        print('Compr: ', compr, ' psigma: ',psigma, ' thresh: ', np.exp(thresh))
+        continue
+
+        for i in range(4):
+
+            config['basedir'] = BASEEXPNAME
+            config['Tensorboard_log_dir'] = ''
+            config['checkpoint_path'] = ''
+            config['feature_list'] = None
+
+            config['expname'] = 'mhd_p_' + str(compr) + '_' + str(i)
+            #config['compression_ratio'] = compr
+
+            # M: changing for compr
+            config['variational_dkl_multiplier'] = np.exp(dkl_mult)
+
+            training(config)
+
+
+
 if __name__ == '__main__':
     #emaTest2()
     #calculate_variance_of_data()
@@ -268,8 +329,9 @@ if __name__ == '__main__':
     #Hyperparam_Best_Runs()
 
     #calcParetoStuff()
-    #analyse_NW_Weights()
+    analyse_NW_Weights()
     #test_different_dropout_rates()
-    create_parallel_coordinates()
+    #create_parallel_coordinates()
 
     #testingstuff()
+    #neurcompRunsDiffComprRates()
