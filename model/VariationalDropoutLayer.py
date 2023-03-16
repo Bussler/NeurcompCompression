@@ -50,10 +50,10 @@ def calculate_variational_dropout_loss(model, loss_criterion, predicted_volume, 
         if isinstance(module, VariationalDropout):
             Dkl_sum = Dkl_sum + module.calculate_Dkl()
             Entropy_sum = Entropy_sum + module.calculate_Dropout_Entropy()
-    #Dkl_sum = (lambda_dkl/predicted_volume.shape[0]) * Dkl_sum  # 0.1 (1/predicted_volume.shape[0]) * (lambda_dkl/predicted_volume.shape[0])
+    #Dkl_sum = (lambda_dkl/predicted_volume.shape[0]) * Dkl_sum
     Dkl_sum = lambda_dkl * (loss_criterion/predicted_volume.shape[0]) * Dkl_sum  # M: TODO scaling!
-    Entropy_sum = lambda_entropy * (loss_criterion/predicted_volume.shape[0]) * Entropy_sum  # 0.00001
-    #weight_loss = lambda_weights * (lambda_dkl/predicted_volume.shape[0]) * calculte_weight_loss(model)  # 0.00001 lambda_weights * (lambda_dkl/predicted_volume.shape[0])
+    Entropy_sum = lambda_entropy * (loss_criterion/predicted_volume.shape[0]) * Entropy_sum
+    #weight_loss = lambda_weights * (lambda_dkl/predicted_volume.shape[0]) * calculte_weight_loss(model)
     weight_loss = lambda_weights * (loss_criterion/predicted_volume.shape[0]) * calculte_weight_loss(model)
 
     #Log_Likelyhood, mse = calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volume, log_sigma)
@@ -63,7 +63,7 @@ def calculate_variational_dropout_loss(model, loss_criterion, predicted_volume, 
     Log_Likelyhood = Log_Likelyhood.sum() * (loss_criterion/predicted_volume.shape[0])
     mse = mse.sum() * (1/predicted_volume.shape[0])
 
-    complete_loss = -(Log_Likelyhood - Dkl_sum - weight_loss - Entropy_sum)# - Entropy_sum)
+    complete_loss = -(Log_Likelyhood - Dkl_sum - weight_loss - Entropy_sum)
 
     return complete_loss, Dkl_sum, Log_Likelyhood, mse, weight_loss
 
@@ -76,6 +76,7 @@ class VariationalDropout(DropoutLayer):
     C = -k1
 
     i = 0
+    theshold_list = None
 
     def __init__(self, number_thetas, init_dropout=0.5, threshold=0.9):
         super(VariationalDropout, self).__init__(init_dropout, threshold)
@@ -87,13 +88,10 @@ class VariationalDropout(DropoutLayer):
         self.log_var = torch.nn.Parameter(torch.empty(number_thetas).fill_(log_alphas), requires_grad=True)
 
         self.pruning_threshold = threshold
-        if VariationalDropout.i == 1:
-            self.pruning_threshold = 0.9
-        if VariationalDropout.i == 2:
-            self.pruning_threshold = 0.5
-        if VariationalDropout.i == 3:
-            self.pruning_threshold = 0.80
-        VariationalDropout.i = VariationalDropout.i +1
+        if VariationalDropout.theshold_list is not None:  #M used for testing, needs refactoring
+            if VariationalDropout.i != 0:
+                self.pruning_threshold = VariationalDropout.theshold_list[VariationalDropout.i-1]
+            VariationalDropout.i = VariationalDropout.i +1
 
     @property
     def alphas(self):
@@ -151,6 +149,10 @@ class VariationalDropout(DropoutLayer):
         bin3 = torch.mean((self.dropout_rates > 0.9).to(torch.float)).item()
         bin2 = 1.0-bin1-bin3
         return not_dropped, self.dropout_rates
+
+    @classmethod
+    def set_feature_list(cls, list: []):
+        cls.theshold_list = list
 
     @classmethod
     def create_instance(cls, c, init_dropout=0.5, threshold=0.9):

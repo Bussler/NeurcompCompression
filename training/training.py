@@ -15,12 +15,14 @@ from mlflow import log_metric, log_param, log_artifacts
 from model.SmallifyDropoutLayer import calculte_smallify_loss, SmallifyDropout, sign_variance_pruning_strategy_dynamic,\
     SmallifyResidualSiren, sign_variance_pruning_strategy_do_prune
 from model.pruning import prune_dropout_threshold, prune_smallify_use_resnet, prune_smallify_no_Resnet,\
-    prune_variational_dropout_no_resnet, prune_variational_dropout_use_resnet, analyzeVariationalPruning
+    prune_variational_dropout_no_resnet, prune_variational_dropout_use_resnet, analyzeVariationalPruning,\
+    prune_binary_dropout_use_resnet
 from model.VariationalDropoutLayer import calculate_variational_dropout_loss, inference_variational_model, VariationalDropout
 from model.sbp_log_normal_noise import calculate_log_normal_dropout_loss, LogNormalDropout
 import training.learning_rate_decay as lrdecay
 from torch.utils.tensorboard import SummaryWriter
 from model.variational_variance_model import Variance_Model
+from model.Straight_Through_Binary import calculte_binyary_mask_loss, MaskedWavelet_Straight_Through_Dropout
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -120,13 +122,10 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
 
     variational_dkl_lambda = args['variational_lambda_dkl']  # dataset.n_voxels
 
-    if args['dropout_technique'] and args['dropout_technique'] == 'variational':
+    if args['dropout_technique'] and 'variational' in args['dropout_technique'] and 'dynamic' in args['dropout_technique']:
         variance_model = Variance_Model()
         variance_model.to(device)
         variance_model.train()
-        # M: Setup loss, optimizer
-        #optimizer_variance = torch.optim.Adam(variance_model.parameters(), lr=args['lr'])
-        #lrStrategy_variance = lrdecay.LearningRateDecayStrategy.create_instance(args, optimizer_variance)
         optimizer.add_param_group({'params': variance_model.parameters()})
 
     while int(volume_passes) + 1 < args['max_pass'] and not lr_decay_stop:  # M: epochs
@@ -182,10 +181,17 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     loss_Betas, loss_Weights = calculte_smallify_loss(model)
                     complete_loss = complete_loss + (loss_Betas * args['lambda_betas']) \
                                     + (loss_Weights * args['lambda_weights'])
-                if args['dropout_technique'] == 'variational':
+                if args['dropout_technique'] == 'binary':
+                    loss_Betas, loss_Weights = calculte_binyary_mask_loss(model)
+                    complete_loss = complete_loss + (loss_Betas * args['lambda_betas']) \
+                                    + (loss_Weights * args['lambda_weights'])
+                if 'variational' in args['dropout_technique']:
 
-                    variational_variance = variance_model(norm_positions)
-                    variational_variance = variational_variance.squeeze(-1)
+                    if 'dynamic' in args['dropout_technique']:
+                        variational_variance = variance_model(norm_positions)
+                        variational_variance = variational_variance.squeeze(-1)
+                    else:
+                        variational_variance = torch.ones_like(predicted_volume).fill_(args['variational_sigma'])
 
                     complete_loss, dkl, ll, mse, loss_Weights = calculate_variational_dropout_loss(model, #loss_criterion,
                                                                          dataset.n_voxels,
@@ -199,7 +205,7 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                                                                          lambda_entropy=args['variational_lambda_entropy'])
 
                     # M: Gradual scaling of variational dkl
-                    if variational_dkl_lambda < 50.0: #dataset.n_voxels * 25.0:
+                    if variational_dkl_lambda < 50.0: #dataset.n_voxels * 25.0:50.0 20.0
                         variational_dkl_lambda = variational_dkl_lambda * (1.0 + args['variational_dkl_multiplier'])
 
                 if args['dropout_technique'] == 'sbp_log_normal':
@@ -222,7 +228,7 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
             # M: Print training statistics:
             if idx % 100 == 0 and verbose:
                 # M: TODO: Refactoring needed! All special cases with dropouts and special debuggings...
-                if args['dropout_technique'] and (args['dropout_technique'] == 'variational' or args['dropout_technique'] == 'sbp_log_normal'):
+                if args['dropout_technique'] and ( 'variational' in args['dropout_technique'] or args['dropout_technique'] == 'sbp_log_normal'):
                     print(
                         'Pass [{:.4f} / {:.1f}]: volume mse: {:.4f}, LL: {:.4f}, DKL: {:.4f}, Weights: {:.4f}, complete loss: {:.4f} '
                         .format(volume_passes, args['max_pass'], mse.item(), ll, dkl, loss_Weights, complete_loss.item()))
@@ -234,13 +240,8 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                             d, dropr = module.get_valid_fraction()
                             valid_fraction.append(d)
                             droprates.append(dropr)
-                        if isinstance(module, LogNormalDropout):
-                            d, snr = module.get_valid_fraction()
-                            valid_fraction.append(d)
-                            droprates.append(snr)
-                    writer.add_histogram("droprates_layer1", droprates[0], step_iter)
-                    writer.add_histogram("droprates_layer2", droprates[1], step_iter)
-                    writer.add_histogram("droprates_layer3", droprates[2], step_iter)
+                    for idx, droprate in enumerate(droprates):
+                        writer.add_histogram("droprates_layer_"+str(idx), droprate, step_iter)
                     print('Valid Fraction: ', valid_fraction)
                 else:
                     if args['grad_lambda'] > 0:
@@ -250,7 +251,7 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                         print('Pass [{:.4f} / {:.1f}]: volume loss: {:.4f}, mse: {:.6f}'.format(
                             volume_passes, args['max_pass'], debug_for_volumeloss, complete_loss.item()))
                     if args['dropout_technique']:
-                        if args['dropout_technique'] == 'smallify':
+                        if args['dropout_technique'] == 'smallify' or args['dropout_technique'] == 'binary':
                             print('Beta Loss: {:.4f}, Weight loss: {:.4f}'.format(loss_Betas, loss_Weights))
 
             writer.add_scalar("loss", complete_loss.item(), step_iter)
@@ -262,7 +263,7 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                 if args['dropout_technique'] == 'smallify':
                     writer.add_scalar("beta_loss", loss_Betas, step_iter)
                     writer.add_scalar("nw_weight_loss", loss_Weights, step_iter)
-                if args['dropout_technique'] == 'variational':
+                if 'variational' in args['dropout_technique']:
                     writer.add_scalar("Log_Likelyhood", ll, step_iter)
                     writer.add_scalar("DKL", dkl, step_iter)
                     writer.add_scalar("nw_weight_loss", loss_Weights, step_iter)
@@ -280,6 +281,8 @@ def training(args, verbose=True):
     data_loader = DataLoader(dataset, batch_size=args['batch_size'], shuffle=True,
                              num_workers=args['num_workers'])  # M: create dataloader from dataset to use in training
     volume = volume.to(device)
+
+    #VariationalDropout.set_feature_list(args['pruning_threshold_list'])  # M: used for testing, needs refactoring
 
     # M: Setup model, deleted: args['checkpoint_path']
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
@@ -319,15 +322,13 @@ def training(args, verbose=True):
             else:
                 model = prune_smallify_no_Resnet(model, SmallifyDropout)  # M: prune and mult betas
 
-        #weightsp, weights = analyzeVariationalPruning(model)
-        #writer.add_histogram("weights_invalid_layer1", weights[0],0)
-        #writer.add_histogram("weights_invalid_layer2", weightsp[1],0)
-        #writer.add_histogram("weights_invalid_layer3", weightsp[2],0)
-        #writer.add_histogram("weights_valid_layer1", weights[0],0)
-        #writer.add_histogram("weights_valid_layer2", weights[1],0)
-        #writer.add_histogram("weights_valid_layer3", weights[2],0)
+        if args['dropout_technique'] == 'binary':
+            if args['use_resnet']:
+                model = prune_binary_dropout_use_resnet(model)
+            else:
+                raise NotImplementedError('Pruning for non-resnot structure for simple binary dropout not implemented.')
 
-        if args['dropout_technique'] == 'variational':
+        if 'variational' in args['dropout_technique']:
             if args['use_resnet']:
                 model = prune_variational_dropout_use_resnet(model)
             else:
@@ -337,10 +338,7 @@ def training(args, verbose=True):
         # M: finetuning after pruning
         print('---Retraining after pruning---')
         args_second = deepcopy(args)
-        if args['dropout_technique'] == 'variational':
-            args_second['max_pass'] *= (1.0 / 3.0)
-        else:
-            args_second['max_pass'] *= (1.0 / 3.0)
+        args_second['max_pass'] *= (1.0 / 3.0)
 
         args_second['dropout_technique'] = ''
         optimizer = torch.optim.Adam(model.parameters(), lr=args['lr'] / 100.0)

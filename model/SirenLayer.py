@@ -4,6 +4,7 @@ import numpy as np
 from model.DropoutLayer import DropoutLayer
 from model.SmallifyDropoutLayer import SmallifyDropout
 from model.VariationalDropoutLayer import VariationalDropout
+from model.Straight_Through_Binary import MaskedWavelet_Straight_Through_Dropout
 
 
 # M: taken from https://github.com/vsitzmann/siren
@@ -35,7 +36,8 @@ class SineLayer(nn.Module):
 
     def forward(self, input):
         sine = self.linear_1(input)
-        if self.drop1 is not None and isinstance(self.drop1, SmallifyDropout):
+        if self.drop1 is not None and (isinstance(self.drop1, SmallifyDropout)
+                                       or isinstance(self.drop1, MaskedWavelet_Straight_Through_Dropout)):
             sine = self.drop1(sine)
 
         sine = torch.sin(self.omega_0 * sine)
@@ -84,7 +86,8 @@ class ResidualSineBlock(nn.Module):
     # M: concat residual block according to paper with two linear layers
     def forward(self, input):
         sine_1 = self.linear_1(self.weight_1 * input)
-        if self.drop1 is not None and isinstance(self.drop1, SmallifyDropout):
+        if self.drop1 is not None and (isinstance(self.drop1, SmallifyDropout)
+                                       or isinstance(self.drop1, MaskedWavelet_Straight_Through_Dropout)):
             sine_1 = self.drop1(sine_1)
 
         sine_1 = torch.sin(self.omega_0 * sine_1)

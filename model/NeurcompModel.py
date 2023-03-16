@@ -5,6 +5,7 @@ from model.SirenLayer import SineLayer, ResidualSineBlock
 from model.SmallifyDropoutLayer import SmallifyDropout, SmallifyResidualSiren
 from model.VariationalDropoutLayer import VariationalDropout
 from model.sbp_log_normal_noise import LogNormalDropout
+from model.Straight_Through_Binary import MaskedWavelet_Straight_Through_Dropout
 
 
 # M: Neurcomp according to "Compressive Neural Representations of Volumetric Scalar Fields"
@@ -30,6 +31,9 @@ class Neurcomp(nn.Module):
         if dropout_technique and '_quant' not in dropout_technique:
             if 'smallify' in dropout_technique:
                 dropout_layer = SmallifyDropout(self.layer_sizes[1], sign_variance_momentum, pruning_threshold)
+            if 'binary' in dropout_technique:
+                dropout_layer = MaskedWavelet_Straight_Through_Dropout(self.layer_sizes[1],
+                                                                       sign_variance_momentum, pruning_threshold)
             if 'variational' in dropout_technique:
                 dropout_layer = VariationalDropout(self.layer_sizes[1], variational_init_droprate, pruning_threshold)
             if 'sbp_log_normal' in dropout_technique:

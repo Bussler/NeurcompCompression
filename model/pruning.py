@@ -4,6 +4,7 @@ import torch.nn.utils.prune as prune
 from model.NeurcompModel import Neurcomp
 from model.VariationalDropoutLayer import VariationalDropout
 from model.SirenLayer import ResidualSineBlock
+from model.Straight_Through_Binary import MaskedWavelet_Straight_Through_Dropout
 
 
 # M: Search for zero beta parameters of layer_type dropout layer
@@ -287,3 +288,64 @@ def analyzeVariationalPruning(model):
                         last_linear_2 = module
 
     return weights_pruned, weights_unpruned
+
+
+def prune_binary_dropout_use_resnet(model):
+    pruned_dropout_channel = []
+    B = None
+    indices = None
+    last_linear_1 = None
+    last_linear_2 = None
+
+    startCaching = False
+
+    with torch.no_grad():
+        for module in model.net_layers.modules():
+
+            if isinstance(module, ResidualSineBlock):
+                if not startCaching:
+                    startCaching = True
+                    pruned_dropout_channel.append(module.linear_1.weight.shape[1])
+
+            if isinstance(module, MaskedWavelet_Straight_Through_Dropout):
+                #B, indices = module.get_valid_thetas()
+                #pruned_dropout_channel.append(B.shape[0])
+
+                B, indices, thresh = module.calculate_final_value_for_pruning()
+                pruned_dropout_channel.append(B.shape[0])
+
+                # M: prune input of linear and mult thetas out to remove them
+                #w_ = torch.index_select(last_linear_2.weight, 1, indices).mul(B)
+                w_ = torch.index_select(last_linear_2.weight, 1, indices)
+                w_ = (w_ * (B >= thresh) - w_ * B) + (w_ * B)
+                #w_ = (w_ * (B >= thresh) )
+                last_linear_2.weight = torch.nn.Parameter(w_, requires_grad=True)
+
+                # M: prune output of last linear to match new input
+                w_last = torch.index_select(last_linear_1.weight, 0, indices)
+                last_linear_1.weight = torch.nn.Parameter(w_last, requires_grad=True)
+                b_ = torch.index_select(last_linear_1.bias, 0, indices)
+                last_linear_1.bias = torch.nn.Parameter(b_, requires_grad=True)
+
+                last_linear_1 = None
+                last_linear_2 = None
+
+            if isinstance(module, torch.nn.Linear):
+                if startCaching:
+                    if last_linear_1 is None:
+                        last_linear_1 = module
+                    else:
+                        last_linear_2 = module
+
+        # M: prune param 'log_thetas', 'log_var' from state dict
+        state_dict = model.state_dict()
+        for name, param, in model.state_dict().items():
+            if 'mask_values' in name:
+                state_dict.pop(name)
+
+        print('Channel:', pruned_dropout_channel)
+
+        new_model = Neurcomp(input_ch=model.d_in, output_ch=model.d_out, features=pruned_dropout_channel,
+                             omega_0=model.omega_0, dropout_technique='', use_resnet=model.use_resnet)
+        new_model.load_state_dict(state_dict)
+        return new_model
