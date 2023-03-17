@@ -1,0 +1,27 @@
+expname = Smallify
+data = datasets/test_vol.npy
+basedir = /experiments/Tests/turbulence/
+
+d_in = 3
+d_out = 1
+
+n_layers = 4
+checkpoint_path = ''
+
+compression_ratio = 100
+
+grad_lambda = 1e-07
+lr = 0.00017
+max_pass = 75
+pass_decay = 20
+lr_decay = 0.2
+smallify_decay = 0
+
+batch_size = 1024
+sample_size = 16
+
+dropout_technique = smallify
+lambda_betas = 3e-06
+lambda_weights = 1e-05
+pruning_momentum = 0.025
+pruning_threshold = 0.75

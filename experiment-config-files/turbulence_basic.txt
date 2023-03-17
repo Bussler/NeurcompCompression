@@ -1,0 +1,20 @@
+expname = basic
+data = datasets/mhd1024.h5
+basedir = /experiments/Tests/turbulence/
+
+d_in = 3
+d_out = 1
+
+n_layers = 4
+checkpoint_path = ''
+
+compression_ratio = 100
+
+grad_lambda = 1e-07
+lr = 0.00017
+max_pass = 75
+pass_decay = 20
+lr_decay = 0.2
+
+batch_size = 1024
+sample_size = 16

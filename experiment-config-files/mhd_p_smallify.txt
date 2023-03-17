@@ -1,0 +1,27 @@
+expname = Smallify
+data = datasets/mhd1024.h5
+basedir = /experiments/Tests/mhd_p/
+
+d_in = 3
+d_out = 1
+n_layers = 4
+
+compression_ratio = 100.0
+omega_0 = 30
+grad_lambda = 1e-07
+lr = 0.00017
+
+max_pass = 100
+pass_decay = 20
+lr_decay = 0.2
+smallify_decay = 0
+
+batch_size = 2048
+sample_size = 16
+num_workers = 8
+
+dropout_technique = smallify
+lambda_betas = 1e-06
+lambda_weights = 5e-06
+pruning_momentum = 0.025
+pruning_threshold = 0.75
