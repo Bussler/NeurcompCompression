@@ -26,7 +26,9 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
         log_path: str,
         lambda_betas: float,
         lambda_weights: float,
-        lr: float,
+            pruning_momentum: float,
+            pruning_threshold: float,
+        #lr: float,
         n_layers: float,
         features_per_layer: float,
         trial_idx: int = -1,
@@ -53,10 +55,15 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
             "--lambda_weights",
             str(lambda_weights),
 
+            "--pruning_momentum",
+            str(pruning_momentum),
+            "--pruning_threshold",
+            str(pruning_threshold),
+
             # M: TODO search for best rmse for compression rate: Diff NW Size + Num Layers + Pruning
 
-            "--lr",
-            str(lr),
+            #"--lr",
+            #str(lr),
             "--n_layers",
             str(n_layers),
             "--features_per_layer",
@@ -93,7 +100,7 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
         RangeParameter(
             name="lambda_betas",
             lower=1e-08,
-            upper=9e-05,
+            upper=9e-04,
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
         ),
@@ -106,12 +113,26 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
         ),
 
         RangeParameter(
-            name="lr",
-            lower=8e-05,
-            upper=1e-03,
+            name="pruning_momentum",
+            lower=1e-04,
+            upper=0.1,
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
         ),
+        RangeParameter(
+            name="pruning_threshold",
+            lower=0.6,#0.6, 0.5
+            upper=0.9,#0.9, 0.75
+            parameter_type=ParameterType.FLOAT,
+        ),
+
+        #RangeParameter(
+        #    name="lr",
+        #    lower=8e-05,
+        #    upper=1e-03,
+        #    parameter_type=ParameterType.FLOAT,
+        #    log_scale=True,
+        #),
         RangeParameter(
             name="n_layers",
             lower=2,
@@ -120,7 +141,7 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
         ),
         RangeParameter(
             name="features_per_layer",
-            lower=120,
+            lower=60,
             upper=290,
             parameter_type=ParameterType.INT,
         ),
@@ -200,7 +221,7 @@ def create_experiment_scheduler(config, scriptname="NeurcompTraining.py", expnam
         experiment=experiment,
         generation_strategy=gs,
         options=SchedulerOptions(
-            total_trials=total_trials, max_pending_trials=4
+            total_trials=total_trials, max_pending_trials=3
         ),
     )
 
@@ -213,7 +234,7 @@ def create_NoDropout_experiment_scheduler(config, scriptname="NeurcompTraining.p
 
     def trainer(
         log_path: str,
-        lr: float,
+        #lr: float,
         n_layers: float,
         features_per_layer: float,
         trial_idx: int = -1,
@@ -239,8 +260,8 @@ def create_NoDropout_experiment_scheduler(config, scriptname="NeurcompTraining.p
             "--dropout_technique",
             str(''),
 
-            "--lr",
-            str(lr),
+            #"--lr",
+            #str(lr),
             "--n_layers",
             str(n_layers),
             "--features_per_layer",
@@ -275,13 +296,13 @@ def create_NoDropout_experiment_scheduler(config, scriptname="NeurcompTraining.p
         # would mean that num_params can't take on that many values, which
         # in turn makes the Pareto frontier look pretty weird.
 
-        RangeParameter(
-            name="lr",
-            lower=8e-05,
-            upper=1e-03,
-            parameter_type=ParameterType.FLOAT,
-            log_scale=True,
-        ),
+        #RangeParameter(
+        #    name="lr",
+        #    lower=8e-05,
+        #    upper=1e-03,
+        #    parameter_type=ParameterType.FLOAT,
+        #    log_scale=True,
+        #),
         RangeParameter(
             name="n_layers",
             lower=2,
@@ -290,7 +311,7 @@ def create_NoDropout_experiment_scheduler(config, scriptname="NeurcompTraining.p
         ),
         RangeParameter(
             name="features_per_layer",
-            lower=120,
+            lower=60, #120
             upper=290,
             parameter_type=ParameterType.INT,
         ),
@@ -370,7 +391,7 @@ def create_NoDropout_experiment_scheduler(config, scriptname="NeurcompTraining.p
         experiment=experiment,
         generation_strategy=gs,
         options=SchedulerOptions(
-            total_trials=total_trials, max_pending_trials=4
+            total_trials=total_trials, max_pending_trials=3
         ),
     )
 
@@ -386,9 +407,9 @@ def create_variational_experiment_scheduler(config, scriptname="NeurcompTraining
         variational_dkl_multiplier: float,
         variational_lambda_dkl: float,
         variational_init_droprate: float,
-        lr: float,
-            variational_lambda_entropy: float,
-            variational_lambda_weight: float,
+        #lr: float,
+        #variational_lambda_entropy: float,
+        #variational_lambda_weight: float,
         n_layers: float,
         features_per_layer: float,
         trial_idx: int = -1,
@@ -423,12 +444,12 @@ def create_variational_experiment_scheduler(config, scriptname="NeurcompTraining
             "--variational_init_droprate",
             str(variational_init_droprate),
 
-            "--lr",
-            str(lr),
-            "--variational_lambda_entropy",
-            str(variational_lambda_entropy),
-            "--variational_lambda_weight",
-            str(variational_lambda_weight),
+            #"--lr",
+            #str(lr),
+            #"--variational_lambda_entropy",
+            #str(variational_lambda_entropy),
+            #"--variational_lambda_weight",
+            #str(variational_lambda_weight),
             "--n_layers",
             str(n_layers),
             "--features_per_layer",
@@ -468,65 +489,63 @@ def create_variational_experiment_scheduler(config, scriptname="NeurcompTraining
             lower=0.6,
             upper=0.95,
             parameter_type=ParameterType.FLOAT,
-            log_scale=True,
         ),
         #RangeParameter(
         #    name="variational_sigma",
-        #    lower=-10.0,
-        #    upper=-8.3,
+        #    lower=-3.0, #-10.0, -5.0
+        #    upper=-1.0, #-8.3, -1.0
         #    parameter_type=ParameterType.FLOAT,
         #),
         RangeParameter(
             name="variational_dkl_multiplier",
-            lower=5e-06,
-            upper=5e-02,
+            lower=5e-05, #5e-05 ,5e-08
+            upper=5e-01, #5e-01
             parameter_type=ParameterType.FLOAT,
             log_scale=True,
         ),
         RangeParameter(
             name="variational_lambda_dkl",
-            lower=1,
-            upper=10,
-            parameter_type=ParameterType.INT,
+            lower=0.5,
+            upper=10.0,
+            parameter_type=ParameterType.FLOAT,
+            log_scale=True,
         ),
         RangeParameter(
             name="variational_init_droprate",
             lower=0.1,
             upper=0.8,
             parameter_type=ParameterType.FLOAT,
-            log_scale=True,
         ),
 
-        RangeParameter(
-            name="lr",
-            lower=8e-05,
-            upper=1e-03,
-            parameter_type=ParameterType.FLOAT,
-            log_scale=True,
-        ),
-        RangeParameter(
-            name="variational_lambda_entropy",
-            lower=0.5,
-            upper=3.0,
-            parameter_type=ParameterType.FLOAT,
-            log_scale=True,
-        ),
-        RangeParameter(
-            name="variational_lambda_weight",
-            lower=0.5,
-            upper=3.0,
-            parameter_type=ParameterType.FLOAT,
-            log_scale=True,
-        ),
+        #RangeParameter(
+        #    name="lr",
+        #    lower=8e-05,
+        #    upper=1e-03,
+        #    parameter_type=ParameterType.FLOAT,
+        #    log_scale=True,
+        #),
+        #RangeParameter(
+        #    name="variational_lambda_entropy",
+        #    lower=0.5,
+        #    upper=3.0,
+        #    parameter_type=ParameterType.FLOAT,
+        #    log_scale=True,
+        #),
+        #RangeParameter(
+        #    name="variational_lambda_weight",
+        #    lower=0.5,
+        #    upper=2.0,
+        #    parameter_type=ParameterType.FLOAT,
+        #),
         RangeParameter(
             name="n_layers",
             lower=2,
-            upper=5,
+            upper=6,
             parameter_type=ParameterType.INT,
         ),
         RangeParameter(
             name="features_per_layer",
-            lower=120,
+            lower=60,
             upper=200,
             parameter_type=ParameterType.INT,
         ),
