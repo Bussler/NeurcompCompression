@@ -13,14 +13,12 @@ if __name__ == '__main__':
     dataset = IndexDataset(volume, args['sample_size'])
 
     model = setup_neurcomp(args['compression_ratio'], dataset.n_voxels, args['n_layers'], args['d_in'],
-                           args['d_out'], args['omega_0'], args['checkpoint_path'], args['dropout_technique'],
-                           args['pruning_momentum'], use_resnet=args['use_resnet'],
+                           args['d_out'], args['omega_0'], args['checkpoint_path'], '',
+                           args['pruning_momentum'], use_resnet=args['use_resnet'], featureList=args['feature_list'],
                            pruning_threshold= args['pruning_threshold'],
                            variational_init_droprate=args['variational_init_droprate'])
 
-    is_probalistic_model = 'variational' in args['dropout_technique']
-
-    tiled_net_out(dataset, model, True, gt_vol=volume, evaluate=True, probalistic_model=is_probalistic_model,
+    tiled_net_out(dataset, model, True, gt_vol=volume, evaluate=True, probalistic_model=False,
                   write_vols=True)
 
     print("Finished visualization.")
