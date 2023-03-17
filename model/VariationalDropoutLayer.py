@@ -12,15 +12,6 @@ def inference_variational_model(mu, sigma):
     return torch.normal(mu, sigma)
 
 
-def calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volume, log_sigma):
-    x_mu_loss = loss_criterion(predicted_volume, ground_truth_volume)
-    sigma = math.exp(log_sigma)
-    a = 1 / (2 * (sigma ** 2))
-    b = - (math.log(2 * math.pi) + (2 * log_sigma)) / 2
-
-    return a * (-x_mu_loss) + b, x_mu_loss
-
-
 def calculate_Log_Likelihood_variance(predicted_volume, ground_truth_volume, variance):
     x_mu_loss = (ground_truth_volume-predicted_volume) ** 2
     sigma = torch.exp(variance)
@@ -42,25 +33,21 @@ def calculte_weight_loss(model):
     return loss_Weights
 
 
-def calculate_variational_dropout_loss(model, loss_criterion, predicted_volume, ground_truth_volume, log_sigma,
-                                    lambda_dkl, lambda_weights, lambda_entropy):
+def calculate_variational_dropout_loss(model, dataset_size, predicted_volume, ground_truth_volume, log_sigma,
+                                       lambda_dkl, lambda_weights, lambda_entropy):
     Dkl_sum = 0.0
     Entropy_sum = 0.0
     for module in model.net_layers.modules():
         if isinstance(module, VariationalDropout):
             Dkl_sum = Dkl_sum + module.calculate_Dkl()
             Entropy_sum = Entropy_sum + module.calculate_Dropout_Entropy()
-    #Dkl_sum = (lambda_dkl/predicted_volume.shape[0]) * Dkl_sum
-    Dkl_sum = lambda_dkl * (loss_criterion/predicted_volume.shape[0]) * Dkl_sum  # M: TODO scaling!
-    Entropy_sum = lambda_entropy * (loss_criterion/predicted_volume.shape[0]) * Entropy_sum
-    #weight_loss = lambda_weights * (lambda_dkl/predicted_volume.shape[0]) * calculte_weight_loss(model)
-    weight_loss = lambda_weights * (loss_criterion/predicted_volume.shape[0]) * calculte_weight_loss(model)
-
-    #Log_Likelyhood, mse = calculate_Log_Likelihood(loss_criterion, predicted_volume, ground_truth_volume, log_sigma)
+    Dkl_sum = lambda_dkl * (dataset_size / predicted_volume.shape[0]) * Dkl_sum
+    Entropy_sum = lambda_entropy * (dataset_size / predicted_volume.shape[0]) * Entropy_sum
+    weight_loss = lambda_weights * (dataset_size / predicted_volume.shape[0]) * calculte_weight_loss(model)
 
     # M: iter over all values
     Log_Likelyhood, mse = calculate_Log_Likelihood_variance(predicted_volume, ground_truth_volume, log_sigma)
-    Log_Likelyhood = Log_Likelyhood.sum() * (loss_criterion/predicted_volume.shape[0])
+    Log_Likelyhood = Log_Likelyhood.sum() * (dataset_size / predicted_volume.shape[0])
     mse = mse.sum() * (1/predicted_volume.shape[0])
 
     complete_loss = -(Log_Likelyhood - Dkl_sum - weight_loss - Entropy_sum)

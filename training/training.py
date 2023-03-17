@@ -72,15 +72,6 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
     info['rmse'] = rmse
     info['compr_rmse'] = compr_rmse
 
-    #log_param("num_net_params", num_net_params)
-    #log_param("compression_ratio", compression_ratio)
-    #log_param("volume_size", dataset.vol_res)
-    #log_param("volume_num_voxels", dataset.n_voxels)
-    #log_param("network_layer_sizes", model.layer_sizes)
-    #log_param("psnr", psnr)
-    #log_param("l1_diff", l1_diff)
-    #log_param("mse", mse)
-    #log_param("rmse", rmse)
     writer.add_scalar("compression_ratio", compression_ratio)
     writer.add_scalar("psnr", psnr)
     writer.add_scalar("mse", mse)
@@ -106,8 +97,6 @@ def gather_training_info(model, dataset, volume, args, verbose=True):
 
     write_dict(args, 'config.txt', ExperimentPath)
     write_dict(info, 'info.txt', ExperimentPath)
-
-    #log_artifacts(ExperimentPath)
 
     return info
 
@@ -193,13 +182,10 @@ def solveModel(model_init, optimizer, lrStrategy, loss_criterion, volume, datase
                     else:
                         variational_variance = torch.ones_like(predicted_volume).fill_(args['variational_sigma'])
 
-                    complete_loss, dkl, ll, mse, loss_Weights = calculate_variational_dropout_loss(model, #loss_criterion,
+                    complete_loss, dkl, ll, mse, loss_Weights = calculate_variational_dropout_loss(model,
                                                                          dataset.n_voxels,
                                                                          predicted_volume, ground_truth_volume,
-                                                                         #log_sigma=args['variational_sigma'],
                                                                          log_sigma=variational_variance,
-                                                                         #lambda_dkl=args['variational_lambda_dkl'],
-                                                                         #lambda_dkl=variational_dkl_lambda * args['variational_lambda_dkl'],
                                                                          lambda_dkl=variational_dkl_lambda,
                                                                          lambda_weights=args['variational_lambda_weight'],
                                                                          lambda_entropy=args['variational_lambda_entropy'])
@@ -298,7 +284,6 @@ def training(args, verbose=True):
     lrStrategy = lrdecay.LearningRateDecayStrategy.create_instance(args, optimizer)
     loss_criterion = torch.nn.MSELoss().to(device)
 
-    #mlflow.start_run(experiment_id=get_Mlfow_Experiment(args['expname']))
     global writer
     if args['Tensorboard_log_dir']:
         writer = SummaryWriter(args['Tensorboard_log_dir'])
@@ -308,7 +293,6 @@ def training(args, verbose=True):
 
     if args['dropout_technique']:
         args_first = deepcopy(args)
-        #if args['dropout_technique'] == 'smallify':
         args_first['max_pass'] *= (2.0 / 3.0)
 
         model = solveModel(model, optimizer, lrStrategy, loss_criterion, volume,
@@ -350,7 +334,6 @@ def training(args, verbose=True):
                            data_loader, args, verbose)
 
     info = gather_training_info(model, dataset, volume, args, verbose)
-    #mlflow.end_run()
     writer.close()
     return info
 
