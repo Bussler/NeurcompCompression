@@ -36,6 +36,25 @@ def get_tensor_from_hdf5(filepath):
         return volume
 
 
+def get_tensor_from_raw(filepath):
+    import struct
+
+    file = open(filepath, 'rb')
+
+    vol_size = 256 ** 3
+
+    format_str = ''.join(['f' for _ in range(vol_size)])
+    read_data = torch.FloatTensor(struct.unpack(format_str, file.read(4 * vol_size)))
+    tensor_3d = torch.reshape(read_data, (256, 256, 256))
+
+    minV = torch.min(tensor_3d)
+    maxV = torch.max(tensor_3d)
+    tensor_3d = normalize_volume(tensor_3d, minV, maxV, -1.0, 1.0)
+
+    print('Loaded RAW Volume Successfully. Shape of: ', tensor_3d.shape)
+    return tensor_3d
+
+
 def get_tensor(filepath):
 
     if filepath.endswith('.npy'):
@@ -45,6 +64,8 @@ def get_tensor(filepath):
         return get_tensor_from_cvol(filepath)
     if filepath.endswith('.h5'):
         return get_tensor_from_hdf5(filepath)
+    if filepath.endswith('.raw'):
+        return get_tensor_from_raw(filepath)
 
 
 class IndexDataset(Dataset):
