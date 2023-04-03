@@ -1,6 +1,6 @@
 # Neurcomp Compression
 
-[**Master's Thesis**](plots\Master_Thesis_Training_Methods_for_Memory_efficient_Volume_Scene_Representation_Networks_Maarten_Bussler.pdf)
+[**Master's Thesis**](Master_Thesis_Training_Methods_for_Memory_efficient_Volume_Scene_Representation_Networks_Maarten_Bussler.pdf)
 
 Project for my master's thesis to research possibilities of compressing Scene Representation Networks based on a monolithic architecture with network pruning algorithms.
 The network is based on [Neurcomp](https://github.com/matthewberger/neurcomp). Besides a binary masking pruning, the pruning algorithms of [Smallify](https://github.com/mitdbg/fastdeepnets) and [Variational Dropout](https://arxiv.org/pdf/1506.02557.pdf) are implemented.
