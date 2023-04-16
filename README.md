@@ -43,4 +43,16 @@ The Search-Space for each experiment can be configured in `Multi_Objective_NAS.p
 - Quantization is handled in the classes in `quantization/`
 
 ## Results
-TODO
+All experiments are performed on the `datasets\mhd1024.h5`(255, 255, 255) and `datasets\test_vol.npy`(150,150,150) datasets.
+Pruning works best when performed on large, open networks, where singular nodes have relatively low influence on the reconstruction quality.
+
+To this end, the Neurcomp architecture is held back by it's dependence on the residual blocks. While these blocks provide stability to the deeper network architecture, they also require the input and output dimension of the blocks to be of the same size, thereby effectively halving the amount of prunable parameters in the network.
+
+![NAS_Results](plots\mhdp_turbulence_NAS.PNG)
+
+The pruning algorithms are not able to increase the reconstruction quality of Neurcomp significantly.
+Furthermore, due to the presence of a large variance in the data, it is difficult to make a conclusive determination regarding the efficacy of the pruning algorithms in improving the network.
+Instead, pruning approaches are again investigated on a more open, and real-time applicable network architecture, the [fV-SRN](https://github.com/shamanDevel/fV-SRN).
+For a comparison with fV-SRN, enhanced by wavelet transformation, see [Latent_Feature_Grid_Compression](https://github.com/Bussler/Latent_Feature_Grid_Compression).
+
+For a more extensive review, see the pdf of the [Master's thesis](Master_Thesis_Training_Methods_for_Memory_efficient_Volume_Scene_Representation_Networks_Maarten_Bussler.pdf).
