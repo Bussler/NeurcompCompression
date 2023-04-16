@@ -2,7 +2,10 @@
 
 [**Master's Thesis**](Master_Thesis_Training_Methods_for_Memory_efficient_Volume_Scene_Representation_Networks_Maarten_Bussler.pdf)
 
-Project for my master's thesis to research possibilities of compressing Scene Representation Networks based on a monolithic architecture with network pruning algorithms.
+Project for my master's thesis to research possibilities of compressing Scene Representation Networks based on latent feature grids with network pruning algorithms.
+The aim is to use the pruning algorithms for identifying the network parameters most important to the reconstruction quality and eliminating the less significant ones.
+This enables the network to learn a good tradeoff between compression ratio and reconstruction quality.
+
 The network is based on [Neurcomp](https://github.com/matthewberger/neurcomp). Besides a binary masking pruning, the pruning algorithms of [Smallify](https://github.com/mitdbg/fastdeepnets) and [Variational Dropout](https://arxiv.org/pdf/1506.02557.pdf) are implemented.
 
 ## Quick Start
@@ -48,7 +51,7 @@ Pruning works best when performed on large, open networks, where singular nodes 
 
 To this end, the Neurcomp architecture is held back by it's dependence on the residual blocks. While these blocks provide stability to the deeper network architecture, they also require the input and output dimension of the blocks to be of the same size, thereby effectively halving the amount of prunable parameters in the network.
 
-![NAS_Results](plots\mhdp_turbulence_NAS.PNG)
+![NAS_Results](/plots/mhdp_turbulence_NAS.jpg)
 
 The pruning algorithms are not able to increase the reconstruction quality of Neurcomp significantly.
 Furthermore, due to the presence of a large variance in the data, it is difficult to make a conclusive determination regarding the efficacy of the pruning algorithms in improving the network.
