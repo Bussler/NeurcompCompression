@@ -1526,6 +1526,161 @@ def curve_quality_control_plot():
     tikzplotlib.save(filepath + '.pgf')
 
 
+def curve_quality_control_plot_VarStatic():
+
+
+    def simple_exponential_betas(x):
+        return 0.4174213153208179 * x + np.log(8.036620143929417e-06)
+
+
+    Var_Static_metric_1 = [-9.809205746954804, -9.809205746954804, -9.809205746954804,
+    -9.519871339134555, -9.519871339134555, -9.519871339134555,
+    -9.350621560391348, -9.350621560391348, -9.350621560391348,
+    -9.230536931314306, -9.230536931314306, -9.230536931314306,
+    -9.13739205661937, -9.13739205661937, -9.13739205661937, 
+    -9.061287152571099, -9.061287152571099, -9.061287152571099,
+    -8.996941373040006, -8.996941373040006, -8.996941373040006, 
+    -8.941202523494058, -8.941202523494058, -8.941202523494058,]
+
+    Var_Static_comparison_1 = [101.5, 100.2, 101.3,
+     185.8, 180.2, 183.3, 
+     275.5, 270.2, 271.2,
+     389.5, 393.2, 390.1,
+     481.3, 485.2, 483.7,
+     622.3, 618.9, 619.4,
+     716.7, 714.5, 711.2,
+     897.8, 893.1, 896.6,
+     ]
+
+    max_metric_1 = []
+    min_metric_1 = []
+    comparison_1_values = []
+
+
+    #ax = plt.gca()
+    #ax.set(xscale = 'log', yscale = 'log')
+
+    plt.scatter(np.log(Var_Static_comparison_1), Var_Static_metric_1, alpha=0.5, label='Ground Truth Runs', color = 'steelblue')  # M: Experiments
+    #x_line_scatter = np.linspace(min(comparison_1), max(comparison_1), len(metric_1), dtype=float)
+    #plt.fill_between(comparison_1_values,min_metric_1, max_metric_1, alpha=0.5, color = 'steelblue') -> Unterscheiden sich doch nur in x!
+
+    x_line = (np.linspace(100, 800, 20, dtype=float))
+    y_line_metric1 = (simple_exponential_betas(np.log(x_line)))
+
+    plt.plot(np.log(x_line), y_line_metric1, label='Fitted Curve', color = 'forestgreen')
+
+    plt.xlabel('compression_ratio')
+    plt.ylabel('psigma')
+    plt.legend()
+
+    filepath = 'plots/LatexFigures/Hyperparam_Analysis/QualityControl/' + 'mhd_p_Variational_Static_Psigma'
+    plt.savefig(filepath + '.png')
+    plt.savefig(filepath + '.pdf')
+    tikzplotlib.save(filepath + '.pgf')
+
+
+def curve_quality_control_plot_VarDynamic():
+
+    def simple_exponential_betas(x):
+        return 3.381908026829859 * x + np.log(1.0926601455968369e-11)
+
+    Var_Static_metric_1 = [6.343094130172634e-05, 6.343094130172634e-05, 6.343094130172634e-05,
+    0.0006612366469063127, 0.0006612366469063127, 0.0006612366469063127,
+    0.0026054416859547995, 0.0026054416859547995, 0.0026054416859547995,
+    0.006893069758055226, 0.006893069758055226, 0.006893069758055226,
+    0.014660656707187768, 0.014660656707187768, 0.014660656707187768,
+    0.027160459686947813, 0.027160459686947813, 0.027160459686947813, 
+    0.045745144234679194, 0.045745144234679194, 0.045745144234679194, 
+    0.07185689255385087, 0.07185689255385087, 0.07185689255385087,]
+
+    Var_Static_comparison_1 = [120.5, 122.2, 123.3,
+     195.8, 190.2, 197.3, 
+     245.5, 240.2, 241.2,
+     329.5, 323.2, 325.1,
+     381.3, 389.2, 385.7,
+     450.9, 457.1, 460.2,
+     512.4, 515.2, 522.8,
+     599.5, 620.1, 607.3,
+     ]
+
+    max_metric_1 = []
+    min_metric_1 = []
+    comparison_1_values = []
+
+
+    #ax = plt.gca()
+    #ax.set(xscale = 'log', yscale = 'log')
+
+    plt.scatter(np.log(Var_Static_comparison_1), np.log(Var_Static_metric_1), alpha=0.5, label='Ground Truth Runs', color = 'steelblue')  # M: Experiments
+    #x_line_scatter = np.linspace(min(comparison_1), max(comparison_1), len(metric_1), dtype=float)
+    #plt.fill_between(comparison_1_values,min_metric_1, max_metric_1, alpha=0.5, color = 'steelblue') -> Unterscheiden sich doch nur in x!
+
+    x_line = np.linspace(100, 800, 20, dtype=float)
+    y_line_metric1 = (simple_exponential_betas(np.log(x_line)))
+
+    plt.plot(np.log(x_line), y_line_metric1, label='Fitted Curve', color = 'forestgreen')
+
+    plt.xlabel('compression_ratio')
+    plt.ylabel('log dkl ramp up')
+    plt.legend()
+
+    filepath = 'plots/LatexFigures/Hyperparam_Analysis/QualityControl/' + 'mhd_p_Variational_Dynamic_dklWeight'
+    plt.savefig(filepath + '.png')
+    plt.savefig(filepath + '.pdf')
+    tikzplotlib.save(filepath + '.pgf')
+
+
+def curve_quality_control_plot_Smallify():
+
+    def simple_exponential_betas(x):
+        return 3.499423692372221 * x + np.log(3.042612458324322e-13)
+
+    Var_Static_metric_1 = [3.034548087102169e-06, 3.034548087102169e-06, 3.034548087102169e-06,
+    3.431828075853098e-05, 3.431828075853098e-05, 3.431828075853098e-05,
+    0.00014182194816418953, 0.00014182194816418953, 0.00014182194816418953,
+    0.00038811195618456676, 0.00038811195618456676, 0.00038811195618456676,
+    0.0008473956248390271, 0.0008473956248390271, 0.0008473956248390271,
+    0.001603891352227109, 0.001603891352227109, 0.001603891352227109,
+    0.002750743703666481, 0.002750743703666481, 0.002750743703666481,
+    0.004389231838077046, 0.004389231838077046, 0.004389231838077046]
+
+    Var_Static_comparison_1 = [107.5, 104.2, 106.3,
+     165.8, 170.2, 163.3, 
+     245.5, 250.2, 251.2,
+     329.5, 333.2, 330.1,
+     451.3, 455.2, 453.7,
+     642.3, 638.9, 639.4,
+     736.7, 734.5, 731.2,
+     927.8, 923.1, 926.6,
+     ]
+
+    max_metric_1 = []
+    min_metric_1 = []
+    comparison_1_values = []
+
+
+    #ax = plt.gca()
+    #ax.set(xscale = 'log', yscale = 'log')
+
+    plt.scatter(np.log(Var_Static_comparison_1), np.log(Var_Static_metric_1), alpha=0.5, label='Ground Truth Runs', color = 'steelblue')  # M: Experiments
+    #x_line_scatter = np.linspace(min(comparison_1), max(comparison_1), len(metric_1), dtype=float)
+    #plt.fill_between(comparison_1_values,min_metric_1, max_metric_1, alpha=0.5, color = 'steelblue') -> Unterscheiden sich doch nur in x!
+
+    x_line = np.linspace(100, 800, 20, dtype=float)
+    y_line_metric1 = simple_exponential_betas(np.log(x_line))
+
+    plt.plot(np.log(x_line), y_line_metric1, label='Fitted Curve', color = 'forestgreen')
+
+    plt.xlabel('compression_ratio')
+    plt.ylabel('log betas')
+    plt.legend()
+
+    filepath = 'plots/LatexFigures/Hyperparam_Analysis/QualityControl/' + 'mhd_p_SmallifyBetas'
+    plt.savefig(filepath + '.png')
+    plt.savefig(filepath + '.pdf')
+    tikzplotlib.save(filepath + '.pgf')
+
+
 if __name__ == '__main__':
     #rmseTTHRESHExperiment()
 
@@ -1552,7 +1707,11 @@ if __name__ == '__main__':
     #HyperparamAnalysis()
     #HyperparamAnalysis_Variational()
 
-    curve_quality_control_plot()
+    #curve_quality_control_plot()
+
+    #curve_quality_control_plot_VarStatic()
+    curve_quality_control_plot_VarDynamic()
+    #curve_quality_control_plot_Smallify()
 
     #CompressionVSRMSE()
     #HyperparamAnalysis()

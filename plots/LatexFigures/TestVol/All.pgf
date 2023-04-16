@@ -7,6 +7,7 @@
 \definecolor{forestgreen}{RGB}{34,139,34}
 \definecolor{lightgray204}{RGB}{204,204,204}
 \definecolor{mediumpurple}{RGB}{147,112,219}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
 
 \begin{axis}[
 legend cell align={left},
@@ -317,7 +318,7 @@ table {%
 8.37466904548624 58.5410270690918
 };
 \addlegendentry{Var Dynamic}
-\addplot [semithick, mediumpurple, opacity=0.25, forget plot]
+\addplot [semithick, steelblue31119180, opacity=0.25, forget plot]
 table {%
 252.600853229549 29.807201385498
 198.985908849714 35.922290802002
@@ -331,7 +332,7 @@ table {%
 13.0610949648028 57.3346672058105
 8.37466904548624 60.2581481933594
 };
-\addplot [semithick, mediumpurple, opacity=0.25, forget plot]
+\addplot [semithick, steelblue31119180, opacity=0.25, forget plot]
 table {%
 318.998109640832 31.2471504211426
 214.312928625857 31.7997932434082
@@ -349,7 +350,7 @@ table {%
 13.9347071234223 56.4556503295898
 8.37466904548624 58.0463752746582
 };
-\addplot [semithick, mediumpurple, opacity=0.25, forget plot]
+\addplot [semithick, steelblue31119180, opacity=0.25, forget plot]
 table {%
 294.220207479731 32.1963348388672
 169.640613219402 36.8407669067383
@@ -365,7 +366,7 @@ table {%
 10.461839857905 57.0783386230469
 8.37466904548624 58.2266044616699
 };
-\addplot [semithick, mediumpurple]
+\addplot [semithick, steelblue31119180]
 table {%
 318.998109640832 31.2471504211426
 294.220207479731 32.1963348388672

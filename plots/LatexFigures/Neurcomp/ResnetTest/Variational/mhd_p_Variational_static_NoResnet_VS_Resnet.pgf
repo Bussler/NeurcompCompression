@@ -1,9 +1,12 @@
 % This file was created with tikzplotlib v0.10.1.
 \begin{tikzpicture}
 
+\definecolor{crimson2143940}{RGB}{214,39,40}
 \definecolor{darkgray176}{RGB}{176,176,176}
-\definecolor{green}{RGB}{0,128,0}
+\definecolor{darkorange25512714}{RGB}{255,127,14}
+\definecolor{forestgreen4416044}{RGB}{44,160,44}
 \definecolor{lightgray204}{RGB}{204,204,204}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
 
 \begin{axis}[
 legend cell align={left},
@@ -19,7 +22,7 @@ ylabel={PSNR},
 ymin=35.4332864761353, ymax=43.558286857605,
 ytick style={color=black}
 ]
-\addplot [semithick, green]
+\addplot [semithick, forestgreen4416044]
 table {%
 578.978840043298 35.802604675293
 533.5406075037 36.6562538146973
@@ -43,8 +46,8 @@ table {%
 145.574523937034 42.751091003418
 142.38928819847 42.9642486572266
 };
-\addlegendentry{Pareto_Frontier Pruned No Resnet}
-\addplot [semithick, blue]
+\addlegendentry{Pruned No Resnet}
+\addplot [semithick, steelblue31119180]
 table {%
 655.338510789661 36.6534843444824
 579.423943809624 37.1407012939453
@@ -56,7 +59,19 @@ table {%
 242.733600737802 41.3203430175781
 179.397747435842 43.1889686584473
 };
-\addlegendentry{Pareto_Frontier Pruned With Resnet}
+\addlegendentry{Pruned With Resnet}
+\addplot [semithick, crimson2143940]
+table {%
+559.40673391586 36.0650215148926
+355.365945135019 38.0633125305176
+287.746203904555 38.8407363891602
+282.56803735451 39.6008682250977
+244.830271978265 40.6663055419922
+189.024007934246 41.6822891235352
+159.680424880346 42.7210388183594
+113.726071837642 44.2401123046875
+};
+\addlegendentry{Baseline Unpruned}
 \end{axis}
 
 \end{tikzpicture}

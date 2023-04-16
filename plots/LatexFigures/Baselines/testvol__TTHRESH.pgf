@@ -23,7 +23,7 @@ ylabel={psnr},
 ymin=25.3464712017822, ymax=68.9973047625732,
 ytick style={color=black}
 ]
-\addplot [semithick, steelblue31119180]
+\addplot [semithick, crimson2143940]
 table {%
 90.9495 46.0206
 150.344 40.9151
@@ -83,7 +83,7 @@ table {%
 22.4757647276195 58.0532336543694
 };
 \addlegendentry{fv-SRN Quant}
-\addplot [semithick, crimson2143940]
+\addplot [semithick, steelblue31119180]
 table {%
 17.4883378695059 63.8139915466309
 19.525797918116 63.0901298522949
