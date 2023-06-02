@@ -22,19 +22,22 @@ def emaTest2():
     pass
 
 
-
 def calculate_variance_of_data():
     volume_mhd_p = get_tensor('datasets/mhd1024.h5')
-    volume_Ejecta = get_tensor('datasets/Ejecta/snapshot_070_256.cvol')
+    #volume_Ejecta = get_tensor('datasets/Ejecta/snapshot_070_256.cvol')
 
     variance_mhd_p = torch.var(volume_mhd_p).item()
-    variance_Ejecta = torch.var(volume_Ejecta).item()
+    #variance_Ejecta = torch.var(volume_Ejecta).item()
 
     print('Variance mhd_p:', variance_mhd_p)  # 0.030741851776838303
     print('Standard Deviation mhd_p:', np.sqrt(variance_mhd_p))  # 0.1753335443571432
 
-    print('Variance Ejecta:', variance_Ejecta)  # 0.02090180665254593
-    print('Standard Deviation Ejecta:', np.sqrt(variance_Ejecta))  # 0.14457457125146844
+    testdata = np.array([1, 1, 1,])
+    print('Variance testdata:',  np.var(testdata).item())
+
+
+    #print('Variance Ejecta:', variance_Ejecta)  # 0.02090180665254593
+    #print('Standard Deviation Ejecta:', np.sqrt(variance_Ejecta))  # 0.14457457125146844
 
 
 def psnr_test():
@@ -324,12 +327,12 @@ def neurcompRunsDiffComprRates():
 
 if __name__ == '__main__':
     #emaTest2()
-    #calculate_variance_of_data()
+    calculate_variance_of_data()
     #psnr_test()
     #Hyperparam_Best_Runs()
 
     #calcParetoStuff()
-    analyse_NW_Weights()
+    #analyse_NW_Weights()
     #test_different_dropout_rates()
     #create_parallel_coordinates()
 
